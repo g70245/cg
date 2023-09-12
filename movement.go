@@ -56,7 +56,7 @@ func (state *MovementState) Move() {
 		x, y = none()
 	}
 
-	fmt.Printf("PID %d moves to (%d, %d)\n", state.hWnd, x, y)
+	fmt.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
 	Act(state.hWnd, int32(x), int32(y), WM_MOUSEMOVE)
 	Act(state.hWnd, int32(x), int32(y), WM_LBUTTONDOWN)

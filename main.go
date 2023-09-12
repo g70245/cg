@@ -16,9 +16,10 @@ const (
 )
 
 func main() {
-	targetWindows, _ := FindWindows(CLASS)
-	targetWindowStrs := targetWindows.Get()
-	stopChan := make(chan bool, len(targetWindows))
+	hWnds, _ := FindWindows(CLASS)
+	workers := CreateWorkers(hWnds)
+	handles := workers.GetHandles()
+	stopChan := make(chan bool, len(workers))
 
 	// base
 	myApp := app.New()
@@ -27,7 +28,7 @@ func main() {
 
 	// choose the party leader
 	dropDownLabel := widget.NewLabel("Lead PID")
-	dropDown := widget.NewSelect(targetWindowStrs, func(pid string) {
+	dropDown := widget.NewSelect(handles, func(pid string) {
 		GLOBAL_PARTY_LEAD_HWND = pid
 	})
 	dropDown.PlaceHolder = "Choose the party lead"
@@ -38,17 +39,27 @@ func main() {
 	lever = widget.NewButton(ON, func() {
 		switch lever.Text {
 		case ON:
-			for _, window := range targetWindows {
-				Worker(window, stopChan)
+			for _, w := range workers {
+				w.Work(stopChan)
 			}
 			turn(OFF, lever)
 		case OFF:
-			for range targetWindows {
+			for range workers {
 				stopChan <- true
 			}
 			turn(ON, lever)
 		}
 	})
+
+	// strategy
+	// movementStrategies := make([]string, len(targetWindows))
+	// for i := range movementStrategies {
+	// 	movementStrategies[i] = MOVEMENT_STRATEGIES[0]
+	// }
+
+	// for i := range targetWindows {
+	// 	label := widget.NewLabel(targetWindowStrs[i])
+	// }
 
 	// cancel the chosen party leader
 	clear := widget.NewButton("Clear", func() {
