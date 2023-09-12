@@ -15,7 +15,7 @@ var (
 	DIRECTION = []int{-1, 1}
 )
 
-type MovementStrategy string
+type MovementMode string
 
 const (
 	NONE               = "None"
@@ -24,11 +24,11 @@ const (
 	BACK_DIAGONAL_MODE = "Back Diagonal"
 )
 
-var MOVEMENT_STRATEGIES = []string{NONE, CIRCLE_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE}
+var MOVEMENT_MODES = []string{NONE, CIRCLE_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE}
 
 type MovementState struct {
 	hWnd             HWND
-	strategy         MovementStrategy
+	mode             MovementMode
 	currentDirection int
 }
 
@@ -42,25 +42,25 @@ func (state *MovementState) nextDirection() (nextDirection int) {
 	return
 }
 
-func (state *MovementState) Move() {
+func (m *MovementState) Move() {
 
 	var x, y int
-	switch state.strategy {
+	switch m.mode {
 	case CIRCLE_MODE:
 		x, y = circle()
 	case DIAGONAL_MODE:
-		x, y = diagonal(*state, false)
+		x, y = diagonal(*m, false)
 	case BACK_DIAGONAL_MODE:
-		x, y = diagonal(*state, true)
+		x, y = diagonal(*m, true)
 	default:
 		x, y = none()
 	}
 
-	fmt.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
+	fmt.Printf("Handle %d moves to (%d, %d)\n", m.hWnd, x, y)
 
-	Act(state.hWnd, int32(x), int32(y), WM_MOUSEMOVE)
-	Act(state.hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
-	Act(state.hWnd, int32(x), int32(y), WM_LBUTTONUP)
+	Act(m.hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	Act(m.hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
+	Act(m.hWnd, int32(x), int32(y), WM_LBUTTONUP)
 }
 
 func circle() (x, y int) {

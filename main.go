@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -24,15 +25,16 @@ func main() {
 	// base
 	myApp := app.New()
 	window := myApp.NewWindow("CG")
-	window.Resize(fyne.NewSize(200, 300))
+	window.Resize(fyne.NewSize(340, 160))
 
 	// choose the party leader
-	dropDownLabel := widget.NewLabel("Lead PID")
-	dropDown := widget.NewSelect(handles, func(pid string) {
-		GLOBAL_PARTY_LEAD_HWND = pid
+	leadSelectorLabel := widget.NewLabel("Lead Handle")
+	leadSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
+	leadSelector := widget.NewSelect(handles, func(handle string) {
+		GLOBAL_PARTY_LEAD_HWND = handle
 	})
-	dropDown.PlaceHolder = "Choose the party lead"
-	dropDownForm := container.NewHBox(dropDownLabel, dropDown)
+	leadSelector.PlaceHolder = "Choose lead"
+	leadSelectorContainer := container.New(layout.NewFormLayout(), leadSelectorLabel, leadSelector)
 
 	// lever
 	var lever *widget.Button
@@ -51,25 +53,35 @@ func main() {
 		}
 	})
 
-	// strategy
-	// movementStrategies := make([]string, len(targetWindows))
-	// for i := range movementStrategies {
-	// 	movementStrategies[i] = MOVEMENT_STRATEGIES[0]
-	// }
+	// configuration for every worker
+	for i := range workers {
+		workers[i].movementMode = MovementMode(MOVEMENT_MODES[0])
+	}
 
-	// for i := range targetWindows {
-	// 	label := widget.NewLabel(targetWindowStrs[i])
-	// }
+	configContainer := container.New(layout.NewFormLayout())
+	for i := range workers {
+		worker := &workers[i]
+		movementModeSelectorLabel := widget.NewLabel("Handle " + worker.GetHandle())
+		movementModeSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
+		movementModeSelector := widget.NewSelect(MOVEMENT_MODES, func(movementMode string) {
+			worker.movementMode = MovementMode(movementMode)
+		})
+		movementModeSelector.PlaceHolder = MOVEMENT_MODES[0]
+		configContainer.Add(movementModeSelectorLabel)
+		configContainer.Add(movementModeSelector)
+	}
 
 	// cancel the chosen party leader
 	clear := widget.NewButton("Clear", func() {
-		dropDown.ClearSelected()
+		leadSelector.ClearSelected()
 	})
 
 	// container
 	buttonGrid := container.NewGridWithColumns(2, lever, clear)
-	mainControl := container.NewVBox(dropDownForm, buttonGrid)
-	window.SetContent(mainControl)
+	mainControl := container.NewVBox(leadSelectorContainer, buttonGrid)
+	separator := widget.NewSeparator()
+	content := container.NewVBox(mainControl, separator, configContainer)
+	window.SetContent(content)
 	window.ShowAndRun()
 
 	close(stopChan)

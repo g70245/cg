@@ -12,14 +12,14 @@ const WORKER_DURATION_MILLIS = 600
 var GLOBAL_PARTY_LEAD_HWND string
 
 type Worker struct {
-	hWnd             HWND
-	movementStrategy MovementStrategy
+	hWnd         HWND
+	movementMode MovementMode
 }
 
 type Workers []Worker
 
 func CreateWorkers(hWnds []HWND) Workers {
-	workers := make([]Worker, len(hWnds))
+	var workers []Worker
 	for _, hWnd := range hWnds {
 		workers = append(workers, Worker{hWnd: hWnd})
 	}
@@ -31,16 +31,16 @@ func (w Worker) GetHandle() string {
 }
 
 func (ws Workers) GetHandles() []string {
-	hWnds := make([]string, 0)
+	var handles []string
 	for _, w := range ws {
-		hWnds = append(hWnds, w.GetHandle())
+		handles = append(handles, w.GetHandle())
 	}
-	return hWnds
+	return handles
 }
 
 func (w Worker) Work(stopChan chan bool) {
 	ticker := time.NewTicker(WORKER_DURATION_MILLIS * time.Millisecond)
-	m := MovementState{hWnd: w.hWnd}
+	m := MovementState{hWnd: w.hWnd, mode: w.movementMode}
 
 	go func() {
 		defer ticker.Stop()
