@@ -14,6 +14,7 @@ import (
 )
 
 func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
+	id := 0
 	autoGroups := make(map[int]map[string]win.HWND)
 	stopChans := make(map[int]chan bool)
 
@@ -40,20 +41,31 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			}
 
 			idleGames.remove(maps.Keys(newGroup))
+			var newTabItem *container.TabItem
 
-			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup)
-			id := len(autoGroups)
+			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup, func(id int) func() {
+				return func() {
+					delete(autoGroups, id)
+					delete(stopChans, id)
+					idleGames.add(newGroup)
+					groupTabs.Remove(newTabItem)
+					if len(autoGroups) == 0 {
+						groupTabs.Hide()
+					}
+				}
+			}(id))
 			autoGroups[id] = newGroup
 			stopChans[id] = stopChan
 
-			groupTabs.Append(container.NewTabItem("Group "+fmt.Sprint(len(autoGroups)), newGroupContainer))
+			newTabItem = container.NewTabItem("Group "+fmt.Sprint(id), newGroupContainer)
+			groupTabs.Append(newTabItem)
 			groupTabs.Show()
-
+			id++
 		})
 		gamesChoosingDialog.Show()
 	})
 
-	menu := container.NewVBox(widget.NewSeparator(), container.NewHBox(newGroupButton))
+	menu := container.NewVBox(container.NewHBox(newGroupButton))
 
 	main := container.NewBorder(menu, nil, nil, nil, groupTabs)
 	return main, stopChans
@@ -64,10 +76,10 @@ const (
 	OFF = "Off"
 )
 
-func newBatttleGroupContainer(games map[string]win.HWND) (*fyne.Container, chan bool) {
+func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var leadHandle string
 	workers := CreateBattleWorkers(maps.Values(games))
-	stopChan := make(chan bool, len(workers))
+	stopChan = make(chan bool, len(workers))
 
 	/* Main Widget */
 	leadSelectorLabel := widget.NewLabel("Leader")
@@ -99,6 +111,9 @@ func newBatttleGroupContainer(games map[string]win.HWND) (*fyne.Container, chan 
 	})
 
 	delete := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		stop(stopChan)
+		close(stopChan)
+		destroy()
 	})
 	mainButtons := container.NewGridWithColumns(3, lever, refresh, delete)
 	mainWidget := container.NewVBox(mainButtons, leadSelectorContainer)
@@ -117,7 +132,7 @@ func newBatttleGroupContainer(games map[string]win.HWND) (*fyne.Container, chan 
 		configContainer.Add(movementModeSelector)
 	}
 
-	autoBattleWidget := container.NewVBox(mainWidget, configContainer)
+	autoBattleWidget = container.NewVBox(mainWidget, configContainer)
 	return autoBattleWidget, stopChan
 }
 

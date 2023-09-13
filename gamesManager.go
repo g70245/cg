@@ -26,3 +26,9 @@ func (gs Games) remove(games []string) {
 		delete(gs, game)
 	}
 }
+
+func (gs Games) add(games map[string]win.HWND) {
+	for k, v := range games {
+		gs[k] = v
+	}
+}

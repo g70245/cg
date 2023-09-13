@@ -16,7 +16,7 @@ import (
 const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
-	APP_WIDTH    = 400
+	APP_WIDTH    = 300
 	APP_HEIGHT   = 260
 )
 
