@@ -1,94 +1,74 @@
 package main
 
 import (
+	"cg/system"
+
 	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/exp/maps"
 )
 
 const (
-	CLASS = "Blue"
-	ON    = "On"
-	OFF   = "Off"
+	TARGET_CLASS = "Blue"
+	APP_NAME     = "CG"
+	APP_WIDTH    = 400
+	APP_HEIGHT   = 260
 )
 
+var window fyne.Window
+
 func main() {
-	hWnds, _ := FindWindows(CLASS)
-	workers := CreateWorkers(hWnds)
-	handles := workers.GetHandles()
-	stopChan := make(chan bool, len(workers))
+	cg := app.New()
+	window = cg.NewWindow(APP_NAME)
+	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 
-	// base
-	myApp := app.New()
-	window := myApp.NewWindow("CG")
-	window.Resize(fyne.NewSize(340, 160))
+	var content *fyne.Container
 
-	// choose the party leader
-	leadSelectorLabel := widget.NewLabel("Lead Handle")
-	leadSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
-	leadSelector := widget.NewSelect(handles, func(handle string) {
-		GLOBAL_PARTY_LEAD_HWND = handle
+	robot := generateRobotContainer()
+	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
+		robot.close()
+		robot = generateRobotContainer()
+		content.Add(robot.main)
+		content.Refresh()
 	})
-	leadSelector.PlaceHolder = "Choose lead"
-	leadSelectorContainer := container.New(layout.NewFormLayout(), leadSelectorLabel, leadSelector)
+	menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton)
 
-	// lever
-	var lever *widget.Button
-	lever = widget.NewButton(ON, func() {
-		switch lever.Text {
-		case ON:
-			for _, w := range workers {
-				w.Work(stopChan)
-			}
-			turn(OFF, lever)
-		case OFF:
-			for range workers {
-				stopChan <- true
-			}
-			turn(ON, lever)
-		}
-	})
-
-	// configuration for every worker
-	for i := range workers {
-		workers[i].movementMode = MovementMode(MOVEMENT_MODES[0])
-	}
-
-	configContainer := container.New(layout.NewFormLayout())
-	for i := range workers {
-		worker := &workers[i]
-		movementModeSelectorLabel := widget.NewLabel("Handle " + worker.GetHandle())
-		movementModeSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
-		movementModeSelector := widget.NewSelect(MOVEMENT_MODES, func(movementMode string) {
-			worker.movementMode = MovementMode(movementMode)
-		})
-		movementModeSelector.PlaceHolder = MOVEMENT_MODES[0]
-		configContainer.Add(movementModeSelectorLabel)
-		configContainer.Add(movementModeSelector)
-	}
-
-	// cancel the chosen party leader
-	clear := widget.NewButton("Clear", func() {
-		leadSelector.ClearSelected()
-	})
-
-	// container
-	buttonGrid := container.NewGridWithColumns(2, lever, clear)
-	mainControl := container.NewVBox(leadSelectorContainer, buttonGrid)
-	separator := widget.NewSeparator()
-	content := container.NewVBox(mainControl, separator, configContainer)
+	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()
-
-	close(stopChan)
 	fmt.Println("Exit")
 }
 
-func turn(text string, button *widget.Button) {
-	button.SetText(text)
-	button.Refresh()
+type Robot struct {
+	main  *fyne.Container
+	close func()
+}
+
+func generateRobotContainer() Robot {
+	idleGames := system.FindWindows(TARGET_CLASS)
+
+	autoBattleWidget, autoBattleStopChans := battleContainer(idleGames)
+
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Auto Battle", autoBattleWidget),
+	)
+
+	tabs.SetTabLocation(container.TabLocationTop)
+	main := container.NewStack(tabs)
+	robot := Robot{main, func() {
+		main.RemoveAll()
+		stopAll(maps.Values(autoBattleStopChans))
+	}}
+	return robot
+}
+
+func stopAll(stopChans []chan bool) {
+	for _, stopChan := range stopChans {
+		stop(stopChan)
+	}
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	sys "cg/system"
+
 	"fmt"
 	"math"
 	"math/rand"
@@ -9,13 +11,13 @@ import (
 )
 
 var (
-	WIDTH     = 640
-	HEIGHT    = 480
-	RADIUS    = 100
-	DIRECTION = []int{-1, 1}
+	GAME_WIDTH  = 640
+	GAME_HEIGHT = 480
+	RADIUS      = 100
+	DIRECTION   = []int{-1, 1}
 )
 
-type MovementMode string
+type BattleMovementMode string
 
 const (
 	NONE               = "None"
@@ -24,48 +26,47 @@ const (
 	BACK_DIAGONAL_MODE = "Back Diagonal"
 )
 
-var MOVEMENT_MODES = []string{NONE, CIRCLE_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE}
+var BATTLE_MOVEMENT_MODES = []string{NONE, CIRCLE_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE}
 
-type MovementState struct {
+type BattleMovementState struct {
 	hWnd             HWND
-	mode             MovementMode
+	mode             BattleMovementMode
 	currentDirection int
 }
 
-func (state *MovementState) nextDirection() (nextDirection int) {
+func (state *BattleMovementState) nextDirection() (nextDirection int) {
 	if state.currentDirection == 0 {
 		nextDirection = DIRECTION[rand.Intn(2)]
 	} else {
 		nextDirection = state.currentDirection * -1
 	}
 	state.currentDirection = nextDirection
+
 	return
 }
 
-func (m *MovementState) Move() {
+func (state *BattleMovementState) Move() {
 
 	var x, y int
-	switch m.mode {
+	switch state.mode {
 	case CIRCLE_MODE:
 		x, y = circle()
 	case DIAGONAL_MODE:
-		x, y = diagonal(*m, false)
+		x, y = diagonal(state, false)
 	case BACK_DIAGONAL_MODE:
-		x, y = diagonal(*m, true)
+		x, y = diagonal(state, true)
 	default:
 		x, y = none()
 	}
 
-	fmt.Printf("Handle %d moves to (%d, %d)\n", m.hWnd, x, y)
+	fmt.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
-	Act(m.hWnd, int32(x), int32(y), WM_MOUSEMOVE)
-	Act(m.hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
-	Act(m.hWnd, int32(x), int32(y), WM_LBUTTONUP)
+	sys.LeftClick(state.hWnd, int32(x), int32(y))
 }
 
 func circle() (x, y int) {
-	xOrigin := WIDTH / 2
-	yOrigin := HEIGHT / 2
+	xOrigin := GAME_WIDTH / 2
+	yOrigin := GAME_HEIGHT / 2
 
 	xOffset := rand.Intn(RADIUS + 1)
 	yOffset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) - math.Pow(float64(xOffset), 2)))
@@ -75,9 +76,9 @@ func circle() (x, y int) {
 	return
 }
 
-func diagonal(state MovementState, isReverse bool) (x, y int) {
-	xOrigin := WIDTH / 2
-	yOrigin := HEIGHT / 2
+func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
+	xOrigin := GAME_WIDTH / 2
+	yOrigin := GAME_HEIGHT / 2
 
 	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) / 2))
 
@@ -95,5 +96,5 @@ func diagonal(state MovementState, isReverse bool) (x, y int) {
 }
 
 func none() (int, int) {
-	return WIDTH / 2, HEIGHT / 2
+	return GAME_WIDTH / 2, GAME_HEIGHT / 2
 }
