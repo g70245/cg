@@ -18,6 +18,8 @@ const (
 	APP_NAME     = "CG"
 	APP_WIDTH    = 300
 	APP_HEIGHT   = 260
+	GAME_WIDTH   = 640
+	GAME_HEIGHT  = 480
 )
 
 var window fyne.Window

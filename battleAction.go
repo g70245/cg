@@ -46,11 +46,13 @@ type BattleActionState struct {
 }
 
 func (b *BattleActionState) Attack() {
-	fmt.Printf("Handle %s attack action begins\n", fmt.Sprint(b.hWnd))
+	fmt.Printf("Handle %s attack's action begins\n", fmt.Sprint(b.hWnd))
 
 	closeAll(b.hWnd)
 
 	for GetScene(b.hWnd) == BATTLE_SCENE {
+		system.MoveOutOfFrame(b.hWnd)
+
 		switch b.state {
 		case HUMAN_ATTACK_NOT_YET:
 			if isHumanStageStable(b.hWnd) {
@@ -58,7 +60,6 @@ func (b *BattleActionState) Attack() {
 				case NORMAL_ATTACK:
 					if !IsBattleCommandEnable(b.hWnd, BATTLE_COMMAND_ATTACK) {
 						system.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
-						system.MoveToMiddle(b.hWnd)
 						time.Sleep(200 * time.Millisecond)
 					}
 				case SKILL_ATTACK:

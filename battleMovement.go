@@ -63,8 +63,8 @@ func (state *BattleMovementState) Move() {
 }
 
 func circle() (x, y int) {
-	xOrigin := sys.GAME_WIDTH / 2
-	yOrigin := sys.GAME_HEIGHT / 2
+	xOrigin := GAME_WIDTH / 2
+	yOrigin := GAME_HEIGHT / 2
 
 	xOffset := rand.Intn(RADIUS + 1)
 	yOffset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) - math.Pow(float64(xOffset), 2)))
@@ -75,8 +75,8 @@ func circle() (x, y int) {
 }
 
 func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
-	xOrigin := sys.GAME_WIDTH / 2
-	yOrigin := sys.GAME_HEIGHT / 2
+	xOrigin := GAME_WIDTH / 2
+	yOrigin := GAME_HEIGHT / 2
 
 	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) / 2))
 
@@ -94,5 +94,5 @@ func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
 }
 
 func none() (int, int) {
-	return sys.GAME_WIDTH / 2, sys.GAME_HEIGHT / 2
+	return GAME_WIDTH / 2, GAME_HEIGHT / 2
 }
