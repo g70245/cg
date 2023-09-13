@@ -25,7 +25,8 @@ const (
 	COLOR_BATTLE_COMMAND_ENABLE  = 7125907
 	COLOR_BATTLE_COMMAND_DISABLE = 6991316
 
-	COLOR_BATTLE_STAGE_PET = 15267320
+	COLOR_BATTLE_STAGE_HUMAN = 15398392
+	COLOR_BATTLE_STAGE_PET   = 8599608
 )
 
 var (
@@ -34,7 +35,7 @@ var (
 
 	MON_POS_T_1 = CheckTarget{28, 260, COLOR_ANY}
 	MON_POS_T_2 = CheckTarget{94, 224, COLOR_ANY}
-	MON_POS_T_3 = CheckTarget{160, 188, COLOR_ANY}
+	MON_POS_T_3 = CheckTarget{156, 188, COLOR_ANY}
 	MON_POS_T_4 = CheckTarget{220, 150, COLOR_ANY}
 	MON_POS_T_5 = CheckTarget{282, 114, COLOR_ANY}
 	MON_POS_B_1 = CheckTarget{100, 312, COLOR_ANY}
@@ -60,10 +61,11 @@ var (
 
 	BATTLE_COMMAND_ATTACK = CheckTarget{386, 28, COLOR_ANY}
 	BATTLE_COMMAND_SKILL  = CheckTarget{450, 54, COLOR_ANY}
-	BATTLE_COMMAND_PET    = CheckTarget{594, 54, COLOR_ANY}
+	BATTLE_COMMAND_PET    = CheckTarget{524, 28, COLOR_ANY}
 	BATTLE_COMMAND_ESCAPE = CheckTarget{594, 54, COLOR_ANY}
 
-	BATTLE_STAGE_PET = CheckTarget{594, 54, COLOR_BATTLE_STAGE_PET}
+	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
+	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 )
 
 func GetScene(hWnd win.HWND) CheckTarget {
@@ -82,4 +84,24 @@ func GetPopOutMenus(hWnd win.HWND) (popOutMenus []CheckTarget) {
 		}
 	}
 	return
+}
+
+func IsBattleCommandEnable(hWnd win.HWND, checkTarget CheckTarget) bool {
+	return sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
+}
+
+func isHumanStageStable(hWnd win.HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) == BATTLE_STAGE_HUMAN.color
+}
+
+func isPetStageStable(hWnd win.HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
+}
+
+func DidHumanAttack(hWnd win.HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
+}
+
+func DidPetAttack(hWnd win.HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }

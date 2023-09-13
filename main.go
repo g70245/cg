@@ -23,6 +23,8 @@ const (
 var window fyne.Window
 
 func main() {
+	// checkTargets := []CheckTarget{BATTLE_COMMAND_ATTACK}
+	// PrintColorFromData(checkTargets)
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))

@@ -11,10 +11,8 @@ import (
 )
 
 var (
-	GAME_WIDTH  = 640
-	GAME_HEIGHT = 480
-	RADIUS      = 100
-	DIRECTION   = []int{-1, 1}
+	RADIUS    = 100
+	DIRECTION = []int{-1, 1}
 )
 
 type BattleMovementMode string
@@ -65,8 +63,8 @@ func (state *BattleMovementState) Move() {
 }
 
 func circle() (x, y int) {
-	xOrigin := GAME_WIDTH / 2
-	yOrigin := GAME_HEIGHT / 2
+	xOrigin := sys.GAME_WIDTH / 2
+	yOrigin := sys.GAME_HEIGHT / 2
 
 	xOffset := rand.Intn(RADIUS + 1)
 	yOffset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) - math.Pow(float64(xOffset), 2)))
@@ -77,8 +75,8 @@ func circle() (x, y int) {
 }
 
 func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
-	xOrigin := GAME_WIDTH / 2
-	yOrigin := GAME_HEIGHT / 2
+	xOrigin := sys.GAME_WIDTH / 2
+	yOrigin := sys.GAME_HEIGHT / 2
 
 	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) / 2))
 
@@ -96,5 +94,5 @@ func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
 }
 
 func none() (int, int) {
-	return GAME_WIDTH / 2, GAME_HEIGHT / 2
+	return sys.GAME_WIDTH / 2, sys.GAME_HEIGHT / 2
 }

@@ -28,9 +28,14 @@ func (w BattleWorker) getHandle() string {
 	return fmt.Sprint(w.hWnd)
 }
 
+// /*leadHandle == "" || *leadHandle == w.getHandle()
+func (w BattleWorker) isLeader(leadHandle string) bool {
+	return leadHandle == "" || leadHandle == w.getHandle()
+}
 func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
 	m := BattleMovementState{hWnd: w.hWnd, mode: w.movementMode}
+	b := BattleActionState{hWnd: w.hWnd, state: HUMAN_ATTACK_NOT_YET, humanMode: NORMAL_ATTACK, petMode: NORMAL_ATTACK}
 
 	go func() {
 		defer ticker.Stop()
@@ -40,11 +45,12 @@ func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-ticker.C:
 				switch GetScene(w.hWnd) {
 				case BATTLE_SCENE:
-					fmt.Printf("Handle %s is at BATTLE_SCENE\n", w.getHandle())
+					fmt.Printf("Handle %s is in BATTLE_SCENE\n", w.getHandle())
+					b.Attack()
 				case NORMAL_SCENE:
-					if *leadHandle == "" || *leadHandle == w.getHandle() {
+					if w.isLeader(*leadHandle) {
+						fmt.Printf("Handle %s is in NORMAL_SCENE\n", w.getHandle())
 						m.Move()
-						fmt.Printf("Handle %s is at NORMAL_SCENE\n", w.getHandle())
 					}
 				}
 			case <-stopChan:
