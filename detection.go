@@ -35,7 +35,7 @@ var (
 
 	MON_POS_T_1 = CheckTarget{28, 260, COLOR_ANY}
 	MON_POS_T_2 = CheckTarget{94, 224, COLOR_ANY}
-	MON_POS_T_3 = CheckTarget{156, 188, COLOR_ANY}
+	MON_POS_T_3 = CheckTarget{156, 184, COLOR_ANY}
 	MON_POS_T_4 = CheckTarget{220, 150, COLOR_ANY}
 	MON_POS_T_5 = CheckTarget{282, 114, COLOR_ANY}
 	MON_POS_B_1 = CheckTarget{100, 312, COLOR_ANY}

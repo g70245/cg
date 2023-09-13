@@ -127,7 +127,7 @@ func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBa
 		movementModeSelector := widget.NewSelect(BATTLE_MOVEMENT_MODES, func(movementMode string) {
 			worker.movementMode = BattleMovementMode(movementMode)
 		})
-		movementModeSelector.PlaceHolder = BATTLE_MOVEMENT_MODES[0]
+		movementModeSelector.PlaceHolder = "Choose movenent mode"
 		configContainer.Add(movementModeSelectorLabel)
 		configContainer.Add(movementModeSelector)
 	}

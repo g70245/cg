@@ -9,7 +9,7 @@ import (
 )
 
 var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
-var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
+var petAttackOrder = []CheckTarget{MON_POS_T_5, MON_POS_T_1, MON_POS_B_5, MON_POS_B_1, MON_POS_T_4, MON_POS_T_2, MON_POS_B_4, MON_POS_B_2, MON_POS_T_3, MON_POS_B_3}
 
 type HumanAttackMode string
 type PetAttackMode string
@@ -32,6 +32,8 @@ const (
 	HUMAN_ATTACK_NOT_YET = "HUMAN_ATTACK_NOT_YET"
 	HUMAN_ATTACKED       = "HUMAN_ATTACKED"
 	PET_ATTACKED         = "PET_ATTACKED"
+	RIDE_NORMAL_ATTACK   = "RIDE_NORMAL"
+	RIDE_SKILL_ATTACK    = "RIDE_SKILL"
 )
 
 type BattleActionState struct {
@@ -44,7 +46,7 @@ type BattleActionState struct {
 }
 
 func (b *BattleActionState) Attack() {
-	fmt.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
+	fmt.Printf("Handle %s attack action begins\n", fmt.Sprint(b.hWnd))
 
 	closeAll(b.hWnd)
 
@@ -61,10 +63,11 @@ func (b *BattleActionState) Attack() {
 					}
 				case SKILL_ATTACK:
 				}
-				attack(b.hWnd, humanAttackOrder, DidHumanAttack)
-				b.state = HUMAN_ATTACKED
-				fmt.Printf("Handle %s human attacked\n", fmt.Sprint(b.hWnd))
-				time.Sleep(100 * time.Millisecond)
+				if attack(b.hWnd, humanAttackOrder, DidHumanAttack) {
+					b.state = HUMAN_ATTACKED
+					fmt.Printf("Handle %s human attacked\n", fmt.Sprint(b.hWnd))
+					time.Sleep(100 * time.Millisecond)
+				}
 			}
 		case HUMAN_ATTACKED:
 			if isPetStageStable(b.hWnd) {
@@ -72,10 +75,11 @@ func (b *BattleActionState) Attack() {
 				case NORMAL_ATTACK:
 				case SKILL_ATTACK:
 				}
-				attack(b.hWnd, petAttackOrder, DidPetAttack)
-				b.state = PET_ATTACKED
-				fmt.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
-				time.Sleep(1800 * time.Millisecond)
+				if attack(b.hWnd, petAttackOrder, DidPetAttack) {
+					b.state = PET_ATTACKED
+					fmt.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
+					time.Sleep(1800 * time.Millisecond)
+				}
 			}
 		case PET_ATTACKED:
 			if isHumanStageStable(b.hWnd) {
@@ -89,14 +93,15 @@ func (b *BattleActionState) Attack() {
 	fmt.Printf("Handle %s's attack action ended\n", fmt.Sprint(b.hWnd))
 }
 
-func attack(hWnd win.HWND, attackedTargets []CheckTarget, stageCheck func(hwnd win.HWND) bool) {
+func attack(hWnd win.HWND, attackedTargets []CheckTarget, stageCheck func(hwnd win.HWND) bool) bool {
 	for _, target := range attackedTargets {
-		if stageCheck(hWnd) {
-			break
-		}
 		system.LeftClick(hWnd, target.x, target.y)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
+		if stageCheck(hWnd) {
+			return true
+		}
 	}
+	return false
 }
 
 func closeAll(hwnd win.HWND) {

@@ -28,9 +28,8 @@ func (w BattleWorker) getHandle() string {
 	return fmt.Sprint(w.hWnd)
 }
 
-// /*leadHandle == "" || *leadHandle == w.getHandle()
-func (w BattleWorker) isLeader(leadHandle string) bool {
-	return leadHandle == "" || leadHandle == w.getHandle()
+func (w BattleWorker) doesMove(leadHandle string) bool {
+	return (leadHandle == "" || leadHandle == w.getHandle()) && w.movementMode != NONE
 }
 func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
@@ -48,7 +47,7 @@ func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 					fmt.Printf("Handle %s is in BATTLE_SCENE\n", w.getHandle())
 					b.Attack()
 				case NORMAL_SCENE:
-					if w.isLeader(*leadHandle) {
+					if w.doesMove(*leadHandle) {
 						fmt.Printf("Handle %s is in NORMAL_SCENE\n", w.getHandle())
 						m.Move()
 					}
