@@ -3,7 +3,6 @@ package system
 import (
 	"time"
 
-	"github.com/lxn/win"
 	. "github.com/lxn/win"
 )
 
@@ -24,7 +23,7 @@ func MoveOutOfFrame(hWnd HWND) {
 }
 
 func CloseAll(hWnd HWND) {
-	KeyCombinationMsg(hWnd, win.VK_SHIFT, win.VK_F12)
+	KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
 }
 
 func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {

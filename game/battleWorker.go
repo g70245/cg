@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"fmt"
@@ -25,12 +25,16 @@ func CreateBattleWorkers(hWnds []HWND) BattleWorkers {
 	return workers
 }
 
-func (w BattleWorker) getHandle() string {
+func (w BattleWorker) GetHandle() string {
 	return fmt.Sprint(w.hWnd)
 }
 
+func (w *BattleWorker) SetMovementMode(movementMode BattleMovementMode) {
+	w.movementMode = movementMode
+}
+
 func (w BattleWorker) doesMove(leadHandle string) bool {
-	return (leadHandle == "" || leadHandle == w.getHandle()) && w.movementMode != NONE
+	return (leadHandle == "" || leadHandle == w.GetHandle()) && w.movementMode != NONE
 }
 func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
@@ -47,13 +51,13 @@ func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		for {
 			select {
 			case <-ticker.C:
-				switch GetScene(w.hWnd) {
+				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
-					log.Printf("Handle %s is in BATTLE_SCENE\n", w.getHandle())
+					log.Printf("Handle %s is in BATTLE_SCENE\n", w.GetHandle())
 					b.Attack()
 				case NORMAL_SCENE:
 					if w.doesMove(*leadHandle) {
-						log.Printf("Handle %s is in NORMAL_SCENE\n", w.getHandle())
+						log.Printf("Handle %s is in NORMAL_SCENE\n", w.GetHandle())
 						m.Move()
 					}
 				}

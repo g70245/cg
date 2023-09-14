@@ -1,15 +1,28 @@
-package main
+package game
 
 import (
 	sys "cg/system"
 
-	"github.com/lxn/win"
+	. "github.com/lxn/win"
+)
+
+const (
+	GAME_WIDTH  = 640
+	GAME_HEIGHT = 480
 )
 
 type CheckTarget struct {
 	x     int32
 	y     int32
-	color win.COLORREF
+	color COLORREF
+}
+
+func (c *CheckTarget) GetX() int32 {
+	return c.x
+}
+
+func (c *CheckTarget) GetY() int32 {
+	return c.y
 }
 
 const (
@@ -68,7 +81,7 @@ var (
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 )
 
-func GetScene(hWnd win.HWND) CheckTarget {
+func getScene(hWnd HWND) CheckTarget {
 	if sys.GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
 		return NORMAL_SCENE
 	}
@@ -77,7 +90,7 @@ func GetScene(hWnd win.HWND) CheckTarget {
 
 var popOutMenuCheckList = []CheckTarget{MENU_Q_POPOUT, MENU_W_POPOUT, MENU_E_POPOUT, MENU_R_POPOUT, MENU_T_POPOUT, MENU_Y_POPOUT}
 
-func GetPopOutMenus(hWnd win.HWND) (popOutMenus []CheckTarget) {
+func getPopOutMenus(hWnd HWND) (popOutMenus []CheckTarget) {
 	for _, target := range popOutMenuCheckList {
 		if sys.GetColor(hWnd, target.x, target.y) == target.color {
 			popOutMenus = append(popOutMenus, target)
@@ -86,22 +99,22 @@ func GetPopOutMenus(hWnd win.HWND) (popOutMenus []CheckTarget) {
 	return
 }
 
-func IsBattleCommandEnable(hWnd win.HWND, checkTarget CheckTarget) bool {
+func isBattleCommandEnable(hWnd HWND, checkTarget CheckTarget) bool {
 	return sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
-func isHumanStageStable(hWnd win.HWND) bool {
+func isHumanStageStable(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) == BATTLE_STAGE_HUMAN.color
 }
 
-func isPetStageStable(hWnd win.HWND) bool {
+func isPetStageStable(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
 }
 
-func DidHumanAttack(hWnd win.HWND) bool {
+func didHumanAttack(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
 
-func DidPetAttack(hWnd win.HWND) bool {
+func didPetAttack(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }

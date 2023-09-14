@@ -1,6 +1,8 @@
 package main
 
 import (
+	. "cg/game"
+
 	"fmt"
 
 	"fyne.io/fyne/v2"
@@ -10,12 +12,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/lxn/win"
+	. "github.com/lxn/win"
 	"golang.org/x/exp/maps"
 )
 
 func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	id := 0
-	autoGroups := make(map[int]map[string]win.HWND)
+	autoGroups := make(map[int]map[string]HWND)
 	stopChans := make(map[int]chan bool)
 
 	groupTabs := container.NewAppTabs()
@@ -27,11 +30,11 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			return
 		}
 
-		var newGroup map[string]win.HWND
+		var newGroup map[string]HWND
 		gamesChoosingDialog := dialog.NewCustom("Choose Games", "create", widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
-			newGroup = make(map[string]win.HWND)
+			newGroup = make(map[string]HWND)
 			for _, game := range games {
-				newGroup[game] = idleGames.peek(game)
+				newGroup[game] = idleGames.Peek(game)
 			}
 		}), window)
 
@@ -40,14 +43,14 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 				return
 			}
 
-			idleGames.remove(maps.Keys(newGroup))
+			idleGames.Remove(maps.Keys(newGroup))
 			var newTabItem *container.TabItem
 
 			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup, func(id int) func() {
 				return func() {
 					delete(autoGroups, id)
 					delete(stopChans, id)
-					idleGames.add(newGroup)
+					idleGames.Add(newGroup)
 					groupTabs.Remove(newTabItem)
 					if len(autoGroups) == 0 {
 						groupTabs.Hide()
@@ -122,10 +125,10 @@ func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBa
 	configContainer := container.New(layout.NewFormLayout())
 	for i := range workers {
 		worker := &workers[i]
-		movementModeSelectorLabel := widget.NewLabel("Game " + worker.getHandle())
+		movementModeSelectorLabel := widget.NewLabel("Game " + worker.GetHandle())
 		movementModeSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
 		movementModeSelector := widget.NewSelect(BATTLE_MOVEMENT_MODES, func(movementMode string) {
-			worker.movementMode = BattleMovementMode(movementMode)
+			worker.SetMovementMode(BattleMovementMode(movementMode))
 		})
 		movementModeSelector.PlaceHolder = "Choose movenent mode"
 		configContainer.Add(movementModeSelectorLabel)
