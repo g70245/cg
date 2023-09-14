@@ -68,7 +68,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 		gamesChoosingDialog.Show()
 	})
 
-	menu := container.NewVBox(container.NewHBox(newGroupButton))
+	menu := container.NewVBox(newGroupButton)
 
 	main := container.NewBorder(menu, nil, nil, nil, groupTabs)
 	return main, stopChans
@@ -85,13 +85,13 @@ func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBa
 	stopChan = make(chan bool, len(workers))
 
 	/* Main Widget */
-	leadSelectorLabel := widget.NewLabel("Leader")
-	leadSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
+	// leadSelectorLabel := widget.NewLabel("Leader")
+	// leadSelectorLabel.TextStyle = fyne.TextStyle{Italic: true, Bold: true}
 	leadSelector := widget.NewSelect(maps.Keys(games), func(handle string) {
 		leadHandle = handle
 	})
-	leadSelector.PlaceHolder = "Choose a leader"
-	leadSelectorContainer := container.New(layout.NewFormLayout(), leadSelectorLabel, leadSelector)
+	leadSelector.PlaceHolder = "Choose Leader"
+	// leadSelectorContainer := container.New(layout.NewFormLayout(), leadSelectorLabel, leadSelector)
 
 	var lever *widget.Button
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
@@ -111,6 +111,7 @@ func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBa
 
 	refresh := widget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
 		leadSelector.ClearSelected()
+		fmt.Println(window.Content().MinSize())
 	})
 
 	delete := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
@@ -118,8 +119,8 @@ func newBatttleGroupContainer(games map[string]win.HWND, destroy func()) (autoBa
 		close(stopChan)
 		destroy()
 	})
-	mainButtons := container.NewGridWithColumns(3, lever, refresh, delete)
-	mainWidget := container.NewVBox(mainButtons, leadSelectorContainer)
+	mainButtons := container.NewGridWithColumns(4, leadSelector, refresh, delete, lever)
+	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widget */
 	configContainer := container.New(layout.NewFormLayout())
