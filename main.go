@@ -2,8 +2,7 @@ package main
 
 import (
 	"cg/system"
-
-	"fmt"
+	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -45,7 +44,7 @@ func main() {
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()
-	fmt.Println("Exit")
+	log.Println("Exit")
 }
 
 type Robot struct {

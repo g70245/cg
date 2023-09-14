@@ -2,8 +2,8 @@ package main
 
 import (
 	sys "cg/system"
+	"log"
 
-	"fmt"
 	"math"
 	"math/rand"
 
@@ -33,13 +33,13 @@ type BattleMovementState struct {
 }
 
 func (state *BattleMovementState) nextDirection() (nextDirection int) {
-	if state.currentDirection == 0 {
+	switch state.currentDirection {
+	case 0:
 		nextDirection = DIRECTION[rand.Intn(2)]
-	} else {
+	default:
 		nextDirection = state.currentDirection * -1
 	}
 	state.currentDirection = nextDirection
-
 	return
 }
 
@@ -57,7 +57,7 @@ func (state *BattleMovementState) Move() {
 		x, y = none()
 	}
 
-	fmt.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
+	log.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
 	sys.LeftClick(state.hWnd, int32(x), int32(y))
 }

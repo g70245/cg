@@ -3,6 +3,7 @@ package system
 import (
 	"time"
 
+	"github.com/lxn/win"
 	. "github.com/lxn/win"
 )
 
@@ -20,6 +21,10 @@ func LeftClick(hWnd HWND, x, y int32) {
 
 func MoveOutOfFrame(hWnd HWND) {
 	MouseMsg(hWnd, int32(-1), int32(-1), WM_MOUSEMOVE)
+}
+
+func CloseAll(hWnd HWND) {
+	KeyCombinationMsg(hWnd, win.VK_SHIFT, win.VK_F12)
 }
 
 func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
