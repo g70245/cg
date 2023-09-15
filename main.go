@@ -26,6 +26,7 @@ func main() {
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+	window.Content().Move(fyne.NewPos(600, 600))
 
 	var content *fyne.Container
 
@@ -34,7 +35,6 @@ func main() {
 		content.Remove(robot.main)
 		robot.close()
 
-		// content = container.NewBorder(menu, nil, nil, nil, robot.main)
 		robot = generateRobotContainer()
 
 		content.Add(robot.main)

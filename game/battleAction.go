@@ -18,24 +18,27 @@ var humanBattleStatesForSelector = []string{H_A_ATTACK}
 var petBattleStatesForSelector = []string{P_ATTACK}
 
 const (
-	H_O_HEAL    = "Heal"
-	H_O_Catch   = "Catch"
-	H_O_Potion  = "Potion"
-	H_O_RIDE    = "Ride"
-	H_A_ATTACK  = "Attack"
-	H_A_Defence = "Defence"
-	H_A_SKILL   = "Skill"
-	H_A_STEAL   = "Steal"
-	H_A_BOMB    = "Bomb"
-	H_A_ESCAPE  = "Escape"
-	H_A_MOVE    = "Move"
-	H_A_HANG    = "Hang"
-	H_O_PET     = "Recall Pet"
+	H_A_ATTACK  = "**Attack"
+	H_A_Defence = "**Defence"
+	H_A_ESCAPE  = "**Escape"
+	H_A_MOVE    = "**Move"
+	H_A_HANG    = "**Hang"
 
-	P_ATTACK = "Attack"
-	P_Skill  = "Skill"
-	P_RIDE   = "Ride"
-	P_HANG   = "P_HANG"
+	H_A_BOMB   = "*Bomb"
+	H_O_PET    = "*Recall Pet"
+	H_O_Catch  = "Catch"
+	H_O_Potion = "*Potion"
+
+	H_A_SKILL  = "*Skill"
+	H_O_S_HEAL = "*Single Heal"
+	H_A_STEAL  = "*Steal"
+	H_O_RIDE   = "*Ride"
+
+	P_ATTACK  = "Pet Attack"
+	P_HANG    = "Pet Hang"
+	P_SkILL   = "Pet Skill"
+	P_DEFENCE = "Pet Defence"
+	P_RIDE    = "Pet Ride"
 )
 
 type BattleActionState struct {

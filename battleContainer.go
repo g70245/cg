@@ -5,6 +5,7 @@ import (
 	. "cg/game"
 	"image/color"
 	"math"
+	"strings"
 
 	"fmt"
 
@@ -116,7 +117,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			turn(theme.MediaPlayIcon(), lever)
 		}
 	})
-	lever.Importance = widget.WarningImportance
+	lever.Importance = widget.DangerImportance
 
 	refresh := widget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
 		leadSelector.ClearSelected()
@@ -128,7 +129,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		close(stopChan)
 		destroy()
 	})
-	delete.Importance = widget.HighImportance
+	delete.Importance = widget.WarningImportance
 	mainButtons := container.NewGridWithColumns(4, leadSelector, refresh, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
@@ -174,9 +175,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				catchButton.Disable()
 				bombButton.Disable()
 				recallButton.Disable()
-				moveButton.Disable()
-				hangButton.Disable()
-				stealSelector.Disable()
 				rideSelector.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
@@ -185,12 +183,9 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				catchButton.Disable()
 				bombButton.Disable()
 				rideSelector.Disable()
 				recallButton.Disable()
-				moveButton.Disable()
-				hangButton.Disable()
 			})
 			defenceButton.Importance = widget.WarningImportance
 			escapeButton = widget.NewButton(game.H_A_ESCAPE, func() {
@@ -229,15 +224,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				stealSelector.Disable()
 				healSelector.Disable()
 			})
-			bombButton.Importance = widget.SuccessImportance
+			bombButton.Importance = widget.HighImportance
 			potionButton = widget.NewButton(game.H_O_Potion, func() {
 				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_O_Potion)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
-
-				potionButton.Disable()
 			})
-			potionButton.Importance = widget.SuccessImportance
+			potionButton.Importance = widget.HighImportance
 			recallButton = widget.NewButton(game.H_O_PET, func() {
 				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_O_PET)
 				statesViewer.Objects = generateTags(*worker)
@@ -247,7 +240,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				bombButton.Disable()
 				rideSelector.Disable()
 			})
-			recallButton.Importance = widget.SuccessImportance
+			recallButton.Importance = widget.HighImportance
 			moveButton = widget.NewButton(game.H_A_MOVE, func() {
 				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_A_MOVE)
 				statesViewer.Objects = generateTags(*worker)
@@ -268,12 +261,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				escapeButton.Disable()
 				catchButton.Disable()
 				bombButton.Disable()
-				potionButton.Disable()
 				skillSelector.Disable()
 				stealSelector.Disable()
 				rideSelector.Disable()
-				healSelector.Disable()
 				recallButton.Disable()
+				moveButton.Disable()
+				potionButton.Disable()
+				healSelector.Disable()
+				hangButton.Disable()
 			})
 			hangButton.Importance = widget.WarningImportance
 			skillSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
@@ -289,7 +284,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				rideSelector.Disable()
 				healSelector.Disable()
 			})
-			skillSelector.PlaceHolder = "Skill"
+			skillSelector.PlaceHolder = H_A_SKILL
 			stealSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
 				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_A_STEAL)
 				worker.ActionState.HumanSkillIds[len(worker.ActionState.HumanStates)-1] = s
@@ -302,7 +297,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				rideSelector.Disable()
 				healSelector.Disable()
 			})
-			stealSelector.PlaceHolder = "Steal"
+			stealSelector.PlaceHolder = H_A_STEAL
 			rideSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
 				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_O_RIDE)
 				worker.ActionState.HumanSkillIds[len(worker.ActionState.HumanStates)-1] = s
@@ -320,19 +315,17 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				rideSelector.Disable()
 				healSelector.Disable()
 			})
-			rideSelector.PlaceHolder = "Ride"
+			rideSelector.PlaceHolder = H_O_RIDE
 			healSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_O_HEAL)
+				worker.ActionState.HumanStates = append(worker.ActionState.HumanStates, H_O_S_HEAL)
 				worker.ActionState.HumanSkillIds[len(worker.ActionState.HumanStates)-1] = s
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
 				bombButton.Disable()
-				recallButton.Disable()
 				stealSelector.Disable()
-				healSelector.Disable()
 			})
-			healSelector.PlaceHolder = "Heal"
+			healSelector.PlaceHolder = H_O_S_HEAL
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				attackButton,
@@ -342,12 +335,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				hangButton,
 				bombButton,
 				recallButton,
-				catchButton,
 				potionButton,
+				catchButton,
 				skillSelector,
+				stealSelector,
 				healSelector,
 				rideSelector,
-				stealSelector,
 			)
 
 			actionStatesDialog := dialog.NewCustom("Select man actions with orders", "Leave", actionStatesContainer, window)
@@ -355,17 +348,76 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		})
 
 		petStateSelector := widget.NewButtonWithIcon("Pet Action", theme.ContentAddIcon(), func() {
-			petAttackButton := widget.NewButton(game.P_ATTACK, func() {})
-			petAttackButton.Importance = widget.SuccessImportance
-			petSkillSelector := widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {})
-			petSkillSelector.PlaceHolder = "Pet Skill"
-			rideSelector := widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {})
-			rideSelector.PlaceHolder = "Ride"
+			worker.ActionState.PetStates = worker.ActionState.PetStates[:0]
+			clear(worker.ActionState.PetSkillIds)
+			statesViewer.Objects = generateTags(*worker)
+			statesViewer.Refresh()
+
+			var petAttackButton *widget.Button
+			var petHangButton *widget.Button
+			var petSkillSelector *widget.Select
+			var petDefenceSelector *widget.Select
+			var petRideSelector *widget.Select
+
+			petAttackButton = widget.NewButton(game.P_ATTACK, func() {
+				worker.ActionState.PetStates = append(worker.ActionState.PetStates, P_ATTACK)
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
+
+				petAttackButton.Disable()
+				petHangButton.Disable()
+				petRideSelector.Disable()
+			})
+			petAttackButton.Importance = widget.WarningImportance
+			petHangButton = widget.NewButton(game.P_HANG, func() {
+				worker.ActionState.PetStates = append(worker.ActionState.PetStates, P_HANG)
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
+
+				petAttackButton.Disable()
+				petHangButton.Disable()
+				petSkillSelector.Disable()
+				petRideSelector.Disable()
+			})
+			petHangButton.Importance = widget.WarningImportance
+			petSkillSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
+				worker.ActionState.PetStates = append(worker.ActionState.PetStates, P_SkILL)
+				worker.ActionState.PetSkillIds[len(worker.ActionState.PetStates)-1] = s
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
+
+				petHangButton.Disable()
+				petRideSelector.Disable()
+			})
+			petSkillSelector.PlaceHolder = P_SkILL
+			petDefenceSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
+				worker.ActionState.PetStates = append(worker.ActionState.PetStates, P_DEFENCE)
+				worker.ActionState.PetSkillIds[len(worker.ActionState.PetStates)-1] = s
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
+
+				petDefenceSelector.Disable()
+				petHangButton.Disable()
+				petRideSelector.Disable()
+			})
+			petDefenceSelector.PlaceHolder = P_DEFENCE
+			petRideSelector = widget.NewSelect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
+				worker.ActionState.PetStates = append(worker.ActionState.PetStates, P_RIDE)
+				worker.ActionState.PetSkillIds[len(worker.ActionState.PetStates)-1] = s
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
+
+				petHangButton.Disable()
+				petRideSelector.Disable()
+			})
+			petRideSelector.PlaceHolder = P_RIDE
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
+				petHangButton,
 				petSkillSelector,
-				rideSelector,
+				petDefenceSelector,
+				petRideSelector,
 			)
 
 			actionStatesDialog := dialog.NewCustom("Select pet actions with orders", "Leave", actionStatesContainer, window)
@@ -373,7 +425,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 		})
 
-		statesViewer = container.NewGridWrap(fyne.NewSize(72, 20), generateTags(*worker)...)
+		// statesViewer = container.NewGridWrap(fyne.NewSize(82, 20), generateTags(*worker)...)
+		statesViewer = container.NewHBox(generateTags(*worker)...)
 
 		humanStateSelector.Importance = widget.MediumImportance
 		petStateSelector.Importance = widget.MediumImportance
@@ -390,31 +443,42 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 }
 
 func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
-	tagContaines = createTagContainer(worker.ActionState.HumanStates, worker.ActionState.HumanSkillIds, humanTagColor)
-	tagContaines = append(tagContaines, createTagContainer(worker.ActionState.PetStates, worker.ActionState.PetSkillIds, petTagColor)...)
+	tagContaines = createTagContainer(worker.ActionState.HumanStates, worker.ActionState.HumanSkillIds, true)
+	tagContaines = append(tagContaines, createTagContainer(worker.ActionState.PetStates, worker.ActionState.PetSkillIds, false)...)
 	return
 }
 
 var (
-	humanTagColor = color.RGBA{35, 128, 24, uint8(math.Round(0.8 * 255))}
-	petTagColor   = color.RGBA{92, 14, 99, uint8(math.Round(0.8 * 255))}
+	humanOnceTagColor       = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
+	humanOnceOptionTagColor = color.RGBA{0, 28, 245, uint8(math.Round(0.8 * 255))}
+	humanOptionTagColor     = color.RGBA{35, 128, 24, uint8(math.Round(0.8 * 255))}
+	petTagColor             = color.RGBA{92, 14, 99, uint8(math.Round(0.8 * 255))}
 )
 
-func createTagContainer(tags []string, skillIds map[int]string, tagColor color.Color) (tagContainers []fyne.CanvasObject) {
+func createTagContainer(tags []string, skillIds map[int]string, isHuman bool) (tagContainers []fyne.CanvasObject) {
 	for i, tag := range tags {
-		tagContainer := container.NewStack()
-		tagContainer.Add(canvas.NewRectangle(tagColor))
+		tagColor := petTagColor
+		if isHuman {
+			switch {
+			case strings.Contains(tag, "**"):
+				tagColor = humanOnceTagColor
+			case strings.Contains(tag, "*"):
+				tagColor = humanOnceOptionTagColor
+			default:
+				tagColor = humanOptionTagColor
+			}
+		}
+
+		tagCanvas := canvas.NewRectangle(tagColor)
+		tagCanvas.SetMinSize(fyne.NewSize(60, 22))
+		tagContainer := container.NewStack(tagCanvas)
 		if value, ok := skillIds[i]; ok {
 			tag += ":" + value
 		}
-		tagCanvas := canvas.NewText(tag, color.White)
-		tagCanvas.Alignment = fyne.TextAlignCenter
-		tagCanvas.TextStyle = fyne.TextStyle{Bold: true, Italic: true, TabWidth: 2}
-		tagContainer.Add(tagCanvas)
-
-		// tagContainers = append(tagContainers, widget.NewIcon(theme.NavigateNextIcon()))
-		// tagContainers = append(tagContainers, container.New(
-		// 	layout.NewFormLayout(), widget.NewToolbarSpacer().ToolbarObject(), tagContainer))
+		tagTextCanvas := canvas.NewText("\t"+tag+"\t\t", color.White)
+		tagTextCanvas.Alignment = fyne.TextAlignCenter
+		tagTextCanvas.TextStyle = fyne.TextStyle{Bold: true, Italic: true, TabWidth: 1}
+		tagContainer.Add(tagTextCanvas)
 		tagContainers = append(tagContainers, tagContainer)
 	}
 	return
