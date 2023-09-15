@@ -17,7 +17,8 @@ func PrintCursorPos(hWnd win.HWND) {
 		var lpPoint win.POINT
 		win.GetCursorPos(&lpPoint)
 		log.Println(lpPoint)
-		time.Sleep(360 * time.Millisecond)
+		log.Println(GetColor(hWnd, lpPoint.X, lpPoint.Y))
+		time.Sleep(800 * time.Millisecond)
 	}
 }
 
@@ -25,7 +26,7 @@ func PrintColorFromData(checkTargets []CheckTarget) {
 	games := FindWindows(TARGET_CLASS)
 	for _, target := range checkTargets {
 		log.Print(target, " ")
-		log.Println(GetColor(maps.Values(games)[0], target.GetX(), target.GetY()))
+		log.Println(GetColor(maps.Values(games)[0], target.GetX(), target.GetY()-25))
 		MouseMsg(maps.Values(games)[0], int32(target.GetX()), int32(target.GetY()), win.WM_MOUSEMOVE)
 		time.Sleep(360 * time.Millisecond)
 	}

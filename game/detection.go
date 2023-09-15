@@ -2,7 +2,6 @@ package game
 
 import (
 	sys "cg/system"
-	"fmt"
 
 	. "github.com/lxn/win"
 )
@@ -83,14 +82,14 @@ var (
 	MENU_ESC_POPOUT = CheckTarget{514, 468, COLOR_MENU_BUTTON_POPOUT}
 
 	BATTLE_COMMAND_ATTACK = CheckTarget{386, 28, COLOR_ANY}
-	BATTLE_COMMAND_SKILL  = CheckTarget{450, 54, COLOR_ANY}
+	BATTLE_COMMAND_SKILL  = CheckTarget{450, 28, COLOR_ANY}
 	BATTLE_COMMAND_PET    = CheckTarget{524, 28, COLOR_ANY}
 	BATTLE_COMMAND_ESCAPE = CheckTarget{594, 54, COLOR_ANY}
 
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
-	WINDOW_SKILL = CheckTarget{136, 126, COLOR_WINDOW_SKILL_TOP}
+	WINDOW_SKILL_FIRST = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
 )
 
 func getScene(hWnd HWND) CheckTarget {
@@ -138,24 +137,28 @@ func didPetAttack(hWnd HWND) bool {
 }
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
-	x, y := WINDOW_SKILL.x, WINDOW_SKILL.y
-	for x <= 146 {
-		for y <= 188 {
-			if sys.GetColor(hWnd, x, y) == WINDOW_SKILL.color {
-				if sys.GetColor(hWnd, x, y+16) == COLOR_WINDOW_SKILL_UNSELECTED {
-					fmt.Println(x, y)
-					return x, y, true
-				}
+	x, y := WINDOW_SKILL_FIRST.x, WINDOW_SKILL_FIRST.y
+	for x <= 180 {
+		for y <= 232 {
+			if sys.GetColor(hWnd, x, y) == WINDOW_SKILL_FIRST.color {
+				return x, y, true
 			}
-			y += 5
+			y += 4
 		}
-		x += 5
+		x += 4
 	}
 	return 0, 0, false
 }
 
-func isOutOfMana(hWnd HWND, x, y int32) bool {
-	if sys.GetColor(hWnd, x, y) == WINDOW_SKILL.color {
+func isHumanOutOfMana(hWnd HWND) bool {
+	if sys.GetColor(hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y) == COLOR_BATTLE_COMMAND_ENABLE {
+		return true
+	}
+	return false
+}
+
+func isPetOutOfMana(hWnd HWND) bool {
+	if sys.GetColor(hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE {
 		return true
 	}
 	return false

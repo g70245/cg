@@ -6,6 +6,10 @@ import (
 	. "github.com/lxn/win"
 )
 
+const (
+	CLICK_DURATION = 60
+)
+
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
 	wparam := uintptr(0)
 	lparam := uintptr(y<<16 | x)
@@ -18,12 +22,14 @@ func MoveOutOfFrame(hWnd HWND) {
 
 func LeftClick(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	time.Sleep(CLICK_DURATION * time.Millisecond)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
 }
 
 func RightClick(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	time.Sleep(CLICK_DURATION * time.Millisecond)
 	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONDOWN)
 	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONUP)
 }
@@ -37,7 +43,7 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 	PostMessage(hWnd, WM_KEYDOWN, lkey, uintptr(llParam))
 	PostMessage(hWnd, WM_KEYDOWN, rkey, uintptr(rlParam))
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(180 * time.Millisecond)
 
 	llParam |= 0xC0000000
 	rlParam |= 0xC0000000

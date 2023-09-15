@@ -461,10 +461,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
-				petHangButton,
 				petSkillButton,
 				petDefenceButton,
 				petRideButton,
+				petHangButton,
 			)
 
 			actionStatesDialog := dialog.NewCustom("Select pet actions with orders", "Leave", actionStatesContainer, window)

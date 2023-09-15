@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	ATTACK_INTERVAL = 180
-	TURN_INTERVAL   = 200
+	ATTACK_INTERVAL        = 180
+	TURN_INTERVAL          = 200
+	WAITING_LOOP_INTERVAL  = 200
+	BATTLE_ACTION_INTERVAL = 160
 )
 
 var humanBattleStatesForSelector = []string{H_A_ATTACK}
@@ -59,7 +61,7 @@ func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
 	b.HandleStartedBySelf()
 	defer b.HandleStartedBySelf()
-	b.closeAll()
+	CloseAll(b.hWnd)
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Started {
 		sys.MoveOutOfFrame(b.hWnd)
@@ -84,7 +86,7 @@ func (b *BattleActionState) humanStateMachiine() {
 			if !b.Started {
 				return
 			}
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
 		}
 
@@ -101,11 +103,12 @@ func (b *BattleActionState) humanStateMachiine() {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if !b.handleHumanOutOfMana(x, y) {
-					if b.attackTargets(humanAttackOrder, didHumanAttack) {
-						log.Printf("Handle %s human used a skill\n", fmt.Sprint(b.hWnd))
-						return
-					}
+				if isHumanOutOfMana(b.hWnd) {
+					log.Printf("Handle %s human is out of mana\n", fmt.Sprint(b.hWnd))
+				} else if b.attackTargets(humanAttackOrder, didHumanAttack) {
+					log.Printf("Handle %s human used a skill\n", fmt.Sprint(b.hWnd))
+					return
+
 				}
 			}
 		default:
@@ -123,7 +126,7 @@ func (b *BattleActionState) petStateMachiine() {
 			if !b.Started {
 				return
 			}
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
 		}
 
@@ -134,7 +137,6 @@ func (b *BattleActionState) petStateMachiine() {
 				usePetSkill(b.hWnd, x, y, 1)
 				if b.attackTargets(petAttackOrder, didPetAttack) {
 					log.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
-					time.Sleep(100 * time.Millisecond)
 					return
 				}
 			}
@@ -144,11 +146,10 @@ func (b *BattleActionState) petStateMachiine() {
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isOutOfMana(b.hWnd, x, y) {
+				if isPetOutOfMana(b.hWnd) {
 					log.Printf("Handle %s Pet is out of mana\n", fmt.Sprint(b.hWnd))
 				} else if b.attackTargets(petAttackOrder, didPetAttack) {
 					log.Printf("Handle %s pet used a skill\n", fmt.Sprint(b.hWnd))
-					time.Sleep(100 * time.Millisecond)
 					return
 				}
 			}
@@ -162,7 +163,7 @@ func (b *BattleActionState) petStateMachiine() {
 func (b *BattleActionState) enableBattleCommandAttack() {
 	if !isBattleCommandEnable(b.hWnd, BATTLE_COMMAND_ATTACK) {
 		sys.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
-		time.Sleep(160 * time.Millisecond)
+		time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 	}
 }
 
@@ -176,20 +177,6 @@ func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCh
 		if stageCheck(b.hWnd) {
 			return true
 		}
-	}
-	return false
-}
-
-func (b *BattleActionState) closeAll() {
-	closeAll(b.hWnd)
-}
-
-func (b *BattleActionState) handleHumanOutOfMana(x, y int32) bool {
-	if isOutOfMana(b.hWnd, x, y) {
-		log.Printf("Handle %s human is out of mana\n", fmt.Sprint(b.hWnd))
-		sys.LeftClick(b.hWnd, MENU_W.x, MENU_W.y)
-		b.closeAll()
-		return true
 	}
 	return false
 }
