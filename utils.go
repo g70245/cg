@@ -17,7 +17,7 @@ func PrintCursorPos(hWnd win.HWND) {
 		var lpPoint win.POINT
 		win.GetCursorPos(&lpPoint)
 		log.Println(lpPoint)
-		log.Println(GetColor(hWnd, lpPoint.X, lpPoint.Y))
+		log.Println(GetColor(hWnd, lpPoint.X-30, lpPoint.Y))
 		time.Sleep(800 * time.Millisecond)
 	}
 }

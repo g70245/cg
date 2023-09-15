@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	ATTACK_INTERVAL        = 180
+	ATTACK_INTERVAL        = 160
 	TURN_INTERVAL          = 200
 	WAITING_LOOP_INTERVAL  = 200
-	BATTLE_ACTION_INTERVAL = 160
+	BATTLE_ACTION_INTERVAL = 140
 )
 
 var humanBattleStatesForSelector = []string{H_A_ATTACK}
@@ -103,7 +103,7 @@ func (b *BattleActionState) humanStateMachiine() {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if isHumanOutOfMana(b.hWnd) {
+				if isHumanOutOfMana(b.hWnd, x, y+16*10) {
 					log.Printf("Handle %s human is out of mana\n", fmt.Sprint(b.hWnd))
 				} else if b.attackTargets(humanAttackOrder, didHumanAttack) {
 					log.Printf("Handle %s human used a skill\n", fmt.Sprint(b.hWnd))

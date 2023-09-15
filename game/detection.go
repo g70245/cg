@@ -48,6 +48,7 @@ const (
 
 	COLOR_WINDOW_SKILL_TOP        = 65536
 	COLOR_WINDOW_SKILL_UNSELECTED = 4411988
+	COLOR_HUMAN_OUT_OF_MANA       = 11575428
 )
 
 var (
@@ -150,8 +151,9 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func isHumanOutOfMana(hWnd HWND) bool {
-	if sys.GetColor(hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y) == COLOR_BATTLE_COMMAND_ENABLE {
+func isHumanOutOfMana(hWnd HWND, x, y int32) bool {
+	sys.LeftClick(hWnd, GAME_WIDTH/2, 28)
+	if sys.GetColor(hWnd, x, y) == COLOR_HUMAN_OUT_OF_MANA {
 		return true
 	}
 	return false
