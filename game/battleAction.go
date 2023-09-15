@@ -11,48 +11,51 @@ import (
 
 const (
 	ATTACK_INTERVAL = 180
-	TURN_INTERVAL   = 2000
+	TURN_INTERVAL   = 200
 )
 
 var humanBattleStatesForSelector = []string{H_A_ATTACK}
 var petBattleStatesForSelector = []string{P_ATTACK}
 
-type HumanState string
-type PetState string
-
 const (
 	H_O_HEAL    = "Heal"
 	H_O_Catch   = "Catch"
 	H_O_Potion  = "Potion"
+	H_O_RIDE    = "Ride"
 	H_A_ATTACK  = "Attack"
 	H_A_Defence = "Defence"
 	H_A_SKILL   = "Skill"
+	H_A_STEAL   = "Steal"
 	H_A_BOMB    = "Bomb"
 	H_A_ESCAPE  = "Escape"
+	H_A_MOVE    = "Move"
+	H_A_HANG    = "Hang"
+	H_O_PET     = "Recall Pet"
 
 	P_ATTACK = "Attack"
 	P_Skill  = "Skill"
-
-	R_ATTACK = "RAttack"
-	R_SKILL  = "RSkill"
+	P_RIDE   = "Ride"
+	P_HANG   = "P_HANG"
 )
 
 type BattleActionState struct {
 	hWnd             HWND
-	humanStates      []HumanState
-	petStates        []PetState
-	nextHumanStateID int
-	nextPetStateID   int
-	humanSkillID     map[int]int
-	petSkillID       map[int]int
+	HumanStates      []string
+	PetStates        []string
+	nextHumanStateId int
+	nextPetStateId   int
+	HumanSkillIds    map[int]string
+	PetSkillIds      map[int]string
+	Started          bool
 }
 
 func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
-
+	b.HandleStartedBySelf()
+	defer b.HandleStartedBySelf()
 	b.closeAll()
 
-	for getScene(b.hWnd) == BATTLE_SCENE {
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Started {
 		sys.MoveOutOfFrame(b.hWnd)
 		b.humanStateMachiine()
 		sys.MoveOutOfFrame(b.hWnd)
@@ -63,47 +66,57 @@ func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action ended\n", fmt.Sprint(b.hWnd))
 }
 
-func (b *BattleActionState) humanStateMachiine() {
-	defer func() { b.nextHumanStateID = 0 }()
+func (b *BattleActionState) HandleStartedBySelf() {
+	b.Started = !b.Started
+}
 
-	for b.nextHumanStateID < len(b.humanStates) && getScene(b.hWnd) == BATTLE_SCENE {
+func (b *BattleActionState) humanStateMachiine() {
+	defer func() { b.nextHumanStateId = 0 }()
+
+	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
+			if !b.Started {
+				return
+			}
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 
-		switch b.humanStates[b.nextHumanStateID] {
+		switch b.HumanStates[b.nextHumanStateId] {
 		case H_A_ATTACK:
 			b.enableBattleCommandAttack()
-			if b.attack(humanAttackOrder, didHumanAttack) {
+			if b.attackTargets(humanAttackOrder, didHumanAttack) {
 				log.Printf("Handle %s human attacked\n", fmt.Sprint(b.hWnd))
 				time.Sleep(100 * time.Millisecond)
 				return
 			}
 		default:
-			b.nextHumanStateID++
+			b.nextHumanStateId++
 		}
 	}
 }
 
 func (b *BattleActionState) petStateMachiine() {
-	defer func() { b.nextPetStateID = 0 }()
+	defer func() { b.nextPetStateId = 0 }()
 
-	for b.nextPetStateID < len(b.petStates) {
+	for b.nextPetStateId < len(b.PetStates) && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
+			if !b.Started {
+				return
+			}
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 
-		switch b.petStates[b.nextPetStateID] {
+		switch b.PetStates[b.nextPetStateId] {
 		case P_ATTACK:
-			if b.attack(petAttackOrder, didPetAttack) {
+			if b.attackTargets(petAttackOrder, didPetAttack) {
 				log.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
 				time.Sleep(100 * time.Millisecond)
 				return
 			}
 		default:
-			b.nextPetStateID++
+			b.nextPetStateId++
 		}
 	}
 }
@@ -111,14 +124,14 @@ func (b *BattleActionState) petStateMachiine() {
 func (b *BattleActionState) enableBattleCommandAttack() {
 	if !isBattleCommandEnable(b.hWnd, BATTLE_COMMAND_ATTACK) {
 		sys.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(160 * time.Millisecond)
 	}
 }
 
 var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
 var petAttackOrder = []CheckTarget{MON_POS_T_5, MON_POS_T_1, MON_POS_B_5, MON_POS_B_1, MON_POS_T_4, MON_POS_T_2, MON_POS_B_4, MON_POS_B_2, MON_POS_T_3, MON_POS_B_3}
 
-func (b *BattleActionState) attack(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
+func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
 	for _, target := range attackedTargets {
 		sys.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(ATTACK_INTERVAL * time.Millisecond)

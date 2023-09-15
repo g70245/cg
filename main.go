@@ -2,7 +2,6 @@ package main
 
 import (
 	"cg/system"
-	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -15,15 +14,15 @@ import (
 const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
-	APP_WIDTH    = 614
-	APP_HEIGHT   = 410
+	APP_WIDTH    = 620
+	APP_HEIGHT   = 380
 )
 
 var window fyne.Window
 
 func main() {
-	// checkTargets := []CheckTarget{BATTLE_COMMAND_ATTACK}
-	// PrintColorFromData(checkTargets)
+	// data := []game.CheckTarget{game.BATTLE_SCENE}
+	// PrintColorFromData(data)
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
@@ -32,17 +31,22 @@ func main() {
 
 	robot := generateRobotContainer()
 	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
+		content.Remove(robot.main)
 		robot.close()
-		robot = generateRobotContainer()
-		content.Add(robot.main)
-		content.Refresh()
-	})
-	menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton)
 
+		// content = container.NewBorder(menu, nil, nil, nil, robot.main)
+		robot = generateRobotContainer()
+
+		content.Add(robot.main)
+		window.SetContent(window.Content())
+		window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+	})
+	refreshButton.Importance = widget.DangerImportance
+
+	menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton)
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()
-	log.Println("Exit")
 }
 
 type Robot struct {

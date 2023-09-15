@@ -30,6 +30,7 @@ const (
 
 	COLOR_SKILL        = 65536
 	COLOR_SCENE_NORMAL = 15595514
+	COLOR_SCENE_BATTLE = 15595514
 
 	COLOR_MENU_BUTTON_NORMAL     = 15135992
 	COLOR_MENU_BUTTON_T          = 15201528
@@ -43,11 +44,12 @@ const (
 )
 
 var (
-	NORMAL_SCENE = CheckTarget{92, 26, COLOR_SCENE_NORMAL}
-	BATTLE_SCENE = CheckTarget{}
+	NOWHERE_SCENE = CheckTarget{}
+	NORMAL_SCENE  = CheckTarget{92, 26, COLOR_SCENE_NORMAL}
+	BATTLE_SCENE  = CheckTarget{108, 10, COLOR_SCENE_BATTLE}
 
 	MON_POS_T_1 = CheckTarget{28, 260, COLOR_ANY}
-	MON_POS_T_2 = CheckTarget{88, 224, COLOR_ANY}
+	MON_POS_T_2 = CheckTarget{90, 218, COLOR_ANY}
 	MON_POS_T_3 = CheckTarget{156, 184, COLOR_ANY}
 	MON_POS_T_4 = CheckTarget{220, 150, COLOR_ANY}
 	MON_POS_T_5 = CheckTarget{282, 114, COLOR_ANY}
@@ -84,8 +86,10 @@ var (
 func getScene(hWnd HWND) CheckTarget {
 	if sys.GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
 		return NORMAL_SCENE
+	} else if sys.GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
+		return BATTLE_SCENE
 	}
-	return BATTLE_SCENE
+	return NOWHERE_SCENE
 }
 
 var popOutMenuCheckList = []CheckTarget{MENU_Q_POPOUT, MENU_W_POPOUT, MENU_E_POPOUT, MENU_R_POPOUT, MENU_T_POPOUT, MENU_Y_POPOUT}

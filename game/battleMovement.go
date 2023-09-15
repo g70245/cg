@@ -24,11 +24,11 @@ const (
 	BACK_DIAGONAL_MODE = "Back Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{NONE, CIRCLE_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE}
+var BATTLE_MOVEMENT_MODES = []string{NONE, DIAGONAL_MODE, BACK_DIAGONAL_MODE, CIRCLE_MODE}
 
 type BattleMovementState struct {
 	hWnd             HWND
-	mode             BattleMovementMode
+	Mode             BattleMovementMode
 	currentDirection int
 }
 
@@ -46,7 +46,7 @@ func (state *BattleMovementState) nextDirection() (nextDirection int) {
 func (state *BattleMovementState) Move() {
 
 	var x, y int
-	switch state.mode {
+	switch state.Mode {
 	case CIRCLE_MODE:
 		x, y = circle()
 	case DIAGONAL_MODE:
