@@ -2,6 +2,7 @@ package game
 
 import (
 	sys "cg/system"
+	"fmt"
 
 	. "github.com/lxn/win"
 )
@@ -55,16 +56,16 @@ var (
 	NORMAL_SCENE  = CheckTarget{92, 26, COLOR_SCENE_NORMAL}
 	BATTLE_SCENE  = CheckTarget{108, 10, COLOR_SCENE_BATTLE}
 
-	MON_POS_T_1 = CheckTarget{28, 260, COLOR_ANY}
+	MON_POS_T_1 = CheckTarget{28, 256, COLOR_ANY}
 	MON_POS_T_2 = CheckTarget{90, 218, COLOR_ANY}
 	MON_POS_T_3 = CheckTarget{156, 184, COLOR_ANY}
-	MON_POS_T_4 = CheckTarget{220, 150, COLOR_ANY}
-	MON_POS_T_5 = CheckTarget{282, 114, COLOR_ANY}
-	MON_POS_B_1 = CheckTarget{100, 312, COLOR_ANY}
+	MON_POS_T_4 = CheckTarget{216, 144, COLOR_ANY}
+	MON_POS_T_5 = CheckTarget{282, 112, COLOR_ANY}
+	MON_POS_B_1 = CheckTarget{100, 308, COLOR_ANY}
 	MON_POS_B_2 = CheckTarget{160, 268, COLOR_ANY}
 	MON_POS_B_3 = CheckTarget{214, 226, COLOR_ANY}
-	MON_POS_B_4 = CheckTarget{290, 200, COLOR_ANY}
-	MON_POS_B_5 = CheckTarget{348, 166, COLOR_ANY}
+	MON_POS_B_4 = CheckTarget{284, 190, COLOR_ANY}
+	MON_POS_B_5 = CheckTarget{348, 160, COLOR_ANY}
 
 	MENU_Q          = CheckTarget{60, 468, COLOR_MENU_BUTTON_NORMAL}
 	MENU_W          = CheckTarget{136, 468, COLOR_MENU_BUTTON_NORMAL}
@@ -124,6 +125,10 @@ func isPetStageStable(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
 }
 
+func isPetSkillWindowOpend(hWnd HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
+}
+
 func didHumanAttack(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
@@ -132,15 +137,26 @@ func didPetAttack(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
 
-func getSkillWindowPivot(hWnd HWND) (int32, bool) {
-	y := WINDOW_SKILL.y
-	for y <= 200 {
-		if sys.GetColor(hWnd, WINDOW_SKILL.x, y) == WINDOW_SKILL.color {
-			if sys.GetColor(hWnd, WINDOW_SKILL.x, y+16) == COLOR_WINDOW_SKILL_UNSELECTED {
-				return y, true
+func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
+	x, y := WINDOW_SKILL.x, WINDOW_SKILL.y
+	for x <= 146 {
+		for y <= 188 {
+			if sys.GetColor(hWnd, x, y) == WINDOW_SKILL.color {
+				if sys.GetColor(hWnd, x, y+16) == COLOR_WINDOW_SKILL_UNSELECTED {
+					fmt.Println(x, y)
+					return x, y, true
+				}
 			}
+			y += 5
 		}
-		y += 5
+		x += 5
 	}
-	return 0, false
+	return 0, 0, false
+}
+
+func isOutOfMana(hWnd HWND, x, y int32) bool {
+	if sys.GetColor(hWnd, x, y) == WINDOW_SKILL.color {
+		return true
+	}
+	return false
 }

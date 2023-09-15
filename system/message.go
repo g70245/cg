@@ -22,6 +22,12 @@ func LeftClick(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
 }
 
+func RightClick(hWnd HWND, x, y int32) {
+	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONDOWN)
+	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONUP)
+}
+
 func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 	lScanCode := MapVirtualKeyEx(uint32(lkey), 0)
 	rScanCode := MapVirtualKeyEx(uint32(rkey), 0)

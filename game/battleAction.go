@@ -4,6 +4,7 @@ import (
 	sys "cg/system"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	. "github.com/lxn/win"
@@ -92,16 +93,24 @@ func (b *BattleActionState) humanStateMachiine() {
 			b.enableBattleCommandAttack()
 			if b.attackTargets(humanAttackOrder, didHumanAttack) {
 				log.Printf("Handle %s human attacked\n", fmt.Sprint(b.hWnd))
-				time.Sleep(100 * time.Millisecond)
 				return
 			}
 		case H_A_SKILL:
-			openWindow(b.hWnd, 0x57)
-			if pivot, ok := getSkillWindowPivot(b.hWnd); ok {
-				fmt.Println(pivot, " ", b.HumanSkillIds[b.nextHumanStateId])
+			openHumanWindow(b.hWnd, 0x57)
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
+				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
+				useHumanSkill(b.hWnd, x, y, id, level)
+				if !b.handleHumanOutOfMana(x, y) {
+					if b.attackTargets(humanAttackOrder, didHumanAttack) {
+						log.Printf("Handle %s human used a skill\n", fmt.Sprint(b.hWnd))
+						return
+					}
+				}
 			}
 		default:
 		}
+
 		b.nextHumanStateId++
 	}
 }
@@ -120,14 +129,33 @@ func (b *BattleActionState) petStateMachiine() {
 
 		switch b.PetStates[b.nextPetStateId] {
 		case P_ATTACK:
-			if b.attackTargets(petAttackOrder, didPetAttack) {
-				log.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
-				time.Sleep(100 * time.Millisecond)
-				return
+			b.openPetSkillWindow()
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				usePetSkill(b.hWnd, x, y, 1)
+				if b.attackTargets(petAttackOrder, didPetAttack) {
+					log.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
+					time.Sleep(100 * time.Millisecond)
+					return
+				}
+			}
+
+		case P_SkILL:
+			b.openPetSkillWindow()
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
+				usePetSkill(b.hWnd, x, y, id)
+				if isOutOfMana(b.hWnd, x, y) {
+					log.Printf("Handle %s Pet is out of mana\n", fmt.Sprint(b.hWnd))
+				} else if b.attackTargets(petAttackOrder, didPetAttack) {
+					log.Printf("Handle %s pet used a skill\n", fmt.Sprint(b.hWnd))
+					time.Sleep(100 * time.Millisecond)
+					return
+				}
 			}
 		default:
-			b.nextPetStateId++
 		}
+
+		b.nextPetStateId++
 	}
 }
 
@@ -154,4 +182,21 @@ func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCh
 
 func (b *BattleActionState) closeAll() {
 	closeAll(b.hWnd)
+}
+
+func (b *BattleActionState) handleHumanOutOfMana(x, y int32) bool {
+	if isOutOfMana(b.hWnd, x, y) {
+		log.Printf("Handle %s human is out of mana\n", fmt.Sprint(b.hWnd))
+		sys.LeftClick(b.hWnd, MENU_W.x, MENU_W.y)
+		b.closeAll()
+		return true
+	}
+	return false
+}
+
+func (b *BattleActionState) openPetSkillWindow() {
+	if !isPetSkillWindowOpend(b.hWnd) {
+		sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
+	}
+	resetAllWindowPos(b.hWnd)
 }
