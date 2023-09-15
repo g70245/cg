@@ -27,11 +27,12 @@ func CreateBattleWorkers(hWnds []HWND) BattleWorkers {
 				Mode: NONE,
 			},
 			ActionState: BattleActionState{
-				hWnd:          hWnd,
-				HumanStates:   []string{H_A_ATTACK},
-				HumanSkillIds: make(map[int]string),
-				PetStates:     []string{P_ATTACK},
-				PetSkillIds:   make(map[int]string),
+				hWnd:             hWnd,
+				HumanStates:      []string{H_A_ATTACK},
+				HumanSkillIds:    make(map[int]string),
+				HumanSkillLevels: make(map[int]string),
+				PetStates:        []string{P_ATTACK},
+				PetSkillIds:      make(map[int]string),
 			},
 		})
 	}

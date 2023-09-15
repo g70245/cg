@@ -25,10 +25,14 @@ func (c *CheckTarget) GetY() int32 {
 	return c.y
 }
 
+func (c *CheckTarget) Set(x, y int32) {
+	c.x = x
+	c.y = y
+}
+
 const (
 	COLOR_ANY = 0
 
-	COLOR_SKILL        = 65536
 	COLOR_SCENE_NORMAL = 15595514
 	COLOR_SCENE_BATTLE = 15595514
 
@@ -41,6 +45,9 @@ const (
 
 	COLOR_BATTLE_STAGE_HUMAN = 15398392
 	COLOR_BATTLE_STAGE_PET   = 8599608
+
+	COLOR_WINDOW_SKILL_TOP        = 65536
+	COLOR_WINDOW_SKILL_UNSELECTED = 4411988
 )
 
 var (
@@ -81,6 +88,8 @@ var (
 
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
+
+	WINDOW_SKILL = CheckTarget{136, 126, COLOR_WINDOW_SKILL_TOP}
 )
 
 func getScene(hWnd HWND) CheckTarget {
@@ -121,4 +130,17 @@ func didHumanAttack(hWnd HWND) bool {
 
 func didPetAttack(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
+}
+
+func getSkillWindowPivot(hWnd HWND) (int32, bool) {
+	y := WINDOW_SKILL.y
+	for y <= 200 {
+		if sys.GetColor(hWnd, WINDOW_SKILL.x, y) == WINDOW_SKILL.color {
+			if sys.GetColor(hWnd, WINDOW_SKILL.x, y+16) == COLOR_WINDOW_SKILL_UNSELECTED {
+				return y, true
+			}
+		}
+		y += 5
+	}
+	return 0, false
 }

@@ -48,8 +48,10 @@ type BattleActionState struct {
 	nextHumanStateId int
 	nextPetStateId   int
 	HumanSkillIds    map[int]string
+	HumanSkillLevels map[int]string
 	PetSkillIds      map[int]string
-	Started          bool
+
+	Started bool
 }
 
 func (b *BattleActionState) Attack() {
@@ -93,9 +95,14 @@ func (b *BattleActionState) humanStateMachiine() {
 				time.Sleep(100 * time.Millisecond)
 				return
 			}
+		case H_A_SKILL:
+			openWindow(b.hWnd, 0x57)
+			if pivot, ok := getSkillWindowPivot(b.hWnd); ok {
+				fmt.Println(pivot, " ", b.HumanSkillIds[b.nextHumanStateId])
+			}
 		default:
-			b.nextHumanStateId++
 		}
+		b.nextHumanStateId++
 	}
 }
 
@@ -146,5 +153,5 @@ func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCh
 }
 
 func (b *BattleActionState) closeAll() {
-	sys.CloseAll(b.hWnd)
+	closeAll(b.hWnd)
 }

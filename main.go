@@ -21,8 +21,14 @@ const (
 var window fyne.Window
 
 func main() {
-	// data := []game.CheckTarget{game.BATTLE_SCENE}
-	// PrintColorFromData(data)
+	// y := 120
+	// for y < 400 {
+	// 	check := game.CheckTarget{}
+	// 	check.Set(136, int32(y))
+	// 	PrintColorFromData([]game.CheckTarget{check})
+	// 	y += 16
+	// }
+	// os.Exit(0)
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
