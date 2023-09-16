@@ -2,7 +2,6 @@ package system
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -42,7 +41,6 @@ func GetLastLineWithSeek(filepath string) string {
 	fileHandle, err := os.Open(filepath)
 
 	if err != nil {
-		fmt.Println(err)
 		panic("Cannot open file")
 	}
 	defer fileHandle.Close()

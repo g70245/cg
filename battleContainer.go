@@ -94,7 +94,7 @@ const (
 
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var leadHandle string
-	workers := CreateBattleWorkers(maps.Values(games), &logDir)
+	workers := CreateBattleWorkers(maps.Values(games), logDir)
 	stopChan = make(chan bool, len(workers))
 
 	var leadSelectorDialog *dialog.CustomDialog
@@ -118,8 +118,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
-			for _, w := range workers {
-				w.Work(&leadHandle, stopChan)
+			for i, _ := range workers {
+				workers[i].Work(&leadHandle, stopChan)
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
@@ -146,12 +146,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer := container.NewGridWithColumns(4)
 		worker := &workers[i]
 
-		gameNameLabelCanvas := canvas.NewRectangle(color.Gray{0xBB})
-		gameNameLabelContainer := container.NewStack(gameNameLabelCanvas)
+		gameNameLabelContainer := container.NewStack()
 		gameNameLabel := canvas.NewText(worker.GetHandle(), color.RGBA{11, 86, 107, 255})
 		gameNameLabel.Alignment = fyne.TextAlignCenter
 		gameNameLabel.TextStyle = fyne.TextStyle{TabWidth: 1, Bold: true}
-		gameNameLabel.TextSize = 20
+		gameNameLabel.TextSize = 16
 		gameNameLabelContainer.Add(gameNameLabel)
 
 		var movementModeDialog *dialog.CustomDialog
@@ -187,22 +186,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var selfHealButton *widget.Button
 			var singleHealButton *widget.Button
 			var multiHealButton *widget.Button
-
-			// enableAll := func() {
-			// 	attackButton.Enable()
-			// 	defenceButton.Enable()
-			// 	escapeButton.Enable()
-			// 	catchButton.Enable()
-			// 	bombButton.Enable()
-			// 	potionButton.Enable()
-			// 	recallButton.Enable()
-			// 	moveButton.Enable()
-			// 	hangButton.Enable()
-			// 	skillButton.Enable()
-			// 	stealButton.Enable()
-			// 	rideButton.Enable()
-			// 	healButton.Enable()
-			// }
 
 			var levelSelectorDialog *dialog.CustomDialog
 			levelSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {

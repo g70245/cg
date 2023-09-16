@@ -20,7 +20,7 @@ const (
 )
 
 var window fyne.Window
-var logDir string
+var logDir *string
 
 // maps.Values(system.FindWindows(TARGET_CLASS))[0]
 
@@ -49,8 +49,8 @@ func main() {
 	var logDialogButton *widget.Button
 	logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 		if lu != nil {
-			logDir = lu.Path()
-			logDialogButton.SetText(logDir)
+			*logDir = lu.Path()
+			logDialogButton.SetText(*logDir)
 			logDialogButton.SetIcon(theme.FolderOpenIcon())
 		}
 	}, window)

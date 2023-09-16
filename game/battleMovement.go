@@ -2,6 +2,7 @@ package game
 
 import (
 	sys "cg/system"
+	"fmt"
 	"log"
 
 	"math"
@@ -44,7 +45,7 @@ func (state *BattleMovementState) nextDirection() (nextDirection int) {
 }
 
 func (state *BattleMovementState) Move() {
-
+	fmt.Println("Move", state)
 	var x, y int
 	switch state.Mode {
 	case CIRCLE_MODE:

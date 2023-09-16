@@ -42,7 +42,7 @@ func (w BattleWorker) canMove(leadHandle string) bool {
 	return (leadHandle == "" || leadHandle == w.GetHandle()) && w.MovementState.Mode != NONE
 }
 
-func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
+func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
 
 	checkLoopStopChan := make(chan bool, 1)
