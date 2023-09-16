@@ -16,7 +16,7 @@ func MouseMsg(hWnd HWND, x, y int32, action uint32) {
 	PostMessage(hWnd, action, wparam, lparam)
 }
 
-func MoveOutOfFrame(hWnd HWND) {
+func MoveToNowhere(hWnd HWND) {
 	MouseMsg(hWnd, int32(-1), int32(-1), WM_MOUSEMOVE)
 }
 

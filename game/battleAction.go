@@ -61,12 +61,10 @@ func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
 	b.HandleStartedBySelf()
 	defer b.HandleStartedBySelf()
-	CloseAll(b.hWnd)
+	closeAllWindow(b.hWnd)
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Started {
-		sys.MoveOutOfFrame(b.hWnd)
 		b.humanStateMachiine()
-		sys.MoveOutOfFrame(b.hWnd)
 		b.petStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
 	}
@@ -79,7 +77,7 @@ func (b *BattleActionState) HandleStartedBySelf() {
 }
 
 func (b *BattleActionState) humanStateMachiine() {
-	defer func() { b.nextHumanStateId = 0 }()
+	defer func() { b.nextHumanStateId %= len(b.HumanStates) }()
 
 	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
@@ -95,7 +93,6 @@ func (b *BattleActionState) humanStateMachiine() {
 			b.enableBattleCommandAttack()
 			if b.attackTargets(humanAttackOrder, didHumanAttack) {
 				log.Printf("Handle %s human attacked\n", fmt.Sprint(b.hWnd))
-				return
 			}
 		case H_A_SKILL:
 			openHumanWindow(b.hWnd, 0x57)
@@ -107,10 +104,19 @@ func (b *BattleActionState) humanStateMachiine() {
 					log.Printf("Handle %s human is out of mana\n", fmt.Sprint(b.hWnd))
 				} else if b.attackTargets(humanAttackOrder, didHumanAttack) {
 					log.Printf("Handle %s human used a skill\n", fmt.Sprint(b.hWnd))
-					return
-
 				}
 			}
+		case H_A_Defence:
+			b.defend()
+			log.Printf("Handle %s human defended\n", fmt.Sprint(b.hWnd))
+		case H_A_MOVE:
+			b.move()
+			log.Printf("Handle %s human moved\n", fmt.Sprint(b.hWnd))
+		case H_A_ESCAPE:
+			b.escape()
+			log.Printf("Handle %s human escaped\n", fmt.Sprint(b.hWnd))
+		case H_A_HANG:
+			time.Sleep(30 * time.Second)
 		default:
 		}
 
@@ -119,7 +125,7 @@ func (b *BattleActionState) humanStateMachiine() {
 }
 
 func (b *BattleActionState) petStateMachiine() {
-	defer func() { b.nextPetStateId = 0 }()
+	defer func() { b.nextPetStateId = len(b.PetStates) }()
 
 	for b.nextPetStateId < len(b.PetStates) && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
@@ -137,7 +143,6 @@ func (b *BattleActionState) petStateMachiine() {
 				usePetSkill(b.hWnd, x, y, 1)
 				if b.attackTargets(petAttackOrder, didPetAttack) {
 					log.Printf("Handle %s pet attacked\n", fmt.Sprint(b.hWnd))
-					return
 				}
 			}
 
@@ -150,7 +155,6 @@ func (b *BattleActionState) petStateMachiine() {
 					log.Printf("Handle %s Pet is out of mana\n", fmt.Sprint(b.hWnd))
 				} else if b.attackTargets(petAttackOrder, didPetAttack) {
 					log.Printf("Handle %s pet used a skill\n", fmt.Sprint(b.hWnd))
-					return
 				}
 			}
 		default:
@@ -179,6 +183,21 @@ func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCh
 		}
 	}
 	return false
+}
+
+func (b *BattleActionState) defend() {
+	sys.LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+}
+
+func (b *BattleActionState) escape() {
+	sys.LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+}
+
+func (b *BattleActionState) move() {
+	sys.LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) openPetSkillWindow() {

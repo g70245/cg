@@ -33,7 +33,7 @@ func PrintColorFromData(checkTargets []CheckTarget) {
 	os.Exit(0)
 }
 
-func Test() {
+func KeyCombination() {
 	games := FindWindows(TARGET_CLASS)
 	i := 0
 	for i < 5 {

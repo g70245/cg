@@ -11,7 +11,7 @@ const (
 	ACTION_INTERVAL = 120
 )
 
-func CloseAll(hWnd HWND) {
+func closeAllWindow(hWnd HWND) {
 	KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }

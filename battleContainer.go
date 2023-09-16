@@ -141,7 +141,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		close(stopChan)
 		destroy()
 	})
-	delete.Importance = widget.WarningImportance
+	delete.Importance = widget.HighImportance
 	mainButtons := container.NewGridWithColumns(4, leadSelectorButton, refresh, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
