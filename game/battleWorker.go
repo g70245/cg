@@ -13,11 +13,12 @@ type BattleWorker struct {
 	hWnd          HWND
 	MovementState BattleMovementState
 	ActionState   BattleActionState
+	logDir        *string
 }
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND) BattleWorkers {
+func CreateBattleWorkers(hWnds []HWND, logDir *string) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range hWnds {
 		workers = append(workers, BattleWorker{
@@ -26,14 +27,8 @@ func CreateBattleWorkers(hWnds []HWND) BattleWorkers {
 				hWnd: hWnd,
 				Mode: NONE,
 			},
-			ActionState: BattleActionState{
-				hWnd:             hWnd,
-				HumanStates:      []string{H_A_ATTACK},
-				HumanSkillIds:    make(map[int]string),
-				HumanSkillLevels: make(map[int]string),
-				PetStates:        []string{P_ATTACK},
-				PetSkillIds:      make(map[int]string),
-			},
+			ActionState: CreateNewBattleActionState(hWnd),
+			logDir:      logDir,
 		})
 	}
 	return workers
@@ -46,24 +41,43 @@ func (w BattleWorker) GetHandle() string {
 func (w BattleWorker) canMove(leadHandle string) bool {
 	return (leadHandle == "" || leadHandle == w.GetHandle()) && w.MovementState.Mode != NONE
 }
+
 func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
 
+	checkLoopStopChan := make(chan bool, 1)
+	isTransmittedChan := make(chan bool, 1)
+
+	if *w.logDir != "" {
+		go func() {
+			for {
+				select {
+				case <-checkLoopStopChan:
+					return
+				default:
+					if isTransmittedToOtherMap(*w.logDir) {
+						isTransmittedChan <- true
+						return
+					}
+				}
+			}
+		}()
+	}
+
 	go func() {
 		defer ticker.Stop()
+		isTransmitted := false
 
 		for {
 			select {
 			case <-ticker.C:
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
-					// log.Printf("Handle %s is in BATTLE_SCENE\n", w.GetHandle())
-					if !w.ActionState.Started {
+					if !w.ActionState.Started && !isTransmitted {
 						go w.ActionState.Attack()
 					}
 				case NORMAL_SCENE:
 					if w.canMove(*leadHandle) {
-						// log.Printf("Handle %s is in NORMAL_SCENE\n", w.GetHandle())
 						w.MovementState.Move()
 					}
 				default:
@@ -72,7 +86,8 @@ func (w BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-stopChan:
 				w.ActionState.HandleStartedBySelf()
 				return
-			default:
+			case isTransmitted = <-isTransmittedChan:
+				checkLoopStopChan <- true
 			}
 		}
 	}()

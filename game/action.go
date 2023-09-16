@@ -40,3 +40,8 @@ func usePetSkill(hWnd HWND, x, y int32, id int) {
 	LeftClick(hWnd, x, y+int32((id-1)*16))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
+
+func getLastLineOfLog(logDir string) string {
+	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return GetLastLineWithSeek(path)
+}

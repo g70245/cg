@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"golang.org/x/exp/maps"
@@ -14,11 +15,12 @@ import (
 const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
-	APP_WIDTH    = 620
+	APP_WIDTH    = 675
 	APP_HEIGHT   = 380
 )
 
 var window fyne.Window
+var logDir string
 
 // maps.Values(system.FindWindows(TARGET_CLASS))[0]
 
@@ -44,7 +46,21 @@ func main() {
 	})
 	refreshButton.Importance = widget.DangerImportance
 
-	menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton)
+	var logDialogButton *widget.Button
+	logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
+		if lu != nil {
+			logDir = lu.Path()
+			logDialogButton.SetText(logDir)
+			logDialogButton.SetIcon(theme.FolderOpenIcon())
+		}
+	}, window)
+	logDialogButton = widget.NewButtonWithIcon("Choose Log Directory", theme.FolderIcon(), func() {
+		logDirDialog.Show()
+	})
+	logDialogButton.Importance = widget.HighImportance
+
+	// menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton, logDialogButton)
+	menu := container.NewHBox(refreshButton, logDialogButton)
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()

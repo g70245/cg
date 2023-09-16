@@ -2,6 +2,7 @@ package game
 
 import (
 	sys "cg/system"
+	"strings"
 
 	. "github.com/lxn/win"
 )
@@ -166,4 +167,10 @@ func isPetOutOfMana(hWnd HWND) bool {
 		return true
 	}
 	return false
+}
+
+var stopWords = []string{"被不可思"}
+
+func isTransmittedToOtherMap(dir string) bool {
+	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
 }
