@@ -128,7 +128,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			turn(theme.MediaPlayIcon(), lever)
 		}
 	})
-	lever.Importance = widget.DangerImportance
+	lever.Importance = widget.WarningImportance
 
 	refresh := widget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
 		leadHandle = ""
@@ -141,7 +141,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		close(stopChan)
 		destroy()
 	})
-	delete.Importance = widget.HighImportance
+	delete.Importance = widget.DangerImportance
 	mainButtons := container.NewGridWithColumns(4, leadSelectorButton, refresh, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
