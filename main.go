@@ -20,7 +20,7 @@ const (
 )
 
 var window fyne.Window
-var logDir = new(string)
+var logDir *string
 
 // maps.Values(system.FindWindows(TARGET_CLASS))[0]
 
