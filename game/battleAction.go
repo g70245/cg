@@ -139,6 +139,8 @@ func (b *BattleActionState) Attack() {
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
 	}
 
+	b.nextHumanStateId = 0
+	b.nextPetStateId = 0
 	log.Printf("Handle %s's attack action ended\n", fmt.Sprint(b.hWnd))
 }
 
@@ -193,7 +195,11 @@ func (b *BattleActionState) humanStateMachiine() {
 		b.nextHumanStateId++
 	}
 
-	b.nextHumanStateId %= len(b.humanStates)
+	if len(b.humanStates) == 0 {
+		b.nextHumanStateId = 0
+	} else {
+		b.nextHumanStateId %= len(b.humanStates)
+	}
 }
 
 func (b *BattleActionState) petStateMachiine() {
@@ -236,7 +242,11 @@ func (b *BattleActionState) petStateMachiine() {
 		b.nextPetStateId++
 	}
 
-	b.nextPetStateId %= len(b.petStates)
+	if len(b.petStates) == 0 {
+		b.nextPetStateId = 0
+	} else {
+		b.nextPetStateId %= len(b.petStates)
+	}
 }
 
 func (b *BattleActionState) enableBattleCommandAttack() {

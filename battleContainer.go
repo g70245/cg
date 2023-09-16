@@ -162,6 +162,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		movementModeButton := widget.NewButtonWithIcon("Choose Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
+		movementModeSelector.Required = true
 
 		var statesViewer *fyne.Container
 
@@ -412,8 +413,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				selfHealButton,
 				singleHealButton,
 				multiHealButton,
-				catchButton,
 				hangButton,
+				catchButton,
 				stealButton,
 				trainButton,
 			)

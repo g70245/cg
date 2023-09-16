@@ -2,7 +2,6 @@ package game
 
 import (
 	sys "cg/system"
-	"fmt"
 	"log"
 
 	"math"
@@ -19,13 +18,15 @@ var (
 type BattleMovementMode string
 
 const (
-	NONE               = "None"
-	CIRCLE_MODE        = "Circle"
-	DIAGONAL_MODE      = "Diagonal"
-	BACK_DIAGONAL_MODE = "Back Diagonal"
+	NONE                 = "None"
+	CIRCLE_MODE          = "Circle"
+	DIAGONAL_MODE        = "Diagonal"
+	BACK_DIAGONAL_MODE   = "Back Diagonal"
+	DIAGONAL_HYBRID_MODE = "Hybrid Diagonal"
+	HYBRID_DIAGONAL_MODE = "Hybrid Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{NONE, DIAGONAL_MODE, BACK_DIAGONAL_MODE, CIRCLE_MODE}
+var BATTLE_MOVEMENT_MODES = []string{NONE, HYBRID_DIAGONAL_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE, CIRCLE_MODE}
 
 type BattleMovementState struct {
 	hWnd             HWND
@@ -45,7 +46,7 @@ func (state *BattleMovementState) nextDirection() (nextDirection int) {
 }
 
 func (state *BattleMovementState) Move() {
-	fmt.Println("Move", state)
+
 	var x, y int
 	switch state.Mode {
 	case CIRCLE_MODE:
@@ -54,6 +55,8 @@ func (state *BattleMovementState) Move() {
 		x, y = diagonal(state, false)
 	case BACK_DIAGONAL_MODE:
 		x, y = diagonal(state, true)
+	case HYBRID_DIAGONAL_MODE:
+		x, y = diagonal(state, rand.Intn(2) != 0)
 	default:
 		x, y = none()
 	}
@@ -79,7 +82,7 @@ func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
 	xOrigin := GAME_WIDTH / 2
 	yOrigin := GAME_HEIGHT / 2
 
-	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) / 2))
+	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2)/2)) + rand.Intn(10)
 
 	direction := state.nextDirection()
 
