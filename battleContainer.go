@@ -153,16 +153,22 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		gameNameLabel.TextSize = 16
 		gameNameLabelContainer.Add(gameNameLabel)
 
+		var movementModeButton *widget.Button
 		var movementModeDialog *dialog.CustomDialog
 		movementModeSelector := widget.NewRadioGroup(BATTLE_MOVEMENT_MODES, func(s string) {
-			worker.MovementState.Mode = BattleMovementMode(s)
+			if s != "" {
+				worker.MovementState.Mode = BattleMovementMode(s)
+				movementModeButton.SetText(s)
+			} else {
+				worker.MovementState.Mode = BattleMovementMode(NONE)
+				movementModeButton.SetText("Choose Move Way")
+			}
 			movementModeDialog.Hide()
 		})
-		movementModeDialog = dialog.NewCustomWithoutButtons("Choose a movement mode", movementModeSelector, window)
-		movementModeButton := widget.NewButtonWithIcon("Choose Move Way", theme.MailReplyIcon(), func() {
+		movementModeDialog = dialog.NewCustomWithoutButtons("Choose a Move Way", movementModeSelector, window)
+		movementModeButton = widget.NewButtonWithIcon("Choose Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
-		movementModeSelector.Required = true
 
 		var statesViewer *fyne.Container
 
