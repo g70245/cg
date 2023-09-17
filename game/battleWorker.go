@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	BATTLE_WORKER_DURATION_MILLIS = 800
-	LOG_CHECKER_DURATION          = 100
+	BATTLE_WORKER_INTERVAL = 800
+	LOG_CHECKER_INTERVAL   = 100
 )
 
 type BattleWorker struct {
@@ -46,8 +46,8 @@ func (w BattleWorker) canMove(leadHandle string) bool {
 }
 
 func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
-	workerTicker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
-	checkerTicker := time.NewTicker(LOG_CHECKER_DURATION * time.Millisecond)
+	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
+	checkerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
 	checkLoopStopChan := make(chan bool, 1)
 	isTransmittedChan := make(chan bool, 1)
@@ -66,7 +66,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 						return
 					}
 				default:
-					time.Sleep(LOG_CHECKER_DURATION * time.Microsecond / 3)
+					time.Sleep(LOG_CHECKER_INTERVAL * time.Microsecond / 3)
 				}
 			}
 		}()
@@ -97,7 +97,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case isTransmitted = <-isTransmittedChan:
 				checkLoopStopChan <- true
 			default:
-				time.Sleep(BATTLE_WORKER_DURATION_MILLIS * time.Microsecond / 3)
+				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
 			}
 		}
 	}()
