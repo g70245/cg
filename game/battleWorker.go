@@ -75,7 +75,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 
 	go func() {
 		defer workerTicker.Stop()
-		w.ActionState.CanWork = true
+		w.ActionState.CanBattle = true
 		isTransmitted := false
 
 		for {
@@ -83,18 +83,18 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-workerTicker.C:
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
-					if w.ActionState.CanWork && !isTransmitted {
+					if w.ActionState.CanBattle {
 						w.ActionState.Attack()
 					}
 				case NORMAL_SCENE:
-					if w.canMove(*leadHandle) {
+					if w.canMove(*leadHandle) && !isTransmitted {
 						w.MovementState.Move()
 					}
 				default:
 					// do nothing
 				}
 			case <-stopChan:
-				w.ActionState.CanWork = false
+				w.ActionState.CanBattle = false
 				return
 			case isTransmitted = <-isTransmittedChan:
 				checkLoopStopChan <- true

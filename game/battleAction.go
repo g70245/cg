@@ -59,7 +59,7 @@ type BattleActionState struct {
 	humanSkillLevels []string
 	petSkillIds      []string
 
-	CanWork bool
+	CanBattle bool
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -131,7 +131,7 @@ func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
 	closeAllWindow(b.hWnd)
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.CanWork {
+	for getScene(b.hWnd) == BATTLE_SCENE && b.CanBattle {
 		b.humanStateMachiine()
 		b.petStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
@@ -146,7 +146,7 @@ func (b *BattleActionState) humanStateMachiine() {
 
 	for b.nextHumanStateId < len(b.humanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
-			if !b.CanWork {
+			if !b.CanBattle {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
@@ -199,7 +199,7 @@ func (b *BattleActionState) humanStateMachiine() {
 func (b *BattleActionState) petStateMachiine() {
 	for b.nextPetStateId < len(b.petStates) && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
-			if !b.CanWork {
+			if !b.CanBattle {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
@@ -251,7 +251,7 @@ func (b *BattleActionState) enableBattleCommandAttack() {
 }
 
 var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
-var petAttackOrder = []CheckTarget{MON_POS_T_5, MON_POS_T_1, MON_POS_B_5, MON_POS_B_1, MON_POS_T_4, MON_POS_T_2, MON_POS_B_4, MON_POS_B_2, MON_POS_T_3, MON_POS_B_3}
+var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
 
 func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
 	for _, target := range attackedTargets {
