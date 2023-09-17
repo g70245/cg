@@ -105,7 +105,7 @@ var (
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
 	WINDOW_SKILL_FIRST      = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
-	WINDOW_ITEM_MONEY_CLUMN = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+	WINDOW_ITEM_MONEY_CLUMN = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
@@ -189,6 +189,21 @@ func getItemWindowPos(hWnd HWND) (int32, int32, bool) {
 			y += 2
 		}
 		x += 2
+	}
+	return 0, 0, false
+}
+
+func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
+	x := px - 10
+	for x <= px+45*5 {
+		y := py + 10
+		for y <= py+45*4 {
+			if sys.GetColor(hWnd, x, y) == color {
+				return x, y, true
+			}
+			y += 4
+		}
+		x += 4
 	}
 	return 0, 0, false
 }

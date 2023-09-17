@@ -27,6 +27,12 @@ func LeftClick(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
 }
 
+func DoubleClick(hWnd HWND, x, y int32) {
+	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	time.Sleep(CLICK_DURATION * time.Millisecond)
+	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDBLCLK)
+}
+
 func RightClick(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
 	time.Sleep(CLICK_DURATION * time.Millisecond)
