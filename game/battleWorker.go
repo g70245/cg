@@ -46,6 +46,8 @@ func (w BattleWorker) canMove(leadHandle string) bool {
 }
 
 func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
+	closeAllWindow(w.hWnd)
+
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
 
 	checkLoopStopChan := make(chan bool, 1)
@@ -84,7 +86,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
 					if w.ActionState.CanBattle {
-						w.ActionState.Attack()
+						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
 					if w.canMove(*leadHandle) && !isTransmitted {

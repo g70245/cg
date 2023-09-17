@@ -229,8 +229,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				stealButton.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
-			defenceButton = widget.NewButton(game.H_A_DEFENCE, func() {
-				worker.ActionState.AddHumanState(H_A_DEFENCE)
+			defenceButton = widget.NewButton(game.H_A_DEFEND, func() {
+				worker.ActionState.AddHumanState(H_A_DEFEND)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
@@ -297,15 +297,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				defenceButton.Disable()
-				escapeButton.Disable()
 				catchButton.Disable()
 				bombButton.Disable()
-				skillButton.Disable()
 				stealButton.Disable()
 				rideButton.Disable()
 				recallButton.Disable()
-				moveButton.Disable()
 				potionButton.Disable()
 				singleHealButton.Disable()
 				hangButton.Disable()
@@ -431,7 +427,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petHangButton *widget.Button
 			var petSkillButton *widget.Button
 			var petDefenceButton *widget.Button
-			var petHealButton *widget.Button
+			var petHealSelfButton *widget.Button
+			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
 
 			var idSelectorDialog *dialog.CustomDialog
@@ -465,7 +462,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petSkillButton.Disable()
 				petRideButton.Disable()
 				petDefenceButton.Disable()
-				petHealButton.Disable()
+				petHealSelfButton.Disable()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 			petSkillButton = widget.NewButton(P_SkILL, func() {
@@ -473,16 +470,21 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelectorDialog.Show()
 			})
 			petSkillButton.Importance = widget.HighImportance
-			petDefenceButton = widget.NewButton(P_DEFENCE, func() {
-				worker.ActionState.AddPetState(P_DEFENCE)
+			petDefenceButton = widget.NewButton(P_DEFEND, func() {
+				worker.ActionState.AddPetState(P_DEFEND)
 				idSelectorDialog.Show()
 			})
 			petDefenceButton.Importance = widget.HighImportance
-			petHealButton = widget.NewButton(P_HEAL, func() {
-				worker.ActionState.AddPetState(P_HEAL)
+			petHealSelfButton = widget.NewButton(P_SE_HEAL, func() {
+				worker.ActionState.AddPetState(P_SE_HEAL)
 				idSelectorDialog.Show()
 			})
-			petHealButton.Importance = widget.HighImportance
+			petHealSelfButton.Importance = widget.HighImportance
+			petHealOneButton = widget.NewButton(P_S_HEAL, func() {
+				worker.ActionState.AddPetState(P_S_HEAL)
+				idSelectorDialog.Show()
+			})
+			petHealOneButton.Importance = widget.HighImportance
 			petRideButton = widget.NewButton(P_RIDE, func() {
 				worker.ActionState.AddPetState(P_RIDE)
 				idSelectorDialog.Show()
@@ -495,9 +497,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petAttackButton,
 				petSkillButton,
 				petDefenceButton,
-				petHealButton,
-				petHangButton,
 				petRideButton,
+				petHealSelfButton,
+				petHealOneButton,
+				petHangButton,
 			)
 
 			actionStatesDialog := dialog.NewCustom("Select pet actions with orders", "Leave", actionStatesContainer, window)

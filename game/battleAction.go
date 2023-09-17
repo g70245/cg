@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/lxn/win"
@@ -22,18 +23,18 @@ var humanBattleStatesForSelector = []string{H_A_ATTACK}
 var petBattleStatesForSelector = []string{P_ATTACK}
 
 const (
-	H_A_ATTACK  = "**Attack"
-	H_A_DEFENCE = "**Defence"
-	H_A_ESCAPE  = "**Escape"
-	H_A_MOVE    = "**Move"
+	H_A_ATTACK = "**Attack"
+	H_A_DEFEND = "**Defend"
+	H_A_ESCAPE = "**Escape"
+	H_A_MOVE   = "**Move"
 
 	H_O_BOMB    = "*Bomb"
 	H_O_PET     = "*Recall Pet"
 	H_O_POTION  = "*Potion"
 	H_O_SKILL   = "*Skill"
-	H_O_SE_HEAL = "*Self Heal"
-	H_O_S_HEAL  = "*Single Heal"
-	H_O_M_HEAL  = "*Multi Heal"
+	H_O_SE_HEAL = "*Heal Self"
+	H_O_S_HEAL  = "*Heal One"
+	H_O_M_HEAL  = "*Heal Multi"
 	H_O_RIDE    = "*Ride"
 
 	H_S_HANG  = "Hang"
@@ -44,8 +45,9 @@ const (
 	P_ATTACK  = "Pet Attack"
 	P_HANG    = "Pet Hang"
 	P_SkILL   = "Pet Skill"
-	P_DEFENCE = "Pet Defence"
-	P_HEAL    = "Pet Heal"
+	P_DEFEND  = "Pet Defend"
+	P_SE_HEAL = "Pet Heal Self"
+	P_S_HEAL  = "Pet Heal One"
 	P_RIDE    = "Pet Ride"
 )
 
@@ -59,8 +61,10 @@ type BattleActionState struct {
 	humanSkillLevels []string
 	petSkillIds      []string
 
-	CanBattle bool
-	isOnRide  bool
+	CanBattle       bool
+	isOnRide        bool
+	isHumanHangging bool
+	isPetHangging   bool
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -128,9 +132,8 @@ func (b *BattleActionState) GetPetSkillIds() []string {
 	return b.petSkillIds
 }
 
-func (b *BattleActionState) Attack() {
-	log.Printf("[Handle %s's attack action begins]\n", fmt.Sprint(b.hWnd))
-	closeAllWindow(b.hWnd)
+func (b *BattleActionState) Act() {
+	log.Printf("[Handle %s's battle actions begin]\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.CanBattle {
 		b.humanStateMachiine()
@@ -140,12 +143,10 @@ func (b *BattleActionState) Attack() {
 
 	b.nextHumanStateId = 0
 	b.nextPetStateId = 0
-	log.Printf("[Handle %s's attack action ended]\n", fmt.Sprint(b.hWnd))
+	log.Printf("[Handle %s's battle actions ended]\n", fmt.Sprint(b.hWnd))
 }
 
 func (b *BattleActionState) humanStateMachiine() {
-
-	b.isOnRide = false
 
 	for b.nextHumanStateId < len(b.humanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
@@ -156,13 +157,21 @@ func (b *BattleActionState) humanStateMachiine() {
 			continue
 		}
 
-		action := b.humanStates[b.nextHumanStateId]
+		if b.isOnRide {
+			b.isOnRide = false
+		}
+		if b.isPetHangging {
+			b.isPetHangging = false
+			b.nextPetStateId++
+		}
 
-		switch action {
+		switch b.humanStates[b.nextHumanStateId] {
 		case H_A_ATTACK:
 			b.enableBattleCommandAttack()
-			if b.attackTargets(humanAttackOrder, didHumanAttack) {
-				b.log("attacked", action)
+			if b.attack(humanAttackOrder, HumanTargetingChecker) {
+				b.logH("attacked")
+			} else {
+				b.logH("missed a hit")
 			}
 		case H_O_SKILL:
 			openHumanWindow(b.hWnd, 0x57)
@@ -170,35 +179,42 @@ func (b *BattleActionState) humanStateMachiine() {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if isHumanOutOfMana(b.hWnd, x, y+16*10) {
-					b.log("is out of mana", action)
-				} else if b.attackTargets(humanAttackOrder, didHumanAttack) {
-					b.log("used a skill", action)
+				if isHumanOutOfMana(b.hWnd, x, y) {
+					b.logH("is out of mana")
+				} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
+					b.logH("used a skill")
+				} else {
+					b.logH("missed a hit")
 				}
+			} else {
+				b.logH("can not find the skill window")
 			}
-		case H_A_DEFENCE:
+		case H_A_DEFEND:
 			b.defend()
-			b.log("defended", action)
+			b.logH("defended")
 		case H_A_MOVE:
 			b.move()
-			b.log("moved", action)
+			b.logH("moved")
 		case H_A_ESCAPE:
 			b.escape()
-			b.log("escaped", action)
+			b.logH("escaped")
 		case H_S_HANG:
-			b.log("is idle", action)
-			time.Sleep(30 * time.Second)
+			b.logH("is hanging")
+			b.isHumanHangging = true
+			return
 		case H_O_BOMB:
 			openHumanWindow(b.hWnd, 0x45)
 			if px, py, isPivotFound := getItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_BOMB_9A); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
-					if b.attackTargets(humanAttackOrder, didHumanAttack) {
-						b.log("throwed a bomb", action)
+					if b.attack(humanAttackOrder, HumanTargetingChecker) {
+						b.logH("throwed a bomb")
 					} else {
-						b.log("need bombs", action)
+						b.logH("need bombs or missed a hit")
 					}
 				}
+			} else {
+				b.logH("can not find the right position of window")
 			}
 		case H_O_RIDE:
 			openHumanWindow(b.hWnd, 0x57)
@@ -206,22 +222,54 @@ func (b *BattleActionState) humanStateMachiine() {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if isHumanOutOfMana(b.hWnd, x, y+16*10) {
-					b.log("is out of mana", action)
+				if isHumanOutOfMana(b.hWnd, x, y) {
+					b.logH("is out of mana")
+				} else {
+					b.logH("is tring to get on a pet")
+					for i, v := range b.petStates {
+						if v == P_RIDE {
+							b.nextPetStateId = i
+							break
+						}
+					}
 				}
+			} else {
+				b.logH("can not find the right position of window")
 			}
 		case H_O_SE_HEAL:
-			// TODO: check health status here
+			// TODO: check health status
 			openHumanWindow(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if isHumanOutOfMana(b.hWnd, x, y+16*10) {
-					b.log("is out of mana", action)
+				if isHumanOutOfMana(b.hWnd, x, y) {
+					b.logH("is out of mana")
 				} else {
-					b.log("trys to get on a pet", action)
+					b.logH("healed self")
 				}
+			} else {
+				b.logH("can not find the right position of window")
+			}
+		case H_O_S_HEAL:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
+			if target, ok := searchOneLifeBelow(b.hWnd, 0.6); ok {
+				openHumanWindow(b.hWnd, 0x57)
+				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
+					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
+					useHumanSkill(b.hWnd, x, y, id, level)
+					if b.help(*target, HumanTargetingChecker) {
+						b.logH("healed an ally")
+					} else {
+						b.logH("can not target")
+					}
+				} else {
+					b.logH("can not find the right position of window")
+				}
+			} else {
+				b.logH("found no one needed be taken care of")
 			}
 		default:
 		}
@@ -229,15 +277,15 @@ func (b *BattleActionState) humanStateMachiine() {
 		b.nextHumanStateId++
 	}
 
-	if len(b.humanStates) == 0 {
-		b.nextHumanStateId = 0
-	} else {
+	if len(b.humanStates) != 0 {
 		b.nextHumanStateId %= len(b.humanStates)
+	} else {
+		b.nextHumanStateId = 0
 	}
 }
 
 func (b *BattleActionState) petStateMachiine() {
-	for b.nextPetStateId < len(b.petStates) && !isHumanStageStable(b.hWnd) {
+	for b.nextPetStateId < len(b.petStates) && getScene(b.hWnd) == BATTLE_SCENE && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
 			if !b.CanBattle {
 				return
@@ -246,16 +294,23 @@ func (b *BattleActionState) petStateMachiine() {
 			continue
 		}
 
-		action := b.petStates[b.nextPetStateId]
+		if b.isHumanHangging {
+			b.isHumanHangging = false
+			b.nextHumanStateId++
+		}
 
-		switch action {
+		switch b.petStates[b.nextPetStateId] {
 		case P_ATTACK:
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				usePetSkill(b.hWnd, x, y, 1)
-				if b.attackTargets(petAttackOrder, didPetAttack) {
-					b.log("attacked", action)
+				if b.attack(petAttackOrder, PetTargetingChecker) {
+					b.logP("attacked")
+				} else {
+					b.logP("missed a hit")
 				}
+			} else {
+				b.logP("can not find the right position of window")
 			}
 
 		case P_SkILL:
@@ -263,51 +318,84 @@ func (b *BattleActionState) petStateMachiine() {
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) {
-					b.log("is out of mana", action)
-				} else if b.attackTargets(petAttackOrder, didPetAttack) {
-					b.log("used a skill", action)
+				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+					b.logP("is out of mana")
+				} else if b.attack(petAttackOrder, PetTargetingChecker) {
+					b.logP("used a skill")
+				} else {
+					b.logP("missed a hit")
 				}
+			} else {
+				b.logP("can not find the right position of window")
 			}
 		case P_HANG:
-			b.log("is idle", action)
-			time.Sleep(30 * time.Second)
-		case P_DEFENCE:
+			b.logP("is hanging")
+			b.isPetHangging = true
+			return
+		case P_DEFEND:
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) {
-					b.log("is out of mana", action)
+				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+					b.logP("is out of mana")
 				} else {
-					b.log("defended", action)
+					b.logP("defended")
 				}
+			} else {
+				b.logP("can not find the right position of window")
 			}
-		case P_HEAL:
-			// TODO: check health status here
+		case P_SE_HEAL:
+			// TODO: check health status
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) {
-					b.log("is out of mana", action)
+				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+					b.logP("is out of mana")
+				} else {
+					b.logP("healed self")
 				}
+			} else {
+				b.logP("can not find the right position of window")
 			}
 		case P_RIDE:
 			if b.isOnRide {
-				b.log("is already on a ride", action)
+				b.logP("is already on a ride")
 			} else {
 				b.openPetSkillWindow()
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
 					if isPetOutOfMana(b.hWnd) {
-						b.log("is out of mana", action)
+						b.logP("is out of mana")
 					} else {
-						b.log("succeeds on riding?", action)
+						b.logP("succeeds on riding?")
 						b.isOnRide = true
 					}
+				} else {
+					b.logP("can not find the right position of window")
 				}
+			}
+		case P_S_HEAL:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
+			if target, ok := searchOneLifeBelow(b.hWnd, 0.65); ok {
+				b.openPetSkillWindow()
+				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
+					usePetSkill(b.hWnd, x, y, id)
+					if b.help(*target, PetTargetingChecker) {
+						b.logP("healed an ally")
+					} else {
+						b.logP("can not target")
+					}
+				} else {
+					b.logP("can not find the right position of window")
+				}
+
+			} else {
+				b.logP("found no one needed to be taken care of")
 			}
 		default:
 		}
@@ -315,10 +403,10 @@ func (b *BattleActionState) petStateMachiine() {
 		b.nextPetStateId++
 	}
 
-	if len(b.petStates) == 0 {
-		b.nextPetStateId = 0
-	} else {
+	if len(b.petStates) != 0 {
 		b.nextPetStateId %= len(b.petStates)
+	} else {
+		b.nextPetStateId = 0
 	}
 }
 
@@ -337,7 +425,7 @@ func (b *BattleActionState) useItem(x, y int32) {
 var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
 var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
 
-func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
+func (b *BattleActionState) attack(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
 	for _, target := range attackedTargets {
 		sys.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(ATTACK_INTERVAL * time.Millisecond)
@@ -346,6 +434,12 @@ func (b *BattleActionState) attackTargets(attackedTargets []CheckTarget, stageCh
 		}
 	}
 	return false
+}
+
+func (b *BattleActionState) help(target CheckTarget, checkState func(hwnd HWND) bool) bool {
+	sys.LeftClick(b.hWnd, target.x+15, target.y-22)
+	time.Sleep(ATTACK_INTERVAL * time.Millisecond)
+	return checkState(b.hWnd)
 }
 
 func (b *BattleActionState) defend() {
@@ -364,13 +458,17 @@ func (b *BattleActionState) move() {
 }
 
 func (b *BattleActionState) openPetSkillWindow() {
-	if !isPetSkillWindowOpend(b.hWnd) {
-		sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
-	}
+	closeAllWindow(b.hWnd)
+	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
 	resetAllWindowPos(b.hWnd)
 }
 
-func (b *BattleActionState) log(message string, action string) {
-	log.Printf("[%s]\n", action)
+func (b *BattleActionState) logH(message string) {
+	log.Printf("[%s]\n", strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
+	log.Printf("Handle %s %s", fmt.Sprint(b.hWnd), message)
+}
+
+func (b *BattleActionState) logP(message string) {
+	log.Printf("[%s]\n", strings.Trim(b.petStates[b.nextPetStateId], "*"))
 	log.Printf("Handle %s %s", fmt.Sprint(b.hWnd), message)
 }

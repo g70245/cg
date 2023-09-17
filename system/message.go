@@ -8,6 +8,7 @@ import (
 
 const (
 	CLICK_DURATION = 60
+	KEY_DURATION   = 140
 )
 
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
@@ -49,10 +50,22 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 	PostMessage(hWnd, WM_KEYDOWN, lkey, uintptr(llParam))
 	PostMessage(hWnd, WM_KEYDOWN, rkey, uintptr(rlParam))
 
-	time.Sleep(180 * time.Millisecond)
+	time.Sleep(KEY_DURATION * time.Millisecond)
 
 	llParam |= 0xC0000000
 	rlParam |= 0xC0000000
 	PostMessage(hWnd, WM_KEYUP, rkey, uintptr(rlParam))
 	PostMessage(hWnd, WM_KEYUP, lkey, uintptr(llParam))
+}
+
+func KeyMsg(hWnd HWND, key uintptr) {
+	// scanCode := MapVirtualKeyEx(uint32(key), 0)
+
+	// lParam := (0x00000001 | (scanCode << 16))
+	PostMessage(hWnd, WM_KEYDOWN, key, 0)
+
+	time.Sleep(KEY_DURATION * time.Millisecond)
+
+	// lParam |= 0xC0000000
+	PostMessage(hWnd, WM_KEYDOWN, key, 0)
 }

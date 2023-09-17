@@ -51,7 +51,7 @@ const (
 	COLOR_WINDOW_SKILL_UNSELECTED = 4411988
 	COLOR_HUMAN_OUT_OF_MANA       = 11575428
 
-	COLOR_BATTLE_BLOOD_UPPER   = 921135
+	COLOR_BATTLE_BLOOD_UPPER   = 9211135
 	COLOR_BATTLE_BLOOD_LOWER   = 255
 	COLOR_BATTLE_MANA_UPPER    = 16758653
 	COLOR_BATTLE_MANA_LOWER    = 16740864
@@ -94,12 +94,13 @@ var (
 	MENU_Y_POPOUT   = CheckTarget{442, 468, COLOR_MENU_BUTTON_POPOUT}
 	MENU_ESC_POPOUT = CheckTarget{514, 468, COLOR_MENU_BUTTON_POPOUT}
 
-	BATTLE_COMMAND_ATTACK  = CheckTarget{386, 28, COLOR_ANY}
-	BATTLE_COMMAND_DEFENCE = CheckTarget{386, 54, COLOR_ANY}
-	BATTLE_COMMAND_SKILL   = CheckTarget{450, 28, COLOR_ANY}
-	BATTLE_COMMAND_PET     = CheckTarget{524, 28, COLOR_ANY}
-	BATTLE_COMMAND_MOVE    = CheckTarget{524, 54, COLOR_ANY}
-	BATTLE_COMMAND_ESCAPE  = CheckTarget{594, 54, COLOR_ANY}
+	BATTLE_COMMAND_ATTACK             = CheckTarget{386, 28, COLOR_ANY}
+	BATTLE_COMMAND_DEFENCE            = CheckTarget{386, 54, COLOR_ANY}
+	BATTLE_COMMAND_SKILL              = CheckTarget{450, 28, COLOR_ANY}
+	BATTLE_COMMAND_PET                = CheckTarget{524, 28, COLOR_ANY}
+	BATTLE_COMMAND_MOVE               = CheckTarget{524, 54, COLOR_ANY}
+	BATTLE_COMMAND_ESCAPE             = CheckTarget{594, 54, COLOR_ANY}
+	BATTLE_COMMAND_SKILL_WHILE_RIDING = CheckTarget{524, 54, COLOR_ANY}
 
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
@@ -155,11 +156,15 @@ func isPetSkillWindowOpend(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
-func didHumanAttack(hWnd HWND) bool {
+func isPetSkillWindowOpendWhileRiding(hWnd HWND) bool {
+	return isPetSkillWindowOpendWhileRiding(hWnd)
+}
+
+func HumanTargetingChecker(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
 
-func didPetAttack(hWnd HWND) bool {
+func PetTargetingChecker(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
 
@@ -209,8 +214,8 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
 }
 
 func isHumanOutOfMana(hWnd HWND, x, y int32) bool {
-	sys.LeftClick(hWnd, GAME_WIDTH/2, 28)
-	if sys.GetColor(hWnd, x, y) == COLOR_HUMAN_OUT_OF_MANA {
+	sys.MoveToNowhere(hWnd)
+	if sys.GetColor(hWnd, x, y+16*10) == COLOR_HUMAN_OUT_OF_MANA {
 		return true
 	}
 	return false
@@ -223,8 +228,43 @@ func isPetOutOfMana(hWnd HWND) bool {
 	return false
 }
 
+func isRidingOutOfMana(hWnd HWND) bool {
+	if sys.GetColor(hWnd, BATTLE_COMMAND_SKILL_WHILE_RIDING.x, BATTLE_COMMAND_SKILL_WHILE_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE {
+		return true
+	}
+	return false
+}
+
 var stopWords = []string{"被不可思"}
 
 func isTransmittedToOtherMap(dir string) bool {
 	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
+}
+
+var allPlayerTargets = []CheckTarget{
+	PLAYER_L_1_H,
+	PLAYER_L_2_H,
+	PLAYER_L_3_H,
+	PLAYER_L_4_H,
+	PLAYER_L_5_H,
+	PLAYER_L_1_P,
+	PLAYER_L_2_P,
+	PLAYER_L_3_P,
+	PLAYER_L_4_P,
+	PLAYER_L_5_P,
+}
+
+func isLifeBelow(hWnd HWND, percentage float32, checkTarget CheckTarget) bool {
+	healthPoint := int32(percentage*30) + checkTarget.x
+	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
+		sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_BLOOD_UPPER
+}
+
+func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
+	for i := range allPlayerTargets {
+		if isLifeBelow(hWnd, percentage, allPlayerTargets[i]) {
+			return &allPlayerTargets[i], true
+		}
+	}
+	return nil, false
 }

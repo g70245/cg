@@ -82,7 +82,7 @@ func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
 	xOrigin := GAME_WIDTH / 2
 	yOrigin := GAME_HEIGHT / 2
 
-	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2)/2)) + rand.Intn(10)
+	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2)/2)) + rand.Intn(16)
 
 	direction := state.nextDirection()
 
