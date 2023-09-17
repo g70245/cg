@@ -269,7 +269,7 @@ func (b *BattleActionState) humanStateMachiine() {
 					b.logH("can not find the right position of window")
 				}
 			} else {
-				b.logH("found no one needed be taken care of")
+				b.logH("found no one needed to be taken care of")
 			}
 		default:
 		}
@@ -464,11 +464,11 @@ func (b *BattleActionState) openPetSkillWindow() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	log.Printf("[%s]\n", strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
-	log.Printf("Handle %s %s", fmt.Sprint(b.hWnd), message)
+	log.Printf("[%s]", strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
+	log.Printf(" Handle %s %s", fmt.Sprint(b.hWnd), message)
 }
 
 func (b *BattleActionState) logP(message string) {
-	log.Printf("[%s]\n", strings.Trim(b.petStates[b.nextPetStateId], "*"))
+	log.Printf("[%s] ", strings.Trim(b.petStates[b.nextPetStateId], "*"))
 	log.Printf("Handle %s %s", fmt.Sprint(b.hWnd), message)
 }
