@@ -59,7 +59,7 @@ type BattleActionState struct {
 	humanSkillLevels []string
 	petSkillIds      []string
 
-	Started bool
+	CanWork bool
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -129,11 +129,9 @@ func (b *BattleActionState) GetPetSkillIds() []string {
 
 func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action begins\n", fmt.Sprint(b.hWnd))
-	b.HandleStartedBySelf()
-	defer b.HandleStartedBySelf()
 	closeAllWindow(b.hWnd)
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Started {
+	for getScene(b.hWnd) == BATTLE_SCENE && b.CanWork {
 		b.humanStateMachiine()
 		b.petStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
@@ -144,15 +142,11 @@ func (b *BattleActionState) Attack() {
 	log.Printf("Handle %s's attack action ended\n", fmt.Sprint(b.hWnd))
 }
 
-func (b *BattleActionState) HandleStartedBySelf() {
-	b.Started = !b.Started
-}
-
 func (b *BattleActionState) humanStateMachiine() {
 
 	for b.nextHumanStateId < len(b.humanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
-			if !b.Started {
+			if !b.CanWork {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
@@ -205,7 +199,7 @@ func (b *BattleActionState) humanStateMachiine() {
 func (b *BattleActionState) petStateMachiine() {
 	for b.nextPetStateId < len(b.petStates) && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
-			if !b.Started {
+			if !b.CanWork {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)

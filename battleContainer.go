@@ -118,7 +118,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
-			for i, _ := range workers {
+			for i := range workers {
 				workers[i].Work(&leadHandle, stopChan)
 			}
 			turn(theme.MediaStopIcon(), lever)

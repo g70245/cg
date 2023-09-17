@@ -47,15 +47,16 @@ func (w BattleWorker) canMove(leadHandle string) bool {
 
 func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	checkerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
 	checkLoopStopChan := make(chan bool, 1)
 	isTransmittedChan := make(chan bool, 1)
 
 	if *w.logDir != "" {
-		defer checkerTicker.Stop()
+		checkerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
 		go func() {
+			defer checkerTicker.Stop()
+
 			for {
 				select {
 				case <-checkLoopStopChan:
@@ -74,6 +75,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 
 	go func() {
 		defer workerTicker.Stop()
+		w.ActionState.CanWork = true
 		isTransmitted := false
 
 		for {
@@ -81,8 +83,8 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-workerTicker.C:
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
-					if !w.ActionState.Started && !isTransmitted {
-						go w.ActionState.Attack()
+					if w.ActionState.CanWork && !isTransmitted {
+						w.ActionState.Attack()
 					}
 				case NORMAL_SCENE:
 					if w.canMove(*leadHandle) {
@@ -92,7 +94,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 					// do nothing
 				}
 			case <-stopChan:
-				w.ActionState.HandleStartedBySelf()
+				w.ActionState.CanWork = false
 				return
 			case isTransmitted = <-isTransmittedChan:
 				checkLoopStopChan <- true
