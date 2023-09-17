@@ -2,6 +2,7 @@ package main
 
 import (
 	"cg/system"
+	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -22,10 +23,17 @@ const (
 var window fyne.Window
 var logDir = new(string)
 
-// maps.Values(system.FindWindows(TARGET_CLASS))[0]
+func test() {
+	hwnd := getHWND()
+	CheckColor(hwnd, 0, 0, 0, 0, 0)
+	PrintCursorPos(maps.Values(system.FindWindows(TARGET_CLASS))[0])
+	PrintColorFromData(hwnd, someTestData)
+	os.Exit(0)
+}
 
 func main() {
-	// PrintCursorPos(maps.Values(system.FindWindows(TARGET_CLASS))[0])
+	// test()
+
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))

@@ -297,7 +297,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				attackButton.Disable()
 				defenceButton.Disable()
 				escapeButton.Disable()
 				catchButton.Disable()

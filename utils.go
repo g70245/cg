@@ -1,8 +1,11 @@
 package main
 
 import (
+	"cg/game"
 	. "cg/game"
+	"cg/system"
 	. "cg/system"
+	"fmt"
 	"log"
 
 	"os"
@@ -12,25 +15,39 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const (
+	Offset = 26
+)
+
+var someTestData = []game.CheckTarget{
+	game.PLAYER_L_1_H,
+	game.PLAYER_L_2_H,
+	game.PLAYER_L_3_H,
+	game.PLAYER_L_4_H,
+	game.PLAYER_L_5_H,
+	game.PLAYER_L_1_P,
+	game.PLAYER_L_2_P,
+	game.PLAYER_L_3_P,
+	game.PLAYER_L_4_P,
+	game.PLAYER_L_5_P,
+}
+
 func PrintCursorPos(hWnd win.HWND) {
 	for {
 		var lpPoint win.POINT
 		win.GetCursorPos(&lpPoint)
-		log.Println(lpPoint)
-		log.Println(GetColor(hWnd, lpPoint.X-30, lpPoint.Y))
+		fmt.Printf("(%d,%d) %d\n", lpPoint.X, lpPoint.Y-Offset, GetColor(hWnd, lpPoint.X-40, lpPoint.Y-Offset))
 		time.Sleep(800 * time.Millisecond)
 	}
 }
 
-func PrintColorFromData(checkTargets []CheckTarget) {
-	games := FindWindows(TARGET_CLASS)
+func PrintColorFromData(hWnd win.HWND, checkTargets []CheckTarget) {
 	for _, target := range checkTargets {
 		log.Print(target, " ")
-		log.Println(GetColor(maps.Values(games)[0], target.GetX(), target.GetY()-25))
-		MouseMsg(maps.Values(games)[0], int32(target.GetX()), int32(target.GetY()), win.WM_MOUSEMOVE)
-		time.Sleep(360 * time.Millisecond)
+		log.Println(GetColor(hWnd, target.GetX(), target.GetY()))
+		MouseMsg(hWnd, target.GetX(), target.GetX(), win.WM_MOUSEMOVE)
+		time.Sleep(300 * time.Millisecond)
 	}
-	os.Exit(0)
 }
 
 func KeyCombination() {
@@ -43,5 +60,26 @@ func KeyCombination() {
 		time.Sleep(200 * time.Millisecond)
 		i++
 	}
-	os.Exit(0)
+}
+
+func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
+	defer os.Exit(0)
+
+	x := oX
+	for x <= dX {
+		y := oY
+		for y <= dY {
+			if GetColor(hWnd, x, y) == color {
+				MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+				fmt.Printf("Found at (%d, %d)\n", x, y)
+				return
+			}
+			y += 2
+		}
+		x += 2
+	}
+}
+
+func getHWND() win.HWND {
+	return maps.Values(system.FindWindows(TARGET_CLASS))[0]
 }

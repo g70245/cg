@@ -50,6 +50,17 @@ const (
 	// COLOR_WINDOW_SKILL_TOP        = 65536
 	COLOR_WINDOW_SKILL_UNSELECTED = 4411988
 	COLOR_HUMAN_OUT_OF_MANA       = 11575428
+
+	COLOR_BATTLE_BLOOD_UPPER   = 921135
+	COLOR_BATTLE_BLOOD_LOWER   = 255
+	COLOR_BATTLE_MANA_UPPER    = 16758653
+	COLOR_BATTLE_MANA_LOWER    = 16740864
+	COLOR_BATTLE_NO_BLOOD_MANA = 65536
+
+	COLOR_BATTLE_ITEM_CAN_NOT_BE_USED = 255
+	COLOR_WINDOW_ITEM_PIVOT           = 16777215
+
+	COLOR_ITEM_BOMB_9A = 8388607
 )
 
 var (
@@ -93,7 +104,19 @@ var (
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
-	WINDOW_SKILL_FIRST = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+	WINDOW_SKILL_FIRST      = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+	WINDOW_ITEM_MONEY_CLUMN = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+
+	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
+	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
+	PLAYER_L_3_H = CheckTarget{460, 387 - 26, COLOR_ANY}
+	PLAYER_L_4_H = CheckTarget{524, 352 - 26, COLOR_ANY}
+	PLAYER_L_5_H = CheckTarget{589, 317 - 26, COLOR_ANY}
+	PLAYER_L_1_P = CheckTarget{269, 412 - 26, COLOR_ANY}
+	PLAYER_L_2_P = CheckTarget{333, 376 - 26, COLOR_ANY}
+	PLAYER_L_3_P = CheckTarget{397, 340 - 26, COLOR_ANY}
+	PLAYER_L_4_P = CheckTarget{460, 303 - 26, COLOR_ANY}
+	PLAYER_L_5_P = CheckTarget{524, 267 - 26, COLOR_ANY}
 )
 
 func getScene(hWnd HWND) CheckTarget {
@@ -141,8 +164,9 @@ func didPetAttack(hWnd HWND) bool {
 }
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
-	x, y := WINDOW_SKILL_FIRST.x, WINDOW_SKILL_FIRST.y
+	x := WINDOW_SKILL_FIRST.x
 	for x <= 180 {
+		y := WINDOW_SKILL_FIRST.y
 		for y <= 232 {
 			if sys.GetColor(hWnd, x, y) == WINDOW_SKILL_FIRST.color {
 				return x, y, true
@@ -150,6 +174,21 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 			y += 4
 		}
 		x += 4
+	}
+	return 0, 0, false
+}
+
+func getItemWindowPos(hWnd HWND) (int32, int32, bool) {
+	x := WINDOW_ITEM_MONEY_CLUMN.x
+	for x <= 160 {
+		y := WINDOW_ITEM_MONEY_CLUMN.y
+		for y <= 166 {
+			if sys.GetColor(hWnd, x, y) == WINDOW_ITEM_MONEY_CLUMN.color {
+				return x, y, true
+			}
+			y += 2
+		}
+		x += 2
 	}
 	return 0, 0, false
 }
