@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	TURN_INTERVAL         = 200
+	TURN_INTERVAL         = 2000
 	WAITING_LOOP_INTERVAL = 200
 	ATTACK_INTERVAL       = 160
 

@@ -7,7 +7,10 @@ import (
 	. "github.com/lxn/win"
 )
 
-const BATTLE_WORKER_DURATION_MILLIS = 800
+const (
+	BATTLE_WORKER_DURATION_MILLIS = 800
+	LOG_CHECKER_DURATION          = 100
+)
 
 type BattleWorker struct {
 	hWnd          HWND
@@ -43,34 +46,39 @@ func (w BattleWorker) canMove(leadHandle string) bool {
 }
 
 func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
-	ticker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
+	workerTicker := time.NewTicker(BATTLE_WORKER_DURATION_MILLIS * time.Millisecond)
+	checkerTicker := time.NewTicker(LOG_CHECKER_DURATION * time.Millisecond)
 
 	checkLoopStopChan := make(chan bool, 1)
 	isTransmittedChan := make(chan bool, 1)
 
 	if *w.logDir != "" {
+		defer checkerTicker.Stop()
+
 		go func() {
 			for {
 				select {
 				case <-checkLoopStopChan:
 					return
-				default:
+				case <-checkerTicker.C:
 					if isTransmittedToOtherMap(*w.logDir) {
 						isTransmittedChan <- true
 						return
 					}
+				default:
+					time.Sleep(LOG_CHECKER_DURATION * time.Microsecond / 3)
 				}
 			}
 		}()
 	}
 
 	go func() {
-		defer ticker.Stop()
+		defer workerTicker.Stop()
 		isTransmitted := false
 
 		for {
 			select {
-			case <-ticker.C:
+			case <-workerTicker.C:
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
 					if !w.ActionState.Started && !isTransmitted {
@@ -88,6 +96,8 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 				return
 			case isTransmitted = <-isTransmittedChan:
 				checkLoopStopChan <- true
+			default:
+				time.Sleep(BATTLE_WORKER_DURATION_MILLIS * time.Microsecond / 3)
 			}
 		}
 	}()
