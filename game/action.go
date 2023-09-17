@@ -30,14 +30,14 @@ func resetAllWindowPos(hWnd HWND) {
 }
 
 func useHumanSkill(hWnd HWND, x, y int32, id, level int) {
-	LeftClick(hWnd, x, y+int32((id-1)*16))
+	LeftClick(hWnd, x, y+int32((id-1)*13))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	LeftClick(hWnd, x, y+int32(level*16))
+	LeftClick(hWnd, x, y+int32(level*13))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func usePetSkill(hWnd HWND, x, y int32, id int) {
-	LeftClick(hWnd, x, y+int32((id-1)*16))
+	LeftClick(hWnd, x, y+int32((id-1)*13))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 

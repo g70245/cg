@@ -24,10 +24,9 @@ var window fyne.Window
 var logDir = new(string)
 
 func test() {
-	hwnd := getHWND()
-	CheckColor(hwnd, 0, 0, 0, 0, 0)
-	PrintCursorPos(maps.Values(system.FindWindows(TARGET_CLASS))[0])
-	PrintColorFromData(hwnd, someTestData)
+	// CheckColor(hwnd, 140, 123, 340, 300, 8388607)
+	// PrintCursorPos(maps.Values(system.FindWindows(TARGET_CLASS))[0])
+	// PrintColorFromData(hwnd, someTestData)
 	os.Exit(0)
 }
 
