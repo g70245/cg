@@ -274,3 +274,12 @@ func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
 	}
 	return nil, false
 }
+
+func countLifeBelow(hWnd HWND, percentage float32) (count int) {
+	for i := range allPlayerTargets {
+		if isLifeBelow(hWnd, percentage, allPlayerTargets[i]) {
+			count++
+		}
+	}
+	return
+}

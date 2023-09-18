@@ -271,6 +271,27 @@ func (b *BattleActionState) humanStateMachiine() {
 			} else {
 				b.logH("found no one needed to be taken care of")
 			}
+		case H_O_M_HEAL:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
+			count := countLifeBelow(b.hWnd, 0.7)
+			if count >= 6 {
+				openHumanWindow(b.hWnd, 0x57)
+				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
+					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
+					useHumanSkill(b.hWnd, x, y, id, level)
+					if b.help(PLAYER_L_3_H, HumanTargetingChecker) {
+						b.logH("healed allies")
+					} else {
+						b.logH("can not target")
+					}
+				} else {
+					b.logH("can not find the right position of window")
+				}
+			} else {
+				b.logH("found all good")
+			}
 		case H_O_PET_RECALL:
 			openHumanWindow(b.hWnd, 0x52)
 			if canRecall(b.hWnd) {
@@ -478,11 +499,9 @@ func (b *BattleActionState) openPetSkillWindow() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	log.Printf("[%s]", strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
-	log.Printf(" Handle %s %s", fmt.Sprint(b.hWnd), message)
+	log.Printf("%-15s %s", "["+strings.Trim(b.humanStates[b.nextHumanStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
 }
 
 func (b *BattleActionState) logP(message string) {
-	log.Printf("[%s] ", strings.Trim(b.petStates[b.nextPetStateId], "*"))
-	log.Printf("Handle %s %s", fmt.Sprint(b.hWnd), message)
+	log.Printf("%-15s %s", "["+strings.Trim(b.petStates[b.nextPetStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
 }
