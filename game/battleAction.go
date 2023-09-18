@@ -267,7 +267,7 @@ func (b *BattleActionState) humanStateMachiine() {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.help(*target, HumanTargetingChecker) {
+					if b.aim(*target, HumanTargetingChecker) {
 						b.logH("healed an ally")
 					} else {
 						b.logH("can not target")
@@ -288,7 +288,7 @@ func (b *BattleActionState) humanStateMachiine() {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.help(PLAYER_L_3_H, HumanTargetingChecker) {
+					if b.aim(PLAYER_L_3_H, HumanTargetingChecker) {
 						b.logH("healed allies")
 					} else {
 						b.logH("can not target")
@@ -307,7 +307,20 @@ func (b *BattleActionState) humanStateMachiine() {
 			} else {
 				b.logH("already recalled")
 			}
-
+		case H_S_TRAIN:
+			openHumanWindow(b.hWnd, 0x57)
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
+				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
+				useHumanSkill(b.hWnd, x, y, id, level)
+				if isHumanOutOfMana(b.hWnd, x, y) {
+					b.logH("is out of mana")
+				} else if b.aim(PLAYER_L_3_P, HumanTargetingChecker) {
+					b.logH("used a skill")
+				}
+			} else {
+				b.logH("can not find the skill window")
+			}
 		default:
 		}
 
@@ -429,7 +442,7 @@ func (b *BattleActionState) petStateMachiine() {
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if b.help(*target, PetTargetingChecker) {
+					if b.aim(*target, PetTargetingChecker) {
 						b.logP("healed an ally")
 					} else {
 						b.logP("can not target")
@@ -480,7 +493,7 @@ func (b *BattleActionState) attack(attackedTargets []CheckTarget, stageCheck fun
 	return false
 }
 
-func (b *BattleActionState) help(target CheckTarget, checkState func(hwnd HWND) bool) bool {
+func (b *BattleActionState) aim(target CheckTarget, checkState func(hwnd HWND) bool) bool {
 	sys.LeftClick(b.hWnd, target.x+15, target.y-22)
 	time.Sleep(ATTACK_INTERVAL * time.Millisecond)
 	return checkState(b.hWnd)
