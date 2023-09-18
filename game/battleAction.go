@@ -316,7 +316,9 @@ func (b *BattleActionState) humanStateMachiine() {
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
 				} else if b.aim(PLAYER_L_3_P, HumanTargetingChecker) {
-					b.logH("used a skill")
+					b.logH("is training")
+					b.nextHumanStateId = 0
+					return
 				}
 			} else {
 				b.logH("can not find the skill window")

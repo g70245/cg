@@ -385,7 +385,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddHumanState(H_O_S_HEAL)
 				idSelectorDialog.Show()
 
-				trainButton.Disable()
 				selfHealButton.Disable()
 				bombButton.Disable()
 				stealButton.Disable()
