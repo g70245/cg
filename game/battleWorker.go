@@ -50,8 +50,8 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
 
-	checkLoopStopChan := make(chan bool, 1)
-	isTransmittedChan := make(chan bool, 1)
+	logCheckerStopChan := make(chan bool, 1)
+	isTPedChan := make(chan bool, 1)
 
 	if *w.logDir != "" {
 		checkerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
@@ -61,11 +61,11 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 
 			for {
 				select {
-				case <-checkLoopStopChan:
+				case <-logCheckerStopChan:
 					return
 				case <-checkerTicker.C:
-					if isTransmittedToOtherMap(*w.logDir) {
-						isTransmittedChan <- true
+					if isTPedToOtherMap(*w.logDir) {
+						isTPedChan <- true
 						return
 					}
 				default:
@@ -77,7 +77,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 
 	go func() {
 		defer workerTicker.Stop()
-		w.ActionState.CanBattle = true
+		w.ActionState.Enabled = true
 		isTransmitted := false
 
 		for {
@@ -85,7 +85,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-workerTicker.C:
 				switch getScene(w.hWnd) {
 				case BATTLE_SCENE:
-					if w.ActionState.CanBattle {
+					if w.ActionState.Enabled {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
@@ -96,10 +96,10 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 					// do nothing
 				}
 			case <-stopChan:
-				w.ActionState.CanBattle = false
+				w.ActionState.Enabled = false
 				return
-			case isTransmitted = <-isTransmittedChan:
-				checkLoopStopChan <- true
+			case isTransmitted = <-isTPedChan:
+				logCheckerStopChan <- true
 			default:
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
 			}

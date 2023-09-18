@@ -239,7 +239,7 @@ func isRidingOutOfMana(hWnd HWND) bool {
 
 var stopWords = []string{"被不可思"}
 
-func isTransmittedToOtherMap(dir string) bool {
+func isTPedToOtherMap(dir string) bool {
 	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
 }
 
@@ -260,7 +260,7 @@ var allTargets = []CheckTarget{
 	PLAYER_L_5_P,
 }
 
-func isLifeBelow(hWnd HWND, percentage float32, checkTarget CheckTarget) bool {
+func isLifeBelow(hWnd HWND, percentage float32, checkTarget *CheckTarget) bool {
 	healthPoint := int32(percentage*30) + checkTarget.x
 	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
 		sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_BLOOD_UPPER
@@ -268,7 +268,7 @@ func isLifeBelow(hWnd HWND, percentage float32, checkTarget CheckTarget) bool {
 
 func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
 	for i := range allTargets {
-		if isLifeBelow(hWnd, percentage, allTargets[i]) {
+		if isLifeBelow(hWnd, percentage, &allTargets[i]) {
 			return &allTargets[i], true
 		}
 	}
@@ -277,7 +277,7 @@ func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
 
 func countLifeBelow(hWnd HWND, percentage float32) (count int) {
 	for i := range allTargets {
-		if isLifeBelow(hWnd, percentage, allTargets[i]) {
+		if isLifeBelow(hWnd, percentage, &allTargets[i]) {
 			count++
 		}
 	}

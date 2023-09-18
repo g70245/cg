@@ -33,13 +33,13 @@ const (
 	H_O_POTION     = "*Potion"
 	H_O_SKILL      = "*Skill"
 	H_O_SE_HEAL    = "*Heal Self"
-	H_O_S_HEAL     = "*Heal One"
+	H_O_O_HEAL     = "*Heal One"
 	H_O_M_HEAL     = "*Heal Multi"
 	H_O_RIDE       = "*Ride"
 
 	H_S_HANG  = "Hang"
 	H_S_STEAL = "Steal"
-	H_S_Catch = "Catch"
+	H_S_CATCH = "Catch"
 	H_S_TRAIN = "Train Skill"
 
 	P_ATTACK  = "Pet Attack"
@@ -47,7 +47,7 @@ const (
 	P_SkILL   = "Pet Skill"
 	P_DEFEND  = "Pet Defend"
 	P_SE_HEAL = "Pet Heal Self"
-	P_S_HEAL  = "Pet Heal One"
+	P_O_HEAL  = "Pet Heal One"
 	P_RIDE    = "Pet Ride"
 )
 
@@ -61,10 +61,10 @@ type BattleActionState struct {
 	humanSkillLevels []string
 	petSkillIds      []string
 
-	CanBattle       bool
-	isOnRide        bool
-	isHumanHangging bool
-	isPetHangging   bool
+	Enabled        bool
+	isOnRide       bool
+	isHumanHanging bool
+	isPetHanging   bool
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -93,11 +93,11 @@ func (b *BattleActionState) AddHumanSkillId(newSkillId string) {
 	b.humanSkillIds[len(b.humanSkillIds)-1] = newSkillId
 }
 
-func (b *BattleActionState) AddHumanLevel(newLevel string) {
+func (b *BattleActionState) AddHumanSkillLevel(newLevel string) {
 	b.humanSkillLevels[len(b.humanSkillLevels)-1] = newLevel
 }
 
-func (b *BattleActionState) AddHPetSkillId(newSkillId string) {
+func (b *BattleActionState) AddPetSkillId(newSkillId string) {
 	b.petSkillIds[len(b.petSkillIds)-1] = newSkillId
 }
 
@@ -133,24 +133,24 @@ func (b *BattleActionState) GetPetSkillIds() []string {
 }
 
 func (b *BattleActionState) Act() {
-	log.Printf("[Handle %s's battle actions begin]\n", fmt.Sprint(b.hWnd))
+	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.CanBattle {
-		b.humanStateMachiine()
-		b.petStateMachiine()
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+		b.executeHumanStateMachine()
+		b.executePetStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
 	}
 
 	b.nextHumanStateId = 0
 	b.nextPetStateId = 0
-	log.Printf("[Handle %s's battle actions ended]\n", fmt.Sprint(b.hWnd))
+	log.Printf("# Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
 }
 
-func (b *BattleActionState) humanStateMachiine() {
+func (b *BattleActionState) executeHumanStateMachine() {
 
 	for b.nextHumanStateId < len(b.humanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
 		if !isHumanStageStable(b.hWnd) {
-			if !b.CanBattle {
+			if !b.Enabled {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
@@ -160,8 +160,8 @@ func (b *BattleActionState) humanStateMachiine() {
 		if b.isOnRide {
 			b.isOnRide = false
 		}
-		if b.isPetHangging {
-			b.isPetHangging = false
+		if b.isPetHanging {
+			b.isPetHanging = false
 			b.nextPetStateId++
 		}
 
@@ -174,7 +174,7 @@ func (b *BattleActionState) humanStateMachiine() {
 				b.logH("missed a hit")
 			}
 		case H_O_SKILL:
-			openHumanWindow(b.hWnd, 0x57)
+			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
@@ -187,7 +187,7 @@ func (b *BattleActionState) humanStateMachiine() {
 					b.logH("missed a hit")
 				}
 			} else {
-				b.logH("can not find the skill window")
+				b.logH("cannot find the position of window")
 			}
 		case H_A_DEFEND:
 			b.defend()
@@ -200,10 +200,10 @@ func (b *BattleActionState) humanStateMachiine() {
 			b.logH("escaped")
 		case H_S_HANG:
 			b.logH("is hanging")
-			b.isHumanHangging = true
+			b.isHumanHanging = true
 			return
 		case H_O_BOMB:
-			openHumanWindow(b.hWnd, 0x45)
+			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_BOMB_9A); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
@@ -214,10 +214,10 @@ func (b *BattleActionState) humanStateMachiine() {
 					}
 				}
 			} else {
-				b.logH("can not find the right position of window")
+				b.logH("cannot find the position of window")
 			}
 		case H_O_RIDE:
-			openHumanWindow(b.hWnd, 0x57)
+			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
@@ -234,12 +234,12 @@ func (b *BattleActionState) humanStateMachiine() {
 					}
 				}
 			} else {
-				b.logH("can not find the right position of window")
+				b.logH("cannot find the position of window")
 			}
 		case H_O_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
-				if isLifeBelow(b.hWnd, 0.6, *self) {
-					openHumanWindow(b.hWnd, 0x57)
+				if isLifeBelow(b.hWnd, 0.6, self) {
+					openWindowByShortcut(b.hWnd, 0x57)
 					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 						id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 						level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
@@ -250,30 +250,30 @@ func (b *BattleActionState) humanStateMachiine() {
 							b.logH("healed self")
 						}
 					} else {
-						b.logH("can not find the right position of window")
+						b.logH("cannot find the position of window")
 					}
 				} else {
 					b.logH("is a healthy boy")
 				}
 			} else {
-				b.logH("can not find self")
+				b.logH("cannot find self")
 			}
-		case H_O_S_HEAL:
+		case H_O_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			if target, ok := searchOneLifeBelow(b.hWnd, 0.6); ok {
-				openHumanWindow(b.hWnd, 0x57)
+				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.aim(*target, HumanTargetingChecker) {
+					if b.aim(target, HumanTargetingChecker) {
 						b.logH("healed an ally")
 					} else {
-						b.logH("can not target")
+						b.logH("cannot target")
 					}
 				} else {
-					b.logH("can not find the right position of window")
+					b.logH("cannot find the position of window")
 				}
 			} else {
 				b.logH("found no one needed to be taken care of")
@@ -283,24 +283,24 @@ func (b *BattleActionState) humanStateMachiine() {
 			clearChat(b.hWnd)
 			count := countLifeBelow(b.hWnd, 0.7)
 			if count >= 6 {
-				openHumanWindow(b.hWnd, 0x57)
+				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.aim(PLAYER_L_3_H, HumanTargetingChecker) {
+					if b.aim(&PLAYER_L_3_H, HumanTargetingChecker) {
 						b.logH("healed allies")
 					} else {
-						b.logH("can not target")
+						b.logH("cannot target")
 					}
 				} else {
-					b.logH("can not find the right position of window")
+					b.logH("cannot find the position of window")
 				}
 			} else {
 				b.logH("found all good")
 			}
 		case H_O_PET_RECALL:
-			openHumanWindow(b.hWnd, 0x52)
+			openWindowByShortcut(b.hWnd, 0x52)
 			if canRecall(b.hWnd) {
 				b.recall()
 				b.logH("recalled")
@@ -308,20 +308,20 @@ func (b *BattleActionState) humanStateMachiine() {
 				b.logH("already recalled")
 			}
 		case H_S_TRAIN:
-			openHumanWindow(b.hWnd, 0x57)
+			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
-				} else if b.aim(PLAYER_L_3_P, HumanTargetingChecker) {
+				} else if b.aim(&PLAYER_L_3_P, HumanTargetingChecker) {
 					b.logH("is training")
 					b.nextHumanStateId = 0
 					return
 				}
 			} else {
-				b.logH("can not find the skill window")
+				b.logH("cannot find the position of window")
 			}
 		default:
 		}
@@ -336,18 +336,18 @@ func (b *BattleActionState) humanStateMachiine() {
 	}
 }
 
-func (b *BattleActionState) petStateMachiine() {
+func (b *BattleActionState) executePetStateMachiine() {
 	for b.nextPetStateId < len(b.petStates) && getScene(b.hWnd) == BATTLE_SCENE && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
-			if !b.CanBattle {
+			if !b.Enabled {
 				return
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
 		}
 
-		if b.isHumanHangging {
-			b.isHumanHangging = false
+		if b.isHumanHanging {
+			b.isHumanHanging = false
 			b.nextHumanStateId++
 		}
 
@@ -362,7 +362,7 @@ func (b *BattleActionState) petStateMachiine() {
 					b.logP("missed a hit")
 				}
 			} else {
-				b.logP("can not find the right position of window")
+				b.logP("cannot find the position of window")
 			}
 
 		case P_SkILL:
@@ -378,11 +378,11 @@ func (b *BattleActionState) petStateMachiine() {
 					b.logP("missed a hit")
 				}
 			} else {
-				b.logP("can not find the right position of window")
+				b.logP("cannot find the position of window")
 			}
 		case P_HANG:
 			b.logP("is hanging")
-			b.isPetHangging = true
+			b.isPetHanging = true
 			return
 		case P_DEFEND:
 			b.openPetSkillWindow()
@@ -395,11 +395,11 @@ func (b *BattleActionState) petStateMachiine() {
 					b.logP("defended")
 				}
 			} else {
-				b.logP("can not find the right position of window")
+				b.logP("cannot find the position of window")
 			}
 		case P_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
-				if isLifeBelow(b.hWnd, 0.6, *self) {
+				if isLifeBelow(b.hWnd, 0.6, self) {
 					b.openPetSkillWindow()
 					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 						id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
@@ -410,13 +410,13 @@ func (b *BattleActionState) petStateMachiine() {
 							b.logP("healed self")
 						}
 					} else {
-						b.logP("can not find the right position of window")
+						b.logP("cannot find the position of window")
 					}
 				} else {
 					b.logP("is a healthy boy")
 				}
 			} else {
-				b.logP("can not find self")
+				b.logP("cannot find self")
 			}
 		case P_RIDE:
 			if b.isOnRide {
@@ -433,24 +433,24 @@ func (b *BattleActionState) petStateMachiine() {
 						b.isOnRide = true
 					}
 				} else {
-					b.logP("can not find the right position of window")
+					b.logP("cannot find the position of window")
 				}
 			}
-		case P_S_HEAL:
+		case P_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
-			if target, ok := searchOneLifeBelow(b.hWnd, 0.65); ok {
+			if target, ok := searchOneLifeBelow(b.hWnd, 0.6); ok {
 				b.openPetSkillWindow()
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if b.aim(*target, PetTargetingChecker) {
+					if b.aim(target, PetTargetingChecker) {
 						b.logP("healed an ally")
 					} else {
-						b.logP("can not target")
+						b.logP("cannot target")
 					}
 				} else {
-					b.logP("can not find the right position of window")
+					b.logP("cannot find the position of window")
 				}
 
 			} else {
@@ -484,21 +484,21 @@ func (b *BattleActionState) useItem(x, y int32) {
 var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
 var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
 
-func (b *BattleActionState) attack(attackedTargets []CheckTarget, stageCheck func(hwnd HWND) bool) bool {
+func (b *BattleActionState) attack(attackedTargets []CheckTarget, stateChecker func(hwnd HWND) bool) bool {
 	for _, target := range attackedTargets {
 		sys.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(ATTACK_INTERVAL * time.Millisecond)
-		if stageCheck(b.hWnd) {
+		if stateChecker(b.hWnd) {
 			return true
 		}
 	}
 	return false
 }
 
-func (b *BattleActionState) aim(target CheckTarget, checkState func(hwnd HWND) bool) bool {
+func (b *BattleActionState) aim(target *CheckTarget, stateChecker func(hwnd HWND) bool) bool {
 	sys.LeftClick(b.hWnd, target.x+15, target.y-22)
 	time.Sleep(ATTACK_INTERVAL * time.Millisecond)
-	return checkState(b.hWnd)
+	return stateChecker(b.hWnd)
 }
 
 func (b *BattleActionState) defend() {
@@ -524,7 +524,7 @@ func (b *BattleActionState) recall() {
 func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindow(b.hWnd)
 	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
-	resetAllWindowPos(b.hWnd)
+	resetAllWindowsPosition(b.hWnd)
 }
 
 func (b *BattleActionState) logH(message string) {

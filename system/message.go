@@ -59,13 +59,7 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 }
 
 func KeyMsg(hWnd HWND, key uintptr) {
-	// scanCode := MapVirtualKeyEx(uint32(key), 0)
-
-	// lParam := (0x00000001 | (scanCode << 16))
 	PostMessage(hWnd, WM_KEYDOWN, key, 0)
-
 	time.Sleep(KEY_DURATION * time.Millisecond)
-
-	// lParam |= 0xC0000000
 	PostMessage(hWnd, WM_KEYDOWN, key, 0)
 }

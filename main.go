@@ -21,8 +21,11 @@ const (
 	APP_HEIGHT   = 428
 )
 
-var window fyne.Window
-var logDir = new(string)
+var (
+	window         fyne.Window
+	logDir         = new(string)
+	alertMusicPath = new(string)
+)
 
 func test() {
 	hWnd := getHWND()
@@ -58,21 +61,32 @@ func main() {
 	})
 	refreshButton.Importance = widget.DangerImportance
 
+	var alertDialogButton *widget.Button
+	alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+		if uc != nil {
+			*alertMusicPath = uc.URI().Path()
+			alertDialogButton.SetIcon(theme.MediaMusicIcon())
+
+		}
+	}, window)
+	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
+		alertDialog.Show()
+	})
+	alertDialogButton.Importance = widget.HighImportance
+
 	var logDialogButton *widget.Button
 	logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 		if lu != nil {
 			*logDir = lu.Path()
-			logDialogButton.SetText(*logDir)
 			logDialogButton.SetIcon(theme.FolderOpenIcon())
 		}
 	}, window)
-	logDialogButton = widget.NewButtonWithIcon("Choose Log Directory", theme.FolderIcon(), func() {
+	logDialogButton = widget.NewButtonWithIcon("Log Directory", theme.FolderIcon(), func() {
 		logDirDialog.Show()
 	})
 	logDialogButton.Importance = widget.HighImportance
 
-	// menu := container.NewGridWrap(fyne.NewSize(100, 30), refreshButton, logDialogButton)
-	menu := container.NewHBox(refreshButton, logDialogButton)
+	menu := container.NewHBox(refreshButton, alertDialogButton, logDialogButton)
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()
@@ -96,12 +110,12 @@ func generateRobotContainer() Robot {
 	main := container.NewStack(tabs)
 	robot := Robot{main, func() {
 		main.RemoveAll()
-		stopAll(maps.Values(autoBattleStopChans))
+		stopWorkers(maps.Values(autoBattleStopChans))
 	}}
 	return robot
 }
 
-func stopAll(stopChans []chan bool) {
+func stopWorkers(stopChans []chan bool) {
 	for _, stopChan := range stopChans {
 		stop(stopChan)
 	}

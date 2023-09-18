@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cg/game"
 	. "cg/game"
 	"image/color"
 	"math"
@@ -87,11 +86,6 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	return main, stopChans
 }
 
-const (
-	ON  = "On"
-	OFF = "Off"
-)
-
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var leadHandle string
 	workers := CreateBattleWorkers(maps.Values(games), logDir)
@@ -102,7 +96,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	leadSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
 		leadHandle = s
 		if leadHandle != "" {
-			leadSelectorButton.SetText("Lead " + leadHandle)
+			leadSelectorButton.SetText("Lead: " + leadHandle)
 		} else {
 			leadSelectorButton.SetText("Choose Lead")
 		}
@@ -124,7 +118,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
 			for i := range workers {
-				workers[i].ActionState.CanBattle = false
+				workers[i].ActionState.Enabled = false
 				stopChan <- true
 			}
 			turn(theme.MediaPlayIcon(), lever)
@@ -167,7 +161,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			movementModeDialog.Hide()
 		})
 		movementModeDialog = dialog.NewCustomWithoutButtons("Choose a Move Way", movementModeSelector, window)
-		movementModeButton = widget.NewButtonWithIcon("Choose Move Way", theme.MailReplyIcon(), func() {
+		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
 
@@ -191,16 +185,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var stealButton *widget.Button
 			var trainButton *widget.Button
 			var rideButton *widget.Button
-			var selfHealButton *widget.Button
-			var singleHealButton *widget.Button
-			var multiHealButton *widget.Button
+			var healSelfButton *widget.Button
+			var healOneButton *widget.Button
+			var healMultiButton *widget.Button
 
 			var levelSelectorDialog *dialog.CustomDialog
 			levelSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddHumanLevel(s)
-					levelSelectorDialog.Hide()
-				}
+				worker.ActionState.AddHumanSkillLevel(s)
+				levelSelectorDialog.Hide()
 			})
 			levelSelector.Horizontal = true
 			levelSelector.Required = true
@@ -211,14 +203,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Refresh()
 			})
 
-			// var id string
 			var idSelector *widget.RadioGroup
 			var idSelectorDialog *dialog.CustomDialog
 			idSelector = widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddHumanSkillId(s)
-					idSelectorDialog.Hide()
-				}
+				worker.ActionState.AddHumanSkillId(s)
+				idSelectorDialog.Hide()
 			})
 			idSelector.Horizontal = true
 			idSelector.Required = true
@@ -228,21 +217,24 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelector.SetSelected("")
 			})
 
-			attackButton = widget.NewButton(game.H_A_ATTACK, func() {
+			attackButton = widget.NewButton(H_A_ATTACK, func() {
 				worker.ActionState.AddHumanState(H_A_ATTACK)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+
 				trainButton.Disable()
 				stealButton.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
-			defenceButton = widget.NewButton(game.H_A_DEFEND, func() {
+
+			defenceButton = widget.NewButton(H_A_DEFEND, func() {
 				worker.ActionState.AddHumanState(H_A_DEFEND)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			defenceButton.Importance = widget.WarningImportance
-			escapeButton = widget.NewButton(game.H_A_ESCAPE, func() {
+
+			escapeButton = widget.NewButton(H_A_ESCAPE, func() {
 				worker.ActionState.AddHumanState(H_A_ESCAPE)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
@@ -254,15 +246,17 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				trainButton.Disable()
 			})
 			escapeButton.Importance = widget.WarningImportance
-			catchButton = widget.NewButton(game.H_S_Catch, func() {
-				worker.ActionState.AddHumanState(H_S_Catch)
+
+			catchButton = widget.NewButton(H_S_CATCH, func() {
+				worker.ActionState.AddHumanState(H_S_CATCH)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
 				trainButton.Disable()
 			})
 			catchButton.Importance = widget.SuccessImportance
-			bombButton = widget.NewButton(game.H_O_BOMB, func() {
+
+			bombButton = widget.NewButton(H_O_BOMB, func() {
 				worker.ActionState.AddHumanState(H_O_BOMB)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
@@ -272,19 +266,21 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				recallButton.Disable()
 				hangButton.Disable()
 				stealButton.Disable()
-				singleHealButton.Disable()
+				healOneButton.Disable()
 				trainButton.Disable()
-				multiHealButton.Disable()
-				selfHealButton.Disable()
+				healMultiButton.Disable()
+				healSelfButton.Disable()
 			})
 			bombButton.Importance = widget.HighImportance
-			potionButton = widget.NewButton(game.H_O_POTION, func() {
+
+			potionButton = widget.NewButton(H_O_POTION, func() {
 				worker.ActionState.AddHumanState(H_O_POTION)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			potionButton.Importance = widget.HighImportance
-			recallButton = widget.NewButton(game.H_O_PET_RECALL, func() {
+
+			recallButton = widget.NewButton(H_O_PET_RECALL, func() {
 				worker.ActionState.AddHumanState(H_O_PET_RECALL)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
@@ -293,13 +289,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				rideButton.Disable()
 			})
 			recallButton.Importance = widget.HighImportance
-			moveButton = widget.NewButton(game.H_A_MOVE, func() {
+
+			moveButton = widget.NewButton(H_A_MOVE, func() {
 				worker.ActionState.AddHumanState(H_A_MOVE)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			moveButton.Importance = widget.WarningImportance
-			hangButton = widget.NewButton(game.H_S_HANG, func() {
+
+			hangButton = widget.NewButton(H_S_HANG, func() {
 				worker.ActionState.AddHumanState(H_S_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
@@ -310,13 +308,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				rideButton.Disable()
 				recallButton.Disable()
 				potionButton.Disable()
-				singleHealButton.Disable()
+				healOneButton.Disable()
 				hangButton.Disable()
-				multiHealButton.Disable()
-				selfHealButton.Disable()
+				healMultiButton.Disable()
+				healSelfButton.Disable()
 				trainButton.Disable()
 			})
 			hangButton.Importance = widget.SuccessImportance
+
 			skillButton = widget.NewButton(H_O_SKILL, func() {
 				worker.ActionState.AddHumanState(H_O_SKILL)
 				idSelectorDialog.Show()
@@ -327,18 +326,20 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				trainButton.Disable()
 			})
 			skillButton.Importance = widget.HighImportance
+
 			stealButton = widget.NewButton(H_S_STEAL, func() {
 				worker.ActionState.AddHumanState(H_S_STEAL)
 				idSelectorDialog.Show()
 
 				bombButton.Disable()
-				singleHealButton.Disable()
-				multiHealButton.Disable()
-				selfHealButton.Disable()
+				healOneButton.Disable()
+				healMultiButton.Disable()
+				healSelfButton.Disable()
 				trainButton.Disable()
 				catchButton.Disable()
 			})
 			stealButton.Importance = widget.SuccessImportance
+
 			trainButton = widget.NewButton(H_S_TRAIN, func() {
 				worker.ActionState.AddHumanState(H_S_TRAIN)
 				idSelectorDialog.Show()
@@ -346,15 +347,16 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				bombButton.Disable()
 				stealButton.Disable()
 				rideButton.Disable()
-				singleHealButton.Disable()
-				multiHealButton.Disable()
-				selfHealButton.Disable()
+				healOneButton.Disable()
+				healMultiButton.Disable()
+				healSelfButton.Disable()
 				catchButton.Disable()
 				hangButton.Disable()
 				recallButton.Disable()
 
 			})
 			trainButton.Importance = widget.SuccessImportance
+
 			rideButton = widget.NewButton(H_O_RIDE, func() {
 				worker.ActionState.AddHumanState(H_O_RIDE)
 				idSelectorDialog.Show()
@@ -368,38 +370,41 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				skillButton.Disable()
 				stealButton.Disable()
 				rideButton.Disable()
-				singleHealButton.Disable()
+				healOneButton.Disable()
 			})
 			rideButton.Importance = widget.HighImportance
-			selfHealButton = widget.NewButton(H_O_SE_HEAL, func() {
+
+			healSelfButton = widget.NewButton(H_O_SE_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_SE_HEAL)
 				idSelectorDialog.Show()
 
 				trainButton.Disable()
-				selfHealButton.Disable()
+				healSelfButton.Disable()
 				bombButton.Disable()
 				stealButton.Disable()
 			})
-			selfHealButton.Importance = widget.HighImportance
-			singleHealButton = widget.NewButton(H_O_S_HEAL, func() {
-				worker.ActionState.AddHumanState(H_O_S_HEAL)
+			healSelfButton.Importance = widget.HighImportance
+
+			healOneButton = widget.NewButton(H_O_O_HEAL, func() {
+				worker.ActionState.AddHumanState(H_O_O_HEAL)
 				idSelectorDialog.Show()
 
-				selfHealButton.Disable()
+				healSelfButton.Disable()
 				bombButton.Disable()
 				stealButton.Disable()
 			})
-			singleHealButton.Importance = widget.HighImportance
-			multiHealButton = widget.NewButton(H_O_M_HEAL, func() {
+			healOneButton.Importance = widget.HighImportance
+
+			healMultiButton = widget.NewButton(H_O_M_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_M_HEAL)
 				idSelectorDialog.Show()
 
 				trainButton.Disable()
-				selfHealButton.Disable()
+				healSelfButton.Disable()
 				bombButton.Disable()
 				stealButton.Disable()
 			})
-			multiHealButton.Importance = widget.HighImportance
+			healMultiButton.Importance = widget.HighImportance
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				attackButton,
@@ -411,16 +416,16 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				recallButton,
 				rideButton,
 				potionButton,
-				selfHealButton,
-				singleHealButton,
-				multiHealButton,
+				healSelfButton,
+				healOneButton,
+				healMultiButton,
 				hangButton,
 				catchButton,
 				stealButton,
 				trainButton,
 			)
 
-			actionStatesDialog := dialog.NewCustom("Select man actions with orders", "Leave", actionStatesContainer, window)
+			actionStatesDialog := dialog.NewCustom("Select man actions with order", "Leave", actionStatesContainer, window)
 			actionStatesDialog.Show()
 		})
 
@@ -439,12 +444,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			var idSelectorDialog *dialog.CustomDialog
 			idSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddHPetSkillId(s)
-					idSelectorDialog.Hide()
-				}
+				worker.ActionState.AddPetSkillId(s)
+				idSelectorDialog.Hide()
 			})
 			idSelector.Horizontal = true
+			idSelector.Required = true
 			idSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill index", idSelector, window)
 			idSelectorDialog.SetOnClosed(func() {
 				idSelector.SetSelected("")
@@ -452,13 +456,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Refresh()
 			})
 
-			petAttackButton = widget.NewButton(game.P_ATTACK, func() {
+			petAttackButton = widget.NewButton(P_ATTACK, func() {
 				worker.ActionState.AddPetState(P_ATTACK)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			petAttackButton.Importance = widget.WarningImportance
-			petHangButton = widget.NewButton(game.P_HANG, func() {
+
+			petHangButton = widget.NewButton(P_HANG, func() {
 				worker.ActionState.AddPetState(P_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
@@ -471,26 +476,31 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petHealSelfButton.Disable()
 			})
 			petHangButton.Importance = widget.SuccessImportance
+
 			petSkillButton = widget.NewButton(P_SkILL, func() {
 				worker.ActionState.AddPetState(P_SkILL)
 				idSelectorDialog.Show()
 			})
 			petSkillButton.Importance = widget.HighImportance
+
 			petDefenceButton = widget.NewButton(P_DEFEND, func() {
 				worker.ActionState.AddPetState(P_DEFEND)
 				idSelectorDialog.Show()
 			})
 			petDefenceButton.Importance = widget.HighImportance
+
 			petHealSelfButton = widget.NewButton(P_SE_HEAL, func() {
 				worker.ActionState.AddPetState(P_SE_HEAL)
 				idSelectorDialog.Show()
 			})
 			petHealSelfButton.Importance = widget.HighImportance
-			petHealOneButton = widget.NewButton(P_S_HEAL, func() {
-				worker.ActionState.AddPetState(P_S_HEAL)
+
+			petHealOneButton = widget.NewButton(P_O_HEAL, func() {
+				worker.ActionState.AddPetState(P_O_HEAL)
 				idSelectorDialog.Show()
 			})
 			petHealOneButton.Importance = widget.HighImportance
+
 			petRideButton = widget.NewButton(P_RIDE, func() {
 				worker.ActionState.AddPetState(P_RIDE)
 				idSelectorDialog.Show()
@@ -509,20 +519,20 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petHangButton,
 			)
 
-			actionStatesDialog := dialog.NewCustom("Select pet actions with orders", "Leave", actionStatesContainer, window)
+			actionStatesDialog := dialog.NewCustom("Select pet actions with order", "Leave", actionStatesContainer, window)
 			actionStatesDialog.Show()
 
 		})
-
-		// statesViewer = container.NewGridWrap(fyne.NewSize(82, 20), generateTags(*worker)...)
-		statesViewer = container.NewHBox(generateTags(*worker)...)
-
 		humanStateSelector.Importance = widget.MediumImportance
 		petStateSelector.Importance = widget.MediumImportance
+
 		workerMenuContainer.Add(gameNameLabelContainer)
 		workerMenuContainer.Add(movementModeButton)
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
+
+		statesViewer = container.NewHBox(generateTags(*worker)...)
+
 		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
 		configContainer.Add(workerContainer)
 	}
@@ -538,10 +548,10 @@ func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
 }
 
 var (
-	humanOnceTagColor       = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
-	humanOnceOptionTagColor = color.RGBA{0, 28, 245, uint8(math.Round(0.8 * 255))}
-	humanOptionTagColor     = color.RGBA{35, 128, 24, uint8(math.Round(0.8 * 255))}
-	petTagColor             = color.RGBA{92, 14, 99, uint8(math.Round(0.8 * 255))}
+	humanFinishingTagColor   = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
+	humanConditionedTagColor = color.RGBA{0, 28, 245, uint8(math.Round(0.8 * 255))}
+	humanSpecialTagColor     = color.RGBA{35, 128, 24, uint8(math.Round(0.8 * 255))}
+	petTagColor              = color.RGBA{92, 14, 99, uint8(math.Round(0.8 * 255))}
 )
 
 func createTagContainer(actionState BattleActionState, isHuman bool) (tagContainers []fyne.CanvasObject) {
@@ -557,11 +567,11 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 		if isHuman {
 			switch {
 			case strings.Contains(tag, "**"):
-				tagColor = humanOnceTagColor
+				tagColor = humanFinishingTagColor
 			case strings.Contains(tag, "*"):
-				tagColor = humanOnceOptionTagColor
+				tagColor = humanConditionedTagColor
 			default:
-				tagColor = humanOptionTagColor
+				tagColor = humanSpecialTagColor
 			}
 		}
 

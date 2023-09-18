@@ -16,15 +16,15 @@ func closeAllWindow(hWnd HWND) {
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
-func openHumanWindow(hWnd HWND, key uintptr) {
+func openWindowByShortcut(hWnd HWND, key uintptr) {
 	KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 	KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	resetAllWindowPos(hWnd)
+	resetAllWindowsPosition(hWnd)
 }
 
-func resetAllWindowPos(hWnd HWND) {
+func resetAllWindowsPosition(hWnd HWND) {
 	KeyCombinationMsg(hWnd, VK_CONTROL, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
