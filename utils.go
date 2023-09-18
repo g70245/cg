@@ -32,7 +32,7 @@ var someTestData = []game.CheckTarget{
 	game.PLAYER_L_5_P,
 }
 
-func PrintCursorPos(hWnd win.HWND) {
+func PrintCursorPosColor(hWnd win.HWND) {
 	for {
 		var lpPoint win.POINT
 		win.GetCursorPos(&lpPoint)

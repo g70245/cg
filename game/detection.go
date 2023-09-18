@@ -56,8 +56,9 @@ const (
 	COLOR_BATTLE_MANA_UPPER    = 16758653
 	COLOR_BATTLE_MANA_LOWER    = 16740864
 	COLOR_BATTLE_NO_BLOOD_MANA = 65536
+	COLOR_BATTLE_RECALL_BUTTON = 7694643
 
-	COLOR_BATTLE_ITEM_CAN_NOT_BE_USED = 255
+	COLOR_WINDOW_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_WINDOW_ITEM_PIVOT           = 16777215
 
 	COLOR_ITEM_BOMB_9A = 8388607
@@ -105,8 +106,9 @@ var (
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
-	WINDOW_SKILL_FIRST      = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
-	WINDOW_ITEM_MONEY_CLUMN = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
+	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{140, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
+	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
 	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
@@ -169,11 +171,11 @@ func PetTargetingChecker(hWnd HWND) bool {
 }
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
-	x := WINDOW_SKILL_FIRST.x
+	x := BATTLE_WINDOW_SKILL_FIRST.x
 	for x <= 180 {
-		y := WINDOW_SKILL_FIRST.y
+		y := BATTLE_WINDOW_SKILL_FIRST.y
 		for y <= 232 {
-			if sys.GetColor(hWnd, x, y) == WINDOW_SKILL_FIRST.color {
+			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.color {
 				return x, y, true
 			}
 			y += 4
@@ -184,11 +186,11 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	x := WINDOW_ITEM_MONEY_CLUMN.x
+	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= 160 {
-		y := WINDOW_ITEM_MONEY_CLUMN.y
+		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
 		for y <= 166 {
-			if sys.GetColor(hWnd, x, y) == WINDOW_ITEM_MONEY_CLUMN.color {
+			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color {
 				return x, y, true
 			}
 			y += 2
@@ -239,6 +241,10 @@ var stopWords = []string{"被不可思"}
 
 func isTransmittedToOtherMap(dir string) bool {
 	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
+}
+
+func canRecall(hWnd HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
 var allPlayerTargets = []CheckTarget{

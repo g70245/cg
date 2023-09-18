@@ -123,7 +123,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
-			for range workers {
+			for i := range workers {
+				workers[i].ActionState.CanBattle = false
 				stopChan <- true
 			}
 			turn(theme.MediaPlayIcon(), lever)
@@ -283,8 +284,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Refresh()
 			})
 			potionButton.Importance = widget.HighImportance
-			recallButton = widget.NewButton(game.H_O_PET, func() {
-				worker.ActionState.AddHumanState(H_O_PET)
+			recallButton = widget.NewButton(game.H_O_PET_RECALL, func() {
+				worker.ActionState.AddHumanState(H_O_PET_RECALL)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 

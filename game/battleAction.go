@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	TURN_INTERVAL         = 2000
+	TURN_INTERVAL         = 300
 	WAITING_LOOP_INTERVAL = 200
 	ATTACK_INTERVAL       = 160
 
@@ -28,14 +28,14 @@ const (
 	H_A_ESCAPE = "**Escape"
 	H_A_MOVE   = "**Move"
 
-	H_O_BOMB    = "*Bomb"
-	H_O_PET     = "*Recall Pet"
-	H_O_POTION  = "*Potion"
-	H_O_SKILL   = "*Skill"
-	H_O_SE_HEAL = "*Heal Self"
-	H_O_S_HEAL  = "*Heal One"
-	H_O_M_HEAL  = "*Heal Multi"
-	H_O_RIDE    = "*Ride"
+	H_O_BOMB       = "*Bomb"
+	H_O_PET_RECALL = "*Recall Pet"
+	H_O_POTION     = "*Potion"
+	H_O_SKILL      = "*Skill"
+	H_O_SE_HEAL    = "*Heal Self"
+	H_O_S_HEAL     = "*Heal One"
+	H_O_M_HEAL     = "*Heal Multi"
+	H_O_RIDE       = "*Ride"
 
 	H_S_HANG  = "Hang"
 	H_S_STEAL = "Steal"
@@ -271,6 +271,15 @@ func (b *BattleActionState) humanStateMachiine() {
 			} else {
 				b.logH("found no one needed to be taken care of")
 			}
+		case H_O_PET_RECALL:
+			openHumanWindow(b.hWnd, 0x52)
+			if canRecall(b.hWnd) {
+				b.recall()
+				b.logH("recalled")
+			} else {
+				b.logH("already recalled")
+			}
+
 		default:
 		}
 
@@ -454,6 +463,11 @@ func (b *BattleActionState) escape() {
 
 func (b *BattleActionState) move() {
 	sys.LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+}
+
+func (b *BattleActionState) recall() {
+	sys.LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
