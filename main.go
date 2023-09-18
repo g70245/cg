@@ -16,8 +16,8 @@ import (
 const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
-	APP_WIDTH    = 675
-	APP_HEIGHT   = 380
+	APP_WIDTH    = 761
+	APP_HEIGHT   = 428
 )
 
 var window fyne.Window
