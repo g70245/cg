@@ -37,19 +37,16 @@ const (
 	COLOR_SCENE_NORMAL = 15595514
 	COLOR_SCENE_BATTLE = 15595514
 
-	COLOR_MENU_BUTTON_NORMAL     = 15135992
-	COLOR_MENU_BUTTON_T          = 15201528
-	COLOR_MENU_BUTTON_POPOUT     = 10331818
-	COLOR_MENU_BUTTON_R_POPOUT   = 10331817
+	COLOR_MENU_BUTTON_NORMAL   = 15135992
+	COLOR_MENU_BUTTON_T        = 15201528
+	COLOR_MENU_BUTTON_POPOUT   = 10331818
+	COLOR_MENU_BUTTON_R_POPOUT = 10331817
+
 	COLOR_BATTLE_COMMAND_ENABLE  = 7125907
 	COLOR_BATTLE_COMMAND_DISABLE = 6991316
 
 	COLOR_BATTLE_STAGE_HUMAN = 15398392
 	COLOR_BATTLE_STAGE_PET   = 8599608
-
-	// COLOR_WINDOW_SKILL_TOP        = 65536
-	COLOR_WINDOW_SKILL_UNSELECTED = 4411988
-	COLOR_HUMAN_OUT_OF_MANA       = 11575428
 
 	COLOR_BATTLE_BLOOD_UPPER   = 9211135
 	COLOR_BATTLE_BLOOD_LOWER   = 255
@@ -57,6 +54,10 @@ const (
 	COLOR_BATTLE_MANA_LOWER    = 16740864
 	COLOR_BATTLE_NO_BLOOD_MANA = 65536
 	COLOR_BATTLE_RECALL_BUTTON = 7694643
+	COLOR_BATTLE_SELF_TITLE    = 37083
+
+	COLOR_WINDOW_SKILL_UNSELECTED        = 4411988
+	COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA = 11575428
 
 	COLOR_WINDOW_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_WINDOW_ITEM_PIVOT           = 16777215
@@ -217,7 +218,7 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
 
 func isHumanOutOfMana(hWnd HWND, x, y int32) bool {
 	sys.MoveToNowhere(hWnd)
-	if sys.GetColor(hWnd, x, y+16*10) == COLOR_HUMAN_OUT_OF_MANA {
+	if sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA {
 		return true
 	}
 	return false
@@ -247,7 +248,7 @@ func canRecall(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
-var allPlayerTargets = []CheckTarget{
+var allTargets = []CheckTarget{
 	PLAYER_L_1_H,
 	PLAYER_L_2_H,
 	PLAYER_L_3_H,
@@ -267,19 +268,57 @@ func isLifeBelow(hWnd HWND, percentage float32, checkTarget CheckTarget) bool {
 }
 
 func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
-	for i := range allPlayerTargets {
-		if isLifeBelow(hWnd, percentage, allPlayerTargets[i]) {
-			return &allPlayerTargets[i], true
+	for i := range allTargets {
+		if isLifeBelow(hWnd, percentage, allTargets[i]) {
+			return &allTargets[i], true
 		}
 	}
 	return nil, false
 }
 
 func countLifeBelow(hWnd HWND, percentage float32) (count int) {
-	for i := range allPlayerTargets {
-		if isLifeBelow(hWnd, percentage, allPlayerTargets[i]) {
+	for i := range allTargets {
+		if isLifeBelow(hWnd, percentage, allTargets[i]) {
 			count++
 		}
 	}
 	return
+}
+
+var allPlayers = []CheckTarget{
+	PLAYER_L_1_H,
+	PLAYER_L_2_H,
+	PLAYER_L_3_H,
+	PLAYER_L_4_H,
+	PLAYER_L_5_H,
+}
+
+var allPets = []CheckTarget{
+	PLAYER_L_1_P,
+	PLAYER_L_2_P,
+	PLAYER_L_3_P,
+	PLAYER_L_4_P,
+	PLAYER_L_5_P,
+}
+
+func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
+	targets := allPlayers
+	if !isHuman {
+		targets = allPets
+	}
+
+	for i := range targets {
+		x := targets[i].x + 12
+		for x <= targets[i].x+18 {
+			y := targets[i].y
+			for y >= targets[i].y-26 {
+				if sys.GetColor(hWnd, x, y) == COLOR_BATTLE_SELF_TITLE {
+					return &targets[i], true
+				}
+				y--
+			}
+			x++
+		}
+	}
+	return nil, false
 }

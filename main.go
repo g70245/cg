@@ -1,9 +1,7 @@
 package main
 
 import (
-	"cg/game"
 	"cg/system"
-	"fmt"
 	"os"
 
 	"fyne.io/fyne/v2"
@@ -26,11 +24,7 @@ var window fyne.Window
 var logDir = new(string)
 
 func test() {
-	hWnd := maps.Values(system.FindWindows(TARGET_CLASS))[0]
-	// CheckColor(hwnd, 140, 123, 340, 300, 8388607)
-	// PrintCursorPosColor(maps.Values(system.FindWindows(TARGET_CLASS))[0])
-	// PrintColorFromData(hwnd, someTestData)
-	fmt.Println(system.GetColor(hWnd, game.BATTLE_WINDOW_PET_RECALL_BUTTON.GetX(), game.BATTLE_WINDOW_PET_RECALL_BUTTON.GetY()))
+	// hWnd := getHWND()
 	os.Exit(0)
 }
 

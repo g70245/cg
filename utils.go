@@ -74,9 +74,9 @@ func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
 				fmt.Printf("Found at (%d, %d)\n", x, y)
 				return
 			}
-			y += 2
+			y += 1
 		}
-		x += 2
+		x += 1
 	}
 }
 

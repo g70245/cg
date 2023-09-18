@@ -237,19 +237,26 @@ func (b *BattleActionState) humanStateMachiine() {
 				b.logH("can not find the right position of window")
 			}
 		case H_O_SE_HEAL:
-			// TODO: check health status
-			openHumanWindow(b.hWnd, 0x57)
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
-				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
-				level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
-				useHumanSkill(b.hWnd, x, y, id, level)
-				if isHumanOutOfMana(b.hWnd, x, y) {
-					b.logH("is out of mana")
+			if self, ok := getSelfTarget(b.hWnd, true); ok {
+				if isLifeBelow(b.hWnd, 0.6, *self) {
+					openHumanWindow(b.hWnd, 0x57)
+					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+						id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
+						level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
+						useHumanSkill(b.hWnd, x, y, id, level)
+						if isHumanOutOfMana(b.hWnd, x, y) {
+							b.logH("is out of mana")
+						} else {
+							b.logH("healed self")
+						}
+					} else {
+						b.logH("can not find the right position of window")
+					}
 				} else {
-					b.logH("healed self")
+					b.logH("is a healthy boy")
 				}
 			} else {
-				b.logH("can not find the right position of window")
+				b.logH("can not find self")
 			}
 		case H_O_S_HEAL:
 			closeAllWindow(b.hWnd)
@@ -376,18 +383,25 @@ func (b *BattleActionState) petStateMachiine() {
 				b.logP("can not find the right position of window")
 			}
 		case P_SE_HEAL:
-			// TODO: check health status
-			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
-				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
-				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
-					b.logP("is out of mana")
+			if self, ok := getSelfTarget(b.hWnd, true); ok {
+				if isLifeBelow(b.hWnd, 0.6, *self) {
+					b.openPetSkillWindow()
+					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+						id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
+						usePetSkill(b.hWnd, x, y, id)
+						if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+							b.logP("is out of mana")
+						} else {
+							b.logP("healed self")
+						}
+					} else {
+						b.logP("can not find the right position of window")
+					}
 				} else {
-					b.logP("healed self")
+					b.logP("is a healthy boy")
 				}
 			} else {
-				b.logP("can not find the right position of window")
+				b.logP("can not find self")
 			}
 		case P_RIDE:
 			if b.isOnRide {
