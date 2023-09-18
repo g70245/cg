@@ -11,22 +11,20 @@ import (
 )
 
 var (
-	RADIUS    = 100
-	DIRECTION = []int{-1, 1}
+	RADIUS     float64 = 120
+	BIAS_ANGLE float64 = 30
 )
 
 type BattleMovementMode string
 
 const (
-	NONE                 = "None"
-	CIRCLE_MODE          = "Circle"
-	DIAGONAL_MODE        = "Diagonal"
-	BACK_DIAGONAL_MODE   = "Back Diagonal"
-	DIAGONAL_HYBRID_MODE = "Hybrid Diagonal"
-	HYBRID_DIAGONAL_MODE = "Hybrid Diagonal"
+	NONE                   = "None"
+	DIAGONAL_MODE          = "Diagonal"
+	REVERSED_DIAGONAL_MODE = "Reversed Diagonal"
+	HYBRID_DIAGONAL_MODE   = "Hybrid Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{HYBRID_DIAGONAL_MODE, DIAGONAL_MODE, BACK_DIAGONAL_MODE, CIRCLE_MODE}
+var BATTLE_MOVEMENT_MODES = []string{DIAGONAL_MODE, REVERSED_DIAGONAL_MODE, HYBRID_DIAGONAL_MODE}
 
 type BattleMovementState struct {
 	hWnd             HWND
@@ -34,26 +32,18 @@ type BattleMovementState struct {
 	currentDirection int
 }
 
-func (state *BattleMovementState) nextDirection() (nextDirection int) {
-	switch state.currentDirection {
-	case 0:
-		nextDirection = DIRECTION[rand.Intn(2)]
-	default:
-		nextDirection = state.currentDirection * -1
-	}
-	state.currentDirection = nextDirection
-	return
+func (state *BattleMovementState) nextDirection() int {
+	state.currentDirection ^= 1
+	return state.currentDirection
 }
 
 func (state *BattleMovementState) Move() {
 
 	var x, y int
 	switch state.Mode {
-	case CIRCLE_MODE:
-		x, y = circle()
 	case DIAGONAL_MODE:
 		x, y = diagonal(state, false)
-	case BACK_DIAGONAL_MODE:
+	case REVERSED_DIAGONAL_MODE:
 		x, y = diagonal(state, true)
 	case HYBRID_DIAGONAL_MODE:
 		x, y = diagonal(state, rand.Intn(2) != 0)
@@ -66,32 +56,20 @@ func (state *BattleMovementState) Move() {
 	sys.LeftClick(state.hWnd, int32(x), int32(y))
 }
 
-func circle() (x, y int) {
-	xOrigin := GAME_WIDTH / 2
-	yOrigin := GAME_HEIGHT / 2
-
-	xOffset := rand.Intn(RADIUS + 1)
-	yOffset := int(math.Sqrt(math.Pow(float64(RADIUS), 2) - math.Pow(float64(xOffset), 2)))
-
-	x = xOrigin + xOffset*DIRECTION[rand.Intn(2)]
-	y = yOrigin + yOffset*DIRECTION[rand.Intn(2)]
-	return
-}
-
 func diagonal(state *BattleMovementState, isReverse bool) (x, y int) {
 	xOrigin := GAME_WIDTH / 2
 	yOrigin := GAME_HEIGHT / 2
 
-	Offset := int(math.Sqrt(math.Pow(float64(RADIUS), 2)/2)) + rand.Intn(16)
-
-	direction := state.nextDirection()
+	randomBiasAngle := rand.Float64()*BIAS_ANGLE*2 - BIAS_ANGLE
+	direction := float64(state.nextDirection()) * math.Pi
+	rotationAngle := ((45.0+randomBiasAngle)/180.0)*math.Pi + direction
 
 	if isReverse {
-		x = xOrigin + Offset*direction
-		y = yOrigin + Offset*direction
+		x = xOrigin + int(RADIUS*math.Cos(rotationAngle))
+		y = yOrigin + int(RADIUS*math.Sin(rotationAngle))
 	} else {
-		x = xOrigin + Offset*direction
-		y = yOrigin + Offset*direction*-1
+		x = xOrigin + int(RADIUS*math.Cos(rotationAngle))
+		y = yOrigin + int(RADIUS*math.Sin(rotationAngle))*-1
 	}
 
 	return
