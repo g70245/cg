@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cg/game"
 	"cg/system"
 	"os"
 
@@ -24,7 +25,13 @@ var window fyne.Window
 var logDir = new(string)
 
 func test() {
-	// hWnd := getHWND()
+	hWnd := getHWND()
+	PrintColor(
+		hWnd,
+		game.BATTLE_WINDOW_SKILL_FIRST.GetX(),
+		game.BATTLE_WINDOW_SKILL_FIRST.GetY(),
+		game.BATTLE_WINDOW_SKILL_FIRST.GetX(),
+		200)
 	os.Exit(0)
 }
 

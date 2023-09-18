@@ -107,7 +107,7 @@ var (
 	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
-	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{164, 120, COLOR_WINDOW_SKILL_UNSELECTED}
+	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{156, 140, COLOR_WINDOW_SKILL_UNSELECTED}
 	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
@@ -173,7 +173,7 @@ func PetTargetingChecker(hWnd HWND) bool {
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := BATTLE_WINDOW_SKILL_FIRST.x
-	for x <= 180 {
+	for x <= 164 {
 		y := BATTLE_WINDOW_SKILL_FIRST.y
 		for y <= 232 {
 			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.color {
@@ -217,7 +217,6 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
 }
 
 func isHumanOutOfMana(hWnd HWND, x, y int32) bool {
-	sys.MoveToNowhere(hWnd)
 	if sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA {
 		return true
 	}

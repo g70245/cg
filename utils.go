@@ -80,6 +80,24 @@ func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
 	}
 }
 
+func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
+	defer os.Exit(0)
+
+	x := oX
+	for x <= dX {
+		y := oY
+		MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+		time.Sleep(200 * time.Millisecond)
+		for y <= dY {
+			fmt.Printf("(%d, %d) %d\n", x, y, GetColor(hWnd, x, y))
+			y += 1
+		}
+		x += 1
+		MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+		time.Sleep(200 * time.Millisecond)
+	}
+}
+
 func getHWND() win.HWND {
 	return maps.Values(system.FindWindows(TARGET_CLASS))[0]
 }
