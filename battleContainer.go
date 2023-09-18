@@ -191,8 +191,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			var levelSelectorDialog *dialog.CustomDialog
 			levelSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				worker.ActionState.AddHumanSkillLevel(s)
-				levelSelectorDialog.Hide()
+				if s != "" {
+					worker.ActionState.AddHumanSkillLevel(s)
+					levelSelectorDialog.Hide()
+				}
 			})
 			levelSelector.Horizontal = true
 			levelSelector.Required = true
@@ -206,8 +208,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var idSelector *widget.RadioGroup
 			var idSelectorDialog *dialog.CustomDialog
 			idSelector = widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				worker.ActionState.AddHumanSkillId(s)
-				idSelectorDialog.Hide()
+				if s != "" {
+					worker.ActionState.AddHumanSkillId(s)
+					idSelectorDialog.Hide()
+				}
 			})
 			idSelector.Horizontal = true
 			idSelector.Required = true
@@ -444,8 +448,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			var idSelectorDialog *dialog.CustomDialog
 			idSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				worker.ActionState.AddPetSkillId(s)
-				idSelectorDialog.Hide()
+				if s != "" {
+					worker.ActionState.AddPetSkillId(s)
+					idSelectorDialog.Hide()
+				}
 			})
 			idSelector.Horizontal = true
 			idSelector.Required = true
