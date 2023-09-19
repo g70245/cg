@@ -684,7 +684,7 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 				tag = fmt.Sprintf("%s:%s", tag, param)
 			}
 		}
-		tagTextCanvas := canvas.NewText("\t"+tag+"\t\t", color.White)
+		tagTextCanvas := canvas.NewText(tag, color.White)
 		tagTextCanvas.Alignment = fyne.TextAlignCenter
 		tagTextCanvas.TextStyle = fyne.TextStyle{Bold: true, Italic: true, TabWidth: 1}
 		tagContainer.Add(tagTextCanvas)
