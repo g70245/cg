@@ -65,7 +65,7 @@ type BattleActionState struct {
 
 	Enabled         bool
 	IsOutOfMana     bool
-	isRideTriggered bool
+	IsRideTriggered bool
 	isTrainingSkill bool
 	isHumanHanging  bool
 	isPetHanging    bool
@@ -161,6 +161,10 @@ func (b *BattleActionState) GetPetParams() []string {
 func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
+	if b.isTrainingSkill && b.IsRideTriggered {
+		b.IsRideTriggered = false
+	}
+
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
@@ -183,8 +187,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
-		if b.isRideTriggered && !b.isTrainingSkill {
-			b.isRideTriggered = false
+		// for re-ride
+		if b.IsRideTriggered && !b.isTrainingSkill {
+			b.IsRideTriggered = false
 		}
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -459,9 +464,9 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find self")
 			}
 		case P_RIDE:
-			if b.isRideTriggered && b.isTrainingSkill {
+			if b.IsRideTriggered && b.isTrainingSkill {
 				b.logP("is already off ride")
-			} else if b.isRideTriggered && !b.isTrainingSkill {
+			} else if b.IsRideTriggered && !b.isTrainingSkill {
 				b.logP("is already on ride")
 			} else {
 				b.openPetSkillWindow()
@@ -469,7 +474,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
 					b.logP("succeeds on/off ride?")
-					b.isRideTriggered = true
+					b.IsRideTriggered = true
 				} else {
 					b.logP("cannot find the position of window")
 				}
