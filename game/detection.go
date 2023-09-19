@@ -260,24 +260,24 @@ var allTargets = []CheckTarget{
 	PLAYER_L_5_P,
 }
 
-func isLifeBelow(hWnd HWND, percentage float32, checkTarget *CheckTarget) bool {
-	healthPoint := int32(percentage*30) + checkTarget.x
+func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
+	healthPoint := int32(ratio*30) + checkTarget.x
 	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
 		sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_BLOOD_UPPER
 }
 
-func searchOneLifeBelow(hWnd HWND, percentage float32) (*CheckTarget, bool) {
+func searchOneLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 	for i := range allTargets {
-		if isLifeBelow(hWnd, percentage, &allTargets[i]) {
+		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
 			return &allTargets[i], true
 		}
 	}
 	return nil, false
 }
 
-func countLifeBelow(hWnd HWND, percentage float32) (count int) {
+func countLifeBelow(hWnd HWND, ratio float32) (count int) {
 	for i := range allTargets {
-		if isLifeBelow(hWnd, percentage, &allTargets[i]) {
+		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
 			count++
 		}
 	}

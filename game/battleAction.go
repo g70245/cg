@@ -9,6 +9,7 @@ import (
 	"time"
 
 	. "github.com/lxn/win"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -49,7 +50,11 @@ const (
 	P_SE_HEAL = "Pet Heal Self"
 	P_O_HEAL  = "Pet Heal One"
 	P_RIDE    = "Pet Ride"
+	P_ESCAPE  = "Pet Escape"
 )
+
+var HealOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
+var statesWithParam = []string{H_O_SE_HEAL, H_O_O_HEAL, H_O_M_HEAL, H_O_POTION, P_SE_HEAL, P_O_HEAL}
 
 type BattleActionState struct {
 	hWnd             HWND
@@ -266,7 +271,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 		case H_O_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
-				if isLifeBelow(b.hWnd, 0.6, self) {
+				ratio, _ := strconv.ParseFloat(b.humanParams[b.nextHumanStateId], 32)
+				if isLifeBelow(b.hWnd, float32(ratio), self) {
 					openWindowByShortcut(b.hWnd, 0x57)
 					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 						id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
@@ -290,7 +296,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case H_O_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
-			if target, ok := searchOneLifeBelow(b.hWnd, 0.6); ok {
+			ratio, _ := strconv.ParseFloat(b.humanParams[b.nextHumanStateId], 32)
+			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
@@ -310,7 +317,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case H_O_M_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
-			count := countLifeBelow(b.hWnd, 0.7)
+			ratio, _ := strconv.ParseFloat(b.humanParams[b.nextHumanStateId], 32)
+			count := countLifeBelow(b.hWnd, float32(ratio))
 			if count >= 6 {
 				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
@@ -442,7 +450,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 		case P_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
-				if isLifeBelow(b.hWnd, 0.6, self) {
+				ratio, _ := strconv.ParseFloat(b.petParams[b.nextPetStateId], 32)
+				if isLifeBelow(b.hWnd, float32(ratio), self) {
 					b.openPetSkillWindow()
 					if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 						id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
@@ -486,7 +495,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case P_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
-			if target, ok := searchOneLifeBelow(b.hWnd, 0.6); ok {
+			ratio, _ := strconv.ParseFloat(b.petParams[b.nextPetStateId], 32)
+			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
 				b.openPetSkillWindow()
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
@@ -589,4 +599,12 @@ func (b *BattleActionState) logP(message string) {
 		fmt.Sprintf("[%s]", strings.Trim(b.petStates[b.nextPetStateId], "*")),
 		fmt.Sprintf("Pet %s", message),
 	)
+}
+
+func (b *BattleActionState) DoesHumanStateNeedParam() bool {
+	return slices.Contains(statesWithParam, b.humanStates[len(b.humanStates)-1])
+}
+
+func (b *BattleActionState) DoesPetStateNeedParam() bool {
+	return slices.Contains(statesWithParam, b.petStates[len(b.petStates)-1])
 }

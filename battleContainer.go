@@ -170,11 +170,24 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		var statesViewer *fyne.Container
 
 		// prepare the params selector for later usage
+		paramsDialogChan := make(chan bool)
 		var paramsSelectorDialog *dialog.CustomDialog
 		paramsSelector := widget.NewRadioGroup(nil, nil)
+		humanParamsOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddHumanParams(s)
+				paramsSelectorDialog.Hide()
+			}
+		}
+		petParamsOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddPetParams(s)
+				paramsSelectorDialog.Hide()
+			}
+		}
 		paramsSelector.Horizontal = true
 		paramsSelector.Required = true
-		paramsSelectorDialog = dialog.NewCustomWithoutButtons("", paramsSelector, window)
+		paramsSelectorDialog = dialog.NewCustomWithoutButtons("Choose params", paramsSelector, window)
 		paramsSelectorDialog.SetOnClosed(func() {
 			paramsSelector.SetSelected("")
 			statesViewer.Objects = generateTags(*worker)
@@ -217,6 +230,9 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				levelSelector.SetSelected("")
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+				if worker.ActionState.DoesHumanStateNeedParam() {
+					paramsDialogChan <- true
+				}
 			})
 
 			var idSelector *widget.RadioGroup
@@ -295,6 +311,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddHumanState(H_O_POTION)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					humanParamsOnChanged,
+					paramsDialogChan,
+				)
+				paramsDialogChan <- true
 			})
 			potionButton.Importance = widget.HighImportance
 
@@ -395,6 +419,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			healSelfButton = widget.NewButton(H_O_SE_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_SE_HEAL)
 				idSelectorDialog.Show()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					humanParamsOnChanged,
+					paramsDialogChan,
+				)
 
 				trainButton.Disable()
 				healSelfButton.Disable()
@@ -406,6 +437,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			healOneButton = widget.NewButton(H_O_O_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_O_HEAL)
 				idSelectorDialog.Show()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					humanParamsOnChanged,
+					paramsDialogChan,
+				)
 
 				healSelfButton.Disable()
 				bombButton.Disable()
@@ -416,6 +454,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			healMultiButton = widget.NewButton(H_O_M_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_M_HEAL)
 				idSelectorDialog.Show()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					humanParamsOnChanged,
+					paramsDialogChan,
+				)
 
 				trainButton.Disable()
 				healSelfButton.Disable()
@@ -474,6 +519,9 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelector.SetSelected("")
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+				if worker.ActionState.DoesPetStateNeedParam() {
+					paramsDialogChan <- true
+				}
 			})
 
 			petAttackButton = widget.NewButton(P_ATTACK, func() {
@@ -512,12 +560,26 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			petHealSelfButton = widget.NewButton(P_SE_HEAL, func() {
 				worker.ActionState.AddPetState(P_SE_HEAL)
 				idSelectorDialog.Show()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					petParamsOnChanged,
+					paramsDialogChan,
+				)
 			})
 			petHealSelfButton.Importance = widget.HighImportance
 
 			petHealOneButton = widget.NewButton(P_O_HEAL, func() {
 				worker.ActionState.AddPetState(P_O_HEAL)
 				idSelectorDialog.Show()
+				activateParamsSelector(
+					HealOptions,
+					paramsSelector,
+					paramsSelectorDialog,
+					petParamsOnChanged,
+					paramsDialogChan,
+				)
 			})
 			petHealOneButton.Importance = widget.HighImportance
 
@@ -561,6 +623,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	return autoBattleWidget, stopChan
 }
 
+func activateParamsSelector(options []string, paramsSelector *widget.RadioGroup, paramsSelectorDialog *dialog.CustomDialog, humanParamsOnChanged func(s string), paramDialogChan chan bool) {
+	go func() {
+		<-paramDialogChan
+		paramsSelector.Options = options
+		paramsSelector.OnChanged = humanParamsOnChanged
+		paramsSelectorDialog.Show()
+	}()
+}
+
 func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
 	tagContaines = createTagContainer(worker.ActionState, true)
 	tagContaines = append(tagContaines, createTagContainer(worker.ActionState, false)...)
@@ -602,9 +673,15 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 			if v := actionState.GetHumanSkillIds()[i]; v != "" {
 				tag = fmt.Sprintf("%s:%s:%s", tag, v, actionState.GetHumanSkillLevels()[i])
 			}
+			if param := actionState.GetHumanParams()[i]; param != "" {
+				tag = fmt.Sprintf("%s:%s", tag, param)
+			}
 		} else {
 			if v := actionState.GetPetSkillIds()[i]; v != "" {
 				tag = fmt.Sprintf("%s:%s", tag, v)
+			}
+			if param := actionState.GetPetParams()[i]; param != "" {
+				tag = fmt.Sprintf("%s:%s", tag, param)
 			}
 		}
 		tagTextCanvas := canvas.NewText("\t"+tag+"\t\t", color.White)
