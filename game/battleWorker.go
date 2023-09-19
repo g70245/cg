@@ -78,7 +78,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	go func() {
 		defer workerTicker.Stop()
 		w.ActionState.Enabled = true
-		isTransmitted := false
+		isTPed := false
 
 		for {
 			select {
@@ -89,7 +89,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.canMove(*leadHandle) && !isTransmitted {
+					if w.canMove(*leadHandle) && !isTPed {
 						w.MovementState.Move()
 					}
 				default:
@@ -98,7 +98,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-stopChan:
 				w.ActionState.Enabled = false
 				return
-			case isTransmitted = <-isTPedChan:
+			case isTPed = <-isTPedChan:
 				logCheckerStopChan <- true
 			default:
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
