@@ -13,15 +13,11 @@ import (
 )
 
 const (
-	TURN_INTERVAL         = 300
-	WAITING_LOOP_INTERVAL = 200
-	ATTACK_INTERVAL       = 160
-
+	TURN_INTERVAL          = 300
+	WAITING_LOOP_INTERVAL  = 200
+	ATTACK_INTERVAL        = 160
 	BATTLE_ACTION_INTERVAL = 140
 )
-
-var humanBattleStatesForSelector = []string{H_A_ATTACK}
-var petBattleStatesForSelector = []string{P_ATTACK}
 
 const (
 	H_A_ATTACK = "**Attack"
@@ -53,20 +49,32 @@ const (
 	P_ESCAPE  = "Pet Escape"
 )
 
+const (
+	C_U_START_OVER = "Start Over"
+	C_U_CONTINUE   = "Continue"
+	C_U_REPEAT     = "Repeat"
+)
+
+var ControlUnitOptions = []string{C_U_START_OVER, C_U_CONTINUE, C_U_REPEAT}
 var HealOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
 var statesWithParam = []string{H_O_SE_HEAL, H_O_O_HEAL, H_O_M_HEAL, H_O_POTION, P_SE_HEAL, P_O_HEAL}
 
 type BattleActionState struct {
-	hWnd             HWND
-	humanStates      []string
-	petStates        []string
-	nextHumanStateId int
-	humanSkillIds    []string
-	humanSkillLevels []string
-	humanParams      []string
-	nextPetStateId   int
-	petSkillIds      []string
-	petParams        []string
+	hWnd                     HWND
+	humanStates              []string
+	nextHumanStateId         int
+	humanSkillIds            []string
+	humanSkillLevels         []string
+	humanParams              []string
+	humanSuccessControlUnits []string
+	humanFailureControlUnits []string
+
+	petStates              []string
+	nextPetStateId         int
+	petSkillIds            []string
+	petParams              []string
+	petSuccessControlUnits []string
+	petFailureControlUnits []string
 
 	Enabled         bool
 	IsOutOfMana     bool
@@ -75,93 +83,6 @@ type BattleActionState struct {
 	isPetHanging    bool
 
 	petMachineContinuousCounter int
-}
-
-func CreateNewBattleActionState(hWnd HWND) BattleActionState {
-	return BattleActionState{
-		hWnd:             hWnd,
-		humanStates:      []string{H_A_ATTACK},
-		humanSkillIds:    []string{""},
-		humanSkillLevels: []string{""},
-		humanParams:      []string{""},
-		petStates:        []string{P_ATTACK},
-		petSkillIds:      []string{""},
-		petParams:        []string{""},
-	}
-}
-
-func (b *BattleActionState) AddHumanState(newState string) {
-	b.humanStates = append(b.humanStates, newState)
-	b.humanSkillIds = append(b.humanSkillIds, "")
-	b.humanSkillLevels = append(b.humanSkillLevels, "")
-	b.humanParams = append(b.humanParams, "")
-}
-
-func (b *BattleActionState) AddPetState(newState string) {
-	b.petStates = append(b.petStates, newState)
-	b.petSkillIds = append(b.petSkillIds, "")
-	b.petParams = append(b.petParams, "")
-}
-
-func (b *BattleActionState) AddHumanSkillId(newSkillId string) {
-	b.humanSkillIds[len(b.humanSkillIds)-1] = newSkillId
-}
-
-func (b *BattleActionState) AddHumanSkillLevel(newLevel string) {
-	b.humanSkillLevels[len(b.humanSkillLevels)-1] = newLevel
-}
-
-func (b *BattleActionState) AddHumanParams(param string) {
-	b.humanParams[len(b.humanParams)-1] = param
-}
-
-func (b *BattleActionState) AddPetSkillId(newSkillId string) {
-	b.petSkillIds[len(b.petSkillIds)-1] = newSkillId
-}
-
-func (b *BattleActionState) AddPetParams(param string) {
-	b.petParams[len(b.petParams)-1] = param
-}
-
-func (b *BattleActionState) ClearHumanStates() {
-	b.humanStates = b.humanStates[:0]
-	b.humanSkillIds = b.humanSkillIds[:0]
-	b.humanSkillLevels = b.humanSkillLevels[:0]
-	b.humanParams = b.humanParams[:0]
-}
-
-func (b *BattleActionState) ClearPetStates() {
-	b.petStates = b.petStates[:0]
-	b.petSkillIds = b.petSkillIds[:0]
-	b.petParams = b.petParams[:0]
-}
-
-func (b *BattleActionState) GetHumanStates() []string {
-	return b.humanStates
-}
-
-func (b *BattleActionState) GetHumanSkillIds() []string {
-	return b.humanSkillIds
-}
-
-func (b *BattleActionState) GetHumanSkillLevels() []string {
-	return b.humanSkillLevels
-}
-
-func (b *BattleActionState) GetHumanParams() []string {
-	return b.humanParams
-}
-
-func (b *BattleActionState) GetPetStates() []string {
-	return b.petStates
-}
-
-func (b *BattleActionState) GetPetSkillIds() []string {
-	return b.petSkillIds
-}
-
-func (b *BattleActionState) GetPetParams() []string {
-	return b.petParams
 }
 
 func (b *BattleActionState) Act() {
@@ -607,4 +528,134 @@ func (b *BattleActionState) DoesHumanStateNeedParam() bool {
 
 func (b *BattleActionState) DoesPetStateNeedParam() bool {
 	return slices.Contains(statesWithParam, b.petStates[len(b.petStates)-1])
+}
+
+func CreateNewBattleActionState(hWnd HWND) BattleActionState {
+	return BattleActionState{
+		hWnd:                     hWnd,
+		humanStates:              []string{H_A_ATTACK},
+		humanSkillIds:            []string{""},
+		humanSkillLevels:         []string{""},
+		humanParams:              []string{""},
+		humanSuccessControlUnits: []string{C_U_CONTINUE},
+		humanFailureControlUnits: []string{C_U_CONTINUE},
+		petStates:                []string{P_ATTACK},
+		petSkillIds:              []string{""},
+		petParams:                []string{""},
+		petSuccessControlUnits:   []string{C_U_CONTINUE},
+		petFailureControlUnits:   []string{C_U_CONTINUE},
+	}
+}
+
+func (b *BattleActionState) AddHumanState(newState string) {
+	b.humanStates = append(b.humanStates, newState)
+	b.humanSkillIds = append(b.humanSkillIds, "")
+	b.humanSkillLevels = append(b.humanSkillLevels, "")
+	b.humanParams = append(b.humanParams, "")
+	b.humanSuccessControlUnits = append(b.humanSuccessControlUnits, "")
+	b.humanFailureControlUnits = append(b.humanFailureControlUnits, "")
+}
+
+func (b *BattleActionState) AddPetState(newState string) {
+	b.petStates = append(b.petStates, newState)
+	b.petSkillIds = append(b.petSkillIds, "")
+	b.petParams = append(b.petParams, "")
+	b.petSuccessControlUnits = append(b.petSuccessControlUnits, "")
+	b.petFailureControlUnits = append(b.petFailureControlUnits, "")
+}
+
+func (b *BattleActionState) AddHumanSkillId(newSkillId string) {
+	b.humanSkillIds[len(b.humanSkillIds)-1] = newSkillId
+}
+
+func (b *BattleActionState) AddHumanSkillLevel(newLevel string) {
+	b.humanSkillLevels[len(b.humanSkillLevels)-1] = newLevel
+}
+
+func (b *BattleActionState) AddHumanParams(param string) {
+	b.humanParams[len(b.humanParams)-1] = param
+}
+
+func (b *BattleActionState) AddHumanSuccessControlUnits(param string) {
+	b.humanSuccessControlUnits[len(b.humanSuccessControlUnits)-1] = param
+}
+
+func (b *BattleActionState) AddHumanFailureControlUnits(param string) {
+	b.humanFailureControlUnits[len(b.humanFailureControlUnits)-1] = param
+}
+
+func (b *BattleActionState) AddPetSkillId(newSkillId string) {
+	b.petSkillIds[len(b.petSkillIds)-1] = newSkillId
+}
+
+func (b *BattleActionState) AddPetParams(param string) {
+	b.petParams[len(b.petParams)-1] = param
+}
+
+func (b *BattleActionState) AddPetSuccessControlUnits(param string) {
+	b.petSuccessControlUnits[len(b.petSuccessControlUnits)-1] = param
+}
+
+func (b *BattleActionState) AddPetFailureControlUnits(param string) {
+	b.petFailureControlUnits[len(b.petFailureControlUnits)-1] = param
+}
+
+func (b *BattleActionState) ClearHumanStates() {
+	b.humanStates = b.humanStates[:0]
+	b.humanSkillIds = b.humanSkillIds[:0]
+	b.humanSkillLevels = b.humanSkillLevels[:0]
+	b.humanParams = b.humanParams[:0]
+	b.humanSuccessControlUnits = b.humanSuccessControlUnits[:0]
+	b.humanFailureControlUnits = b.humanFailureControlUnits[:0]
+}
+
+func (b *BattleActionState) ClearPetStates() {
+	b.petStates = b.petStates[:0]
+	b.petSkillIds = b.petSkillIds[:0]
+	b.petParams = b.petParams[:0]
+	b.petSuccessControlUnits = b.petSuccessControlUnits[:0]
+	b.petFailureControlUnits = b.petFailureControlUnits[:0]
+}
+
+func (b *BattleActionState) GetHumanStates() []string {
+	return b.humanStates
+}
+
+func (b *BattleActionState) GetHumanSkillIds() []string {
+	return b.humanSkillIds
+}
+
+func (b *BattleActionState) GetHumanSkillLevels() []string {
+	return b.humanSkillLevels
+}
+
+func (b *BattleActionState) GetHumanParams() []string {
+	return b.humanParams
+}
+
+func (b *BattleActionState) GetHumanSuccessControlUnits() []string {
+	return b.humanSuccessControlUnits
+}
+func (b *BattleActionState) GetHumanFailureControlUnits() []string {
+	return b.humanFailureControlUnits
+}
+
+func (b *BattleActionState) GetPetStates() []string {
+	return b.petStates
+}
+
+func (b *BattleActionState) GetPetSkillIds() []string {
+	return b.petSkillIds
+}
+
+func (b *BattleActionState) GetPetParams() []string {
+	return b.petParams
+}
+
+func (b *BattleActionState) GetPetSuccessControlUnits() []string {
+	return b.petSuccessControlUnits
+}
+
+func (b *BattleActionState) GetPetFailureControlUnits() []string {
+	return b.petFailureControlUnits
 }
