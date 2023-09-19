@@ -169,6 +169,22 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 		var statesViewer *fyne.Container
 
+		var paramsSelectorDialog *dialog.CustomDialog
+		paramsSelector := widget.NewRadioGroup([]string{}, func(s string) {
+			if s != "" {
+				worker.ActionState.AddHumanSkillLevel(s)
+				paramsSelectorDialog.Hide()
+			}
+		})
+		paramsSelector.Horizontal = true
+		paramsSelector.Required = true
+		paramsSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill level", paramsSelector, window)
+		paramsSelectorDialog.SetOnClosed(func() {
+			paramsSelector.SetSelected("")
+			statesViewer.Objects = generateTags(*worker)
+			statesViewer.Refresh()
+		})
+
 		humanStateSelector := widget.NewButtonWithIcon("Man Action", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanStates()
 			statesViewer.Objects = generateTags(*worker)
@@ -346,8 +362,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			stealButton.Importance = widget.SuccessImportance
 
-			trainButton = widget.NewButton(H_S_TRAIN, func() {
-				worker.ActionState.AddHumanState(H_S_TRAIN)
+			trainButton = widget.NewButton(H_S_TRAIN_SKILL, func() {
+				worker.ActionState.AddHumanState(H_S_TRAIN_SKILL)
 				idSelectorDialog.Show()
 
 				bombButton.Disable()

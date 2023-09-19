@@ -37,10 +37,10 @@ const (
 	H_O_M_HEAL     = "*Heal Multi"
 	H_O_RIDE       = "*Ride"
 
-	H_S_HANG  = "Hang"
-	H_S_STEAL = "Steal"
-	H_S_CATCH = "Catch"
-	H_S_TRAIN = "Train"
+	H_S_HANG        = "Hang"
+	H_S_STEAL       = "Steal"
+	H_S_CATCH       = "Catch"
+	H_S_TRAIN_SKILL = "Train Skill"
 
 	P_ATTACK  = "Pet Attack"
 	P_HANG    = "Pet Hang"
@@ -56,17 +56,19 @@ type BattleActionState struct {
 	humanStates      []string
 	petStates        []string
 	nextHumanStateId int
-	nextPetStateId   int
 	humanSkillIds    []string
 	humanSkillLevels []string
+	humanParams      []string
+	nextPetStateId   int
 	petSkillIds      []string
+	petParams        []string
 
-	Enabled        bool
-	IsOutOfMana    bool
-	isOnRide       bool
-	isTraining     bool
-	isHumanHanging bool
-	isPetHanging   bool
+	Enabled         bool
+	IsOutOfMana     bool
+	isRideTriggered bool
+	isTrainingSkill bool
+	isHumanHanging  bool
+	isPetHanging    bool
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -75,8 +77,10 @@ func CreateNewBattleActionState(hWnd HWND) BattleActionState {
 		humanStates:      []string{H_A_ATTACK},
 		humanSkillIds:    []string{""},
 		humanSkillLevels: []string{""},
+		humanParams:      []string{""},
 		petStates:        []string{P_ATTACK},
 		petSkillIds:      []string{""},
+		petParams:        []string{""},
 	}
 }
 
@@ -84,11 +88,13 @@ func (b *BattleActionState) AddHumanState(newState string) {
 	b.humanStates = append(b.humanStates, newState)
 	b.humanSkillIds = append(b.humanSkillIds, "")
 	b.humanSkillLevels = append(b.humanSkillLevels, "")
+	b.humanParams = append(b.humanParams, "")
 }
 
 func (b *BattleActionState) AddPetState(newState string) {
 	b.petStates = append(b.petStates, newState)
 	b.petSkillIds = append(b.petSkillIds, "")
+	b.petParams = append(b.petParams, "")
 }
 
 func (b *BattleActionState) AddHumanSkillId(newSkillId string) {
@@ -99,19 +105,29 @@ func (b *BattleActionState) AddHumanSkillLevel(newLevel string) {
 	b.humanSkillLevels[len(b.humanSkillLevels)-1] = newLevel
 }
 
+func (b *BattleActionState) AddHumanParams(param string) {
+	b.humanParams[len(b.humanParams)-1] = param
+}
+
 func (b *BattleActionState) AddPetSkillId(newSkillId string) {
 	b.petSkillIds[len(b.petSkillIds)-1] = newSkillId
+}
+
+func (b *BattleActionState) AddPetParams(param string) {
+	b.petParams[len(b.petParams)-1] = param
 }
 
 func (b *BattleActionState) ClearHumanStates() {
 	b.humanStates = b.humanStates[:0]
 	b.humanSkillIds = b.humanSkillIds[:0]
 	b.humanSkillLevels = b.humanSkillLevels[:0]
+	b.humanParams = b.humanParams[:0]
 }
 
 func (b *BattleActionState) ClearPetStates() {
 	b.petStates = b.petStates[:0]
 	b.petSkillIds = b.petSkillIds[:0]
+	b.petParams = b.petParams[:0]
 }
 
 func (b *BattleActionState) GetHumanStates() []string {
@@ -126,12 +142,20 @@ func (b *BattleActionState) GetHumanSkillLevels() []string {
 	return b.humanSkillLevels
 }
 
+func (b *BattleActionState) GetHumanParams() []string {
+	return b.humanParams
+}
+
 func (b *BattleActionState) GetPetStates() []string {
 	return b.petStates
 }
 
 func (b *BattleActionState) GetPetSkillIds() []string {
 	return b.petSkillIds
+}
+
+func (b *BattleActionState) GetPetParams() []string {
+	return b.petParams
 }
 
 func (b *BattleActionState) Act() {
@@ -159,8 +183,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
-		if b.isOnRide {
-			b.isOnRide = false
+		if b.isRideTriggered && !b.isTrainingSkill {
+			b.isRideTriggered = false
 		}
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -312,7 +336,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			} else {
 				b.logH("already recalled")
 			}
-		case H_S_TRAIN:
+		case H_S_TRAIN_SKILL:
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
@@ -345,8 +369,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 func (b *BattleActionState) executePetStateMachiine() {
 
 	for _, state := range b.humanStates {
-		if state == H_S_TRAIN {
-			b.isTraining = true
+		if state == H_S_TRAIN_SKILL {
+			b.isTrainingSkill = true
 		}
 	}
 
@@ -435,20 +459,17 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find self")
 			}
 		case P_RIDE:
-			if b.isOnRide && !b.isTraining {
-				b.logP("is already on a ride")
+			if b.isRideTriggered && b.isTrainingSkill {
+				b.logP("is already off ride")
+			} else if b.isRideTriggered && !b.isTrainingSkill {
+				b.logP("is already on ride")
 			} else {
 				b.openPetSkillWindow()
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if isPetOutOfMana(b.hWnd) {
-						b.logP("is out of mana")
-						b.IsOutOfMana = true
-					} else {
-						b.logP("succeeds on riding?")
-						b.isOnRide = true
-					}
+					b.logP("succeeds on/off ride?")
+					b.isRideTriggered = true
 				} else {
 					b.logP("cannot find the position of window")
 				}
@@ -545,9 +566,17 @@ func (b *BattleActionState) openPetSkillWindow() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	log.Printf("%-15s %s", "["+strings.Trim(b.humanStates[b.nextHumanStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
+	log.Printf("[%s]%-13s %s",
+		fmt.Sprint(b.hWnd),
+		fmt.Sprintf("[%s]", strings.Trim(b.humanStates[b.nextHumanStateId], "*")),
+		fmt.Sprintf("Human %s", message),
+	)
 }
 
 func (b *BattleActionState) logP(message string) {
-	log.Printf("%-15s Pet %s", "["+strings.Trim(b.petStates[b.nextPetStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
+	log.Printf("[%s]%-13s %s",
+		fmt.Sprint(b.hWnd),
+		fmt.Sprintf("[%s]", strings.Trim(b.petStates[b.nextPetStateId], "*")),
+		fmt.Sprintf("Pet %s", message),
+	)
 }
