@@ -64,8 +64,7 @@ func main() {
 	alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 		if uc != nil {
 			system.CloseBeeper()
-			go system.CreateBeeper(uc.URI().Path())
-			system.PlayBeeper()
+			system.CreateBeeper(uc.URI().Path())
 			alertDialogButton.SetIcon(theme.MediaMusicIcon())
 		} else {
 			system.CloseBeeper()

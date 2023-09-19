@@ -13,40 +13,42 @@ import (
 var alertPausedChan, alertDoneChan chan bool
 
 func CreateBeeper(path string) {
-	alertPausedChan = make(chan bool)
-	alertDoneChan = make(chan bool)
+	go func() {
+		alertPausedChan = make(chan bool)
+		alertDoneChan = make(chan bool)
 
-	f, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	streamer, format, err := mp3.Decode(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer streamer.Close()
-
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
-	speaker.Play(ctrl)
-
-	for {
-		select {
-		case paused := <-alertPausedChan:
-			speaker.Lock()
-			ctrl.Paused = paused
-			speaker.Unlock()
-		case <-alertDoneChan:
-			speaker.Lock()
-			ctrl.Paused = true
-			speaker.Unlock()
-
-			defer speaker.Clear()
-			defer speaker.Close()
-			return
+		f, err := os.Open(path)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
+
+		streamer, format, err := mp3.Decode(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer streamer.Close()
+
+		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+		ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
+		speaker.Play(ctrl)
+
+		for {
+			select {
+			case paused := <-alertPausedChan:
+				speaker.Lock()
+				ctrl.Paused = paused
+				speaker.Unlock()
+			case <-alertDoneChan:
+				speaker.Lock()
+				ctrl.Paused = true
+				speaker.Unlock()
+
+				defer speaker.Clear()
+				defer speaker.Close()
+				return
+			}
+		}
+	}()
 }
 
 func PlayBeeper() {

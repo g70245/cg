@@ -40,7 +40,7 @@ const (
 	H_S_HANG  = "Hang"
 	H_S_STEAL = "Steal"
 	H_S_CATCH = "Catch"
-	H_S_TRAIN = "Train Skill"
+	H_S_TRAIN = "Train"
 
 	P_ATTACK  = "Pet Attack"
 	P_HANG    = "Pet Hang"
@@ -64,6 +64,7 @@ type BattleActionState struct {
 	Enabled        bool
 	IsOutOfMana    bool
 	isOnRide       bool
+	isTraining     bool
 	isHumanHanging bool
 	isPetHanging   bool
 }
@@ -342,6 +343,13 @@ func (b *BattleActionState) executeHumanStateMachine() {
 }
 
 func (b *BattleActionState) executePetStateMachiine() {
+
+	for _, state := range b.humanStates {
+		if state == H_S_TRAIN {
+			b.isTraining = true
+		}
+	}
+
 	for b.nextPetStateId < len(b.petStates) && getScene(b.hWnd) == BATTLE_SCENE && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
 			if !b.Enabled {
@@ -427,7 +435,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find self")
 			}
 		case P_RIDE:
-			if b.isOnRide {
+			if b.isOnRide && !b.isTraining {
 				b.logP("is already on a ride")
 			} else {
 				b.openPetSkillWindow()
