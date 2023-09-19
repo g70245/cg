@@ -169,16 +169,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 		var statesViewer *fyne.Container
 
+		// prepare the params selector for later usage
 		var paramsSelectorDialog *dialog.CustomDialog
-		paramsSelector := widget.NewRadioGroup([]string{}, func(s string) {
-			if s != "" {
-				worker.ActionState.AddHumanSkillLevel(s)
-				paramsSelectorDialog.Hide()
-			}
-		})
+		paramsSelector := widget.NewRadioGroup(nil, nil)
 		paramsSelector.Horizontal = true
 		paramsSelector.Required = true
-		paramsSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill level", paramsSelector, window)
+		paramsSelectorDialog = dialog.NewCustomWithoutButtons("", paramsSelector, window)
 		paramsSelectorDialog.SetOnClosed(func() {
 			paramsSelector.SetSelected("")
 			statesViewer.Objects = generateTags(*worker)
@@ -555,7 +551,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
 
-		statesViewer = container.NewHBox(generateTags(*worker)...)
+		statesViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
 
 		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
 		configContainer.Add(workerContainer)

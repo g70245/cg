@@ -65,10 +65,11 @@ type BattleActionState struct {
 
 	Enabled         bool
 	IsOutOfMana     bool
-	IsRideTriggered bool
 	isTrainingSkill bool
 	isHumanHanging  bool
 	isPetHanging    bool
+
+	petMachineContinuousCounter int
 }
 
 func CreateNewBattleActionState(hWnd HWND) BattleActionState {
@@ -161,10 +162,6 @@ func (b *BattleActionState) GetPetParams() []string {
 func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
-	if b.isTrainingSkill && b.IsRideTriggered {
-		b.IsRideTriggered = false
-	}
-
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
@@ -187,10 +184,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
-		// for re-ride
-		if b.IsRideTriggered && !b.isTrainingSkill {
-			b.IsRideTriggered = false
-		}
+		b.petMachineContinuousCounter = 0
+
 		if b.isPetHanging {
 			b.isPetHanging = false
 			b.nextPetStateId++
@@ -400,6 +395,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				usePetSkill(b.hWnd, x, y, 1)
 				if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("attacked")
+					b.petMachineContinuousCounter++
 				} else {
 					b.logP("missed a hit")
 				}
@@ -417,6 +413,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					b.IsOutOfMana = true
 				} else if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("used a skill")
+					b.petMachineContinuousCounter++
 				} else {
 					b.logP("missed a hit")
 				}
@@ -426,6 +423,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case P_HANG:
 			b.logP("is hanging")
 			b.isPetHanging = true
+			b.petMachineContinuousCounter++
 			return
 		case P_DEFEND:
 			b.openPetSkillWindow()
@@ -437,6 +435,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					b.IsOutOfMana = true
 				} else {
 					b.logP("defended")
+					b.petMachineContinuousCounter++
 				}
 			} else {
 				b.logP("cannot find the position of window")
@@ -453,6 +452,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 							b.IsOutOfMana = true
 						} else {
 							b.logP("healed self")
+							b.petMachineContinuousCounter++
 						}
 					} else {
 						b.logP("cannot find the position of window")
@@ -464,20 +464,24 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find self")
 			}
 		case P_RIDE:
-			if b.IsRideTriggered && b.isTrainingSkill {
+			if b.isTrainingSkill && b.petMachineContinuousCounter < 2 {
 				b.logP("is already off ride")
-			} else if b.IsRideTriggered && !b.isTrainingSkill {
+				break
+			}
+
+			if !b.isTrainingSkill && b.petMachineContinuousCounter != 0 {
 				b.logP("is already on ride")
+				break
+			}
+
+			b.openPetSkillWindow()
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
+				usePetSkill(b.hWnd, x, y, id)
+				b.logP("succeeds on/off ride?")
+				b.petMachineContinuousCounter++
 			} else {
-				b.openPetSkillWindow()
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
-					id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
-					usePetSkill(b.hWnd, x, y, id)
-					b.logP("succeeds on/off ride?")
-					b.IsRideTriggered = true
-				} else {
-					b.logP("cannot find the position of window")
-				}
+				b.logP("cannot find the position of window")
 			}
 		case P_O_HEAL:
 			closeAllWindow(b.hWnd)
@@ -489,6 +493,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					usePetSkill(b.hWnd, x, y, id)
 					if b.aim(target, PetTargetingChecker) {
 						b.logP("healed an ally")
+						b.petMachineContinuousCounter++
 					} else {
 						b.logP("cannot target")
 					}
