@@ -80,6 +80,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	go func() {
 		defer workerTicker.Stop()
 		w.ActionState.Enabled = true
+		w.ActionState.IsOutOfMana = false
 		isTPed := false
 		isPlayingBeeper := false
 
