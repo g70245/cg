@@ -22,9 +22,8 @@ const (
 )
 
 var (
-	window         fyne.Window
-	logDir         = new(string)
-	alertMusicPath = new(string)
+	window fyne.Window
+	logDir = new(string)
 )
 
 func test() {
@@ -64,9 +63,13 @@ func main() {
 	var alertDialogButton *widget.Button
 	alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 		if uc != nil {
-			*alertMusicPath = uc.URI().Path()
+			system.CloseBeeper()
+			go system.CreateBeeper(uc.URI().Path())
+			system.PlayBeeper()
 			alertDialogButton.SetIcon(theme.MediaMusicIcon())
-
+		} else {
+			system.CloseBeeper()
+			alertDialogButton.SetIcon(theme.FolderIcon())
 		}
 	}, window)
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
@@ -79,6 +82,8 @@ func main() {
 		if lu != nil {
 			*logDir = lu.Path()
 			logDialogButton.SetIcon(theme.FolderOpenIcon())
+		} else {
+			logDialogButton.SetIcon(theme.FolderIcon())
 		}
 	}, window)
 	logDialogButton = widget.NewButtonWithIcon("Log Directory", theme.FolderIcon(), func() {

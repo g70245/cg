@@ -1,6 +1,8 @@
 package game
 
 import (
+	. "cg/system"
+
 	"fmt"
 	"time"
 
@@ -79,6 +81,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		defer workerTicker.Stop()
 		w.ActionState.Enabled = true
 		isTPed := false
+		isPlayingBeeper := false
 
 		for {
 			select {
@@ -99,8 +102,13 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 				w.ActionState.Enabled = false
 				return
 			case isTPed = <-isTPedChan:
+				PlayBeeper()
 				logCheckerStopChan <- true
 			default:
+				if !isPlayingBeeper && w.ActionState.IsOutOfMana {
+					PlayBeeper()
+					isPlayingBeeper = true
+				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
 			}
 		}

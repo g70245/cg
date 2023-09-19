@@ -62,6 +62,7 @@ type BattleActionState struct {
 	petSkillIds      []string
 
 	Enabled        bool
+	IsOutOfMana    bool
 	isOnRide       bool
 	isHumanHanging bool
 	isPetHanging   bool
@@ -181,6 +182,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
+					b.IsOutOfMana = true
 				} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
 					b.logH("used a skill")
 				} else {
@@ -224,6 +226,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
+					b.IsOutOfMana = true
 				} else {
 					b.logH("is tring to get on a pet")
 					for i, v := range b.petStates {
@@ -246,6 +249,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						useHumanSkill(b.hWnd, x, y, id, level)
 						if isHumanOutOfMana(b.hWnd, x, y) {
 							b.logH("is out of mana")
+							b.IsOutOfMana = true
 						} else {
 							b.logH("healed self")
 						}
@@ -315,6 +319,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
+					b.IsOutOfMana = true
 				} else if b.aim(&PLAYER_L_3_P, HumanTargetingChecker) {
 					b.logH("is training")
 					b.nextHumanStateId = 0
@@ -372,6 +377,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				usePetSkill(b.hWnd, x, y, id)
 				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
+					b.IsOutOfMana = true
 				} else if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("used a skill")
 				} else {
@@ -391,6 +397,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				usePetSkill(b.hWnd, x, y, id)
 				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
+					b.IsOutOfMana = true
 				} else {
 					b.logP("defended")
 				}
@@ -406,6 +413,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 						usePetSkill(b.hWnd, x, y, id)
 						if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 							b.logP("is out of mana")
+							b.IsOutOfMana = true
 						} else {
 							b.logP("healed self")
 						}
@@ -428,6 +436,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					usePetSkill(b.hWnd, x, y, id)
 					if isPetOutOfMana(b.hWnd) {
 						b.logP("is out of mana")
+						b.IsOutOfMana = true
 					} else {
 						b.logP("succeeds on riding?")
 						b.isOnRide = true
@@ -532,5 +541,5 @@ func (b *BattleActionState) logH(message string) {
 }
 
 func (b *BattleActionState) logP(message string) {
-	log.Printf("%-15s %s", "["+strings.Trim(b.petStates[b.nextPetStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
+	log.Printf("%-15s Pet %s", "["+strings.Trim(b.petStates[b.nextPetStateId], "*")+"]", fmt.Sprintf("Handle %s %s", fmt.Sprint(b.hWnd), message))
 }

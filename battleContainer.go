@@ -2,6 +2,7 @@ package main
 
 import (
 	. "cg/game"
+	. "cg/system"
 	"image/color"
 	"math"
 	"strings"
@@ -121,6 +122,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				workers[i].ActionState.Enabled = false
 				stopChan <- true
 			}
+			StopBeeper()
 			turn(theme.MediaPlayIcon(), lever)
 		}
 	})
