@@ -158,7 +158,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				movementModeButton.SetText(s)
 			} else {
 				worker.MovementState.Mode = BattleMovementMode(NONE)
-				movementModeButton.SetText("Choose Move Way")
+				movementModeButton.SetText("Move Way")
 			}
 			movementModeDialog.Hide()
 		})
