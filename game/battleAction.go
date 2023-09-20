@@ -600,17 +600,17 @@ func (b *BattleActionState) openPetSkillWindow() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	log.Printf("[%s]%-13s %s",
-		fmt.Sprint(b.hWnd),
-		fmt.Sprintf("[%s]", strings.Trim(b.humanStates[b.nextHumanStateId], "*")),
-		fmt.Sprintf("Human %s", message),
+	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
+	log.Printf("%-28s %s",
+		header,
+		fmt.Sprintf("Pet %s", message),
 	)
 }
 
 func (b *BattleActionState) logP(message string) {
-	log.Printf("[%s]%-13s %s",
-		fmt.Sprint(b.hWnd),
-		fmt.Sprintf("[%s]", strings.Trim(b.petStates[b.nextPetStateId], "*")),
+	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.petStates[b.nextPetStateId], "*"))
+	log.Printf("%-28s %s",
+		header,
 		fmt.Sprintf("Pet %s", message),
 	)
 }
