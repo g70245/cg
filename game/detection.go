@@ -315,15 +315,16 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 	}
 
 	for i := range targets {
-		x := targets[i].x + 12
-		for x <= targets[i].x+18 {
-			y := targets[i].y
+		x := targets[i].x + 8
+		for x <= targets[i].x+30 {
+			y := targets[i].y - 10
 			for y >= targets[i].y-26 {
 				if sys.GetColor(hWnd, x, y) == COLOR_BATTLE_SELF_TITLE {
 					return &targets[i], true
 				}
 				y--
 			}
+
 			x++
 		}
 	}
