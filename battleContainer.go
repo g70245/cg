@@ -310,8 +310,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		paramsSelectorDialog = dialog.NewCustomWithoutButtons("Choose param", paramsSelector, window)
 		paramsSelectorDialog.SetOnClosed(func() {
 			paramsSelector.SetSelected("")
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
 		})
 
 		humanStateSelector := widget.NewButtonWithIcon("Man Action", theme.ContentAddIcon(), func() {
@@ -348,8 +346,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			levelSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill level", levelSelector, window)
 			levelSelectorDialog.SetOnClosed(func() {
 				levelSelector.SetSelected("")
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+
 				if worker.ActionState.DoesHumanStateNeedParam() {
 					activateSelector(
 						HealOptions,
@@ -382,8 +379,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			attackButton = widget.NewButton(H_A_ATTACK, func() {
 				worker.ActionState.AddHumanState(H_A_ATTACK)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateHumanControlUnitSelectors()
 
@@ -394,8 +389,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			defenceButton = widget.NewButton(H_A_DEFEND, func() {
 				worker.ActionState.AddHumanState(H_A_DEFEND)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateSelector(
 					ControlUnitOptions,
@@ -411,8 +404,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			escapeButton = widget.NewButton(H_A_ESCAPE, func() {
 				worker.ActionState.AddHumanState(H_A_ESCAPE)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateSelector(
 					ControlUnitOptions,
@@ -434,8 +425,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			catchButton = widget.NewButton(H_S_CATCH, func() {
 				worker.ActionState.AddHumanState(H_S_CATCH)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateHumanControlUnitSelectors()
 
@@ -445,8 +434,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			bombButton = widget.NewButton(H_O_BOMB, func() {
 				worker.ActionState.AddHumanState(H_O_BOMB)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateHumanControlUnitSelectors()
 
@@ -464,8 +451,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			potionButton = widget.NewButton(H_O_POTION, func() {
 				worker.ActionState.AddHumanState(H_O_POTION)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				// directly activate paramsSelector
 				activateSelector(
@@ -482,8 +467,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			recallButton = widget.NewButton(H_O_PET_RECALL, func() {
 				worker.ActionState.AddHumanState(H_O_PET_RECALL)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateSelector(
 					ControlUnitOptions,
@@ -501,8 +484,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			moveButton = widget.NewButton(H_A_MOVE, func() {
 				worker.ActionState.AddHumanState(H_A_MOVE)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activateSelector(
 					ControlUnitOptions,
@@ -658,6 +639,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petHangButton *widget.Button
 			var petSkillButton *widget.Button
 			var petDefenceButton *widget.Button
+			var petEscapeButton *widget.Button
 			var petHealSelfButton *widget.Button
 			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
@@ -675,8 +657,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			idSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill index", idSelector, window)
 			idSelectorDialog.SetOnClosed(func() {
 				idSelector.SetSelected("")
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+
 				if worker.ActionState.DoesPetStateNeedParam() {
 					activateSelector(
 						HealOptions,
@@ -693,8 +674,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			petAttackButton = widget.NewButton(P_ATTACK, func() {
 				worker.ActionState.AddPetState(P_ATTACK)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
 
 				activatePetControlUnitSelectors()
 			})
@@ -754,10 +733,26 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petOffRideButton.Importance = widget.HighImportance
 
+			petEscapeButton = widget.NewButton(P_ESCAPE, func() {
+				worker.ActionState.AddPetState(P_ESCAPE)
+
+				activateSelector(
+					ControlUnitOptions,
+					failureCUSelector,
+					petFailureCUSelectorDialog,
+					petFailureCUOnChanged,
+					cuSelectorDialogChan,
+				)
+
+				cuSelectorDialogChan <- true
+			})
+			petEscapeButton.Importance = widget.HighImportance
+
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
 				petSkillButton,
 				petDefenceButton,
+				petEscapeButton,
 				petRideButton,
 				petOffRideButton,
 				petHealSelfButton,
@@ -777,7 +772,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
 
-		statesViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
+		statesViewer = container.NewAdaptiveGrid(5, generateTags(*worker)...)
 
 		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
 		configContainer.Add(workerContainer)

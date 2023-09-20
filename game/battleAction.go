@@ -503,6 +503,15 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("found no one needed to be taken care of")
 				cu = b.petSuccessControlUnits[b.nextPetStateId]
 			}
+		case P_ESCAPE:
+			if !isOnRide(b.hWnd) {
+				b.logP("cannot escape while off ride")
+				break
+			}
+
+			b.escape()
+			b.logP("escaped")
+			cu = b.petFailureControlUnits[b.nextPetStateId]
 		default:
 		}
 
