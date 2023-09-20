@@ -248,10 +248,10 @@ func canRecall(hWnd HWND) bool {
 }
 
 var allTargets = []CheckTarget{
-	PLAYER_L_1_H,
-	PLAYER_L_2_H,
 	PLAYER_L_3_H,
+	PLAYER_L_2_H,
 	PLAYER_L_4_H,
+	PLAYER_L_1_H,
 	PLAYER_L_5_H,
 	PLAYER_L_1_P,
 	PLAYER_L_2_P,

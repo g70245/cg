@@ -171,49 +171,71 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 		/* Control Unit Selectors */
 		cuSelectorDialogChan := make(chan bool)
-		var successCUSelectorDialog *dialog.CustomDialog
-		var failureCUSelectorDialog *dialog.CustomDialog
+		var humanSuccessCUSelectorDialog *dialog.CustomDialog
+		var humanFailureCUSelectorDialog *dialog.CustomDialog
+		var petSuccessCUSelectorDialog *dialog.CustomDialog
+		var petFailureCUSelectorDialog *dialog.CustomDialog
 		successCUSelector := widget.NewRadioGroup(nil, nil)
 		failureCUSelector := widget.NewRadioGroup(nil, nil)
 		humanSuccessCUOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddHumanSuccessControlUnits(s)
-				successCUSelectorDialog.Hide()
+				humanSuccessCUSelectorDialog.Hide()
 			}
 		}
 		humanFailureCUOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddHumanFailureControlUnits(s)
-				failureCUSelectorDialog.Hide()
+				humanFailureCUSelectorDialog.Hide()
 			}
 		}
 		petSuccessCUOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddPetSuccessControlUnits(s)
-				successCUSelectorDialog.Hide()
+				petSuccessCUSelectorDialog.Hide()
 			}
 		}
 		petFailureCUOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddPetFailureControlUnits(s)
-				failureCUSelectorDialog.Hide()
+				petFailureCUSelectorDialog.Hide()
 			}
 		}
 		successCUSelector.Horizontal = true
 		successCUSelector.Required = true
 		failureCUSelector.Horizontal = true
 		failureCUSelector.Required = true
-		successCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose success control unit", successCUSelector, window)
-		successCUSelectorDialog.SetOnClosed(func() {
+		humanSuccessCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose success control unit", successCUSelector, window)
+		humanSuccessCUSelectorDialog.SetOnClosed(func() {
 			successCUSelector.SetSelected("")
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
 
-			// activate the failureControlUnitSelector
-			cuSelectorDialogChan <- true
+			// activate the humanFailureCUSelectorDialog
+			if worker.ActionState.DoesHumanStateNeedFailureControlUnit() {
+				cuSelectorDialogChan <- true
+			}
 		})
-		failureCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose failure control unit", failureCUSelector, window)
-		failureCUSelectorDialog.SetOnClosed(func() {
+		humanFailureCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose failure control unit", failureCUSelector, window)
+		humanFailureCUSelectorDialog.SetOnClosed(func() {
+			failureCUSelector.SetSelected("")
+			statesViewer.Objects = generateTags(*worker)
+			statesViewer.Refresh()
+		})
+
+		petSuccessCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose success control unit", successCUSelector, window)
+		petSuccessCUSelectorDialog.SetOnClosed(func() {
+			successCUSelector.SetSelected("")
+			statesViewer.Objects = generateTags(*worker)
+			statesViewer.Refresh()
+
+			// activate the petFailureCUSelectorDialog
+			if worker.ActionState.DoesPetStateNeedFailureControlUnit() {
+				cuSelectorDialogChan <- true
+			}
+		})
+		petFailureCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose failure control unit", failureCUSelector, window)
+		petFailureCUSelectorDialog.SetOnClosed(func() {
 			failureCUSelector.SetSelected("")
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
@@ -223,42 +245,46 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			activateSelector(
 				ControlUnitOptions,
 				successCUSelector,
-				successCUSelectorDialog,
+				humanSuccessCUSelectorDialog,
 				humanSuccessCUOnChanged,
 				cuSelectorDialogChan,
 			)
 
-			// activate successControlUnitSelector
+			// activate humanSuccessCUSelectorDialog
 			cuSelectorDialogChan <- true
 
-			activateSelector(
-				ControlUnitOptions,
-				failureCUSelector,
-				failureCUSelectorDialog,
-				humanFailureCUOnChanged,
-				cuSelectorDialogChan,
-			)
+			if worker.ActionState.DoesHumanStateNeedFailureControlUnit() {
+				activateSelector(
+					ControlUnitOptions,
+					failureCUSelector,
+					humanFailureCUSelectorDialog,
+					humanFailureCUOnChanged,
+					cuSelectorDialogChan,
+				)
+			}
 		}
 
 		activatePetControlUnitSelectors := func() {
 			activateSelector(
 				ControlUnitOptions,
 				successCUSelector,
-				successCUSelectorDialog,
+				petSuccessCUSelectorDialog,
 				petSuccessCUOnChanged,
 				cuSelectorDialogChan,
 			)
 
-			// activate successControlUnitSelector
+			// activate petSuccessCUSelectorDialog
 			cuSelectorDialogChan <- true
 
-			activateSelector(
-				ControlUnitOptions,
-				failureCUSelector,
-				failureCUSelectorDialog,
-				petFailureCUOnChanged,
-				cuSelectorDialogChan,
-			)
+			if worker.ActionState.DoesPetStateNeedFailureControlUnit() {
+				activateSelector(
+					ControlUnitOptions,
+					failureCUSelector,
+					petFailureCUSelectorDialog,
+					petFailureCUOnChanged,
+					cuSelectorDialogChan,
+				)
+			}
 		}
 
 		/* Param Selector */
@@ -371,7 +397,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				activateHumanControlUnitSelectors()
+				activateSelector(
+					ControlUnitOptions,
+					successCUSelector,
+					humanSuccessCUSelectorDialog,
+					humanSuccessCUOnChanged,
+					cuSelectorDialogChan,
+				)
+
+				cuSelectorDialogChan <- true
 			})
 			defenceButton.Importance = widget.WarningImportance
 
@@ -380,7 +414,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				activateHumanControlUnitSelectors()
+				activateSelector(
+					ControlUnitOptions,
+					failureCUSelector,
+					humanFailureCUSelectorDialog,
+					humanFailureCUOnChanged,
+					cuSelectorDialogChan,
+				)
+
+				cuSelectorDialogChan <- true
 
 				bombButton.Disable()
 				stealButton.Disable()
@@ -443,9 +485,16 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				activateHumanControlUnitSelectors()
+				activateSelector(
+					ControlUnitOptions,
+					successCUSelector,
+					humanSuccessCUSelectorDialog,
+					humanSuccessCUOnChanged,
+					cuSelectorDialogChan,
+				)
 
-				recallButton.Disable()
+				cuSelectorDialogChan <- true
+
 				rideButton.Disable()
 			})
 			recallButton.Importance = widget.HighImportance
@@ -455,7 +504,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				activateHumanControlUnitSelectors()
+				activateSelector(
+					ControlUnitOptions,
+					successCUSelector,
+					humanSuccessCUSelectorDialog,
+					humanSuccessCUOnChanged,
+					cuSelectorDialogChan,
+				)
+
+				cuSelectorDialogChan <- true
 
 			})
 			moveButton.Importance = widget.WarningImportance
@@ -464,8 +521,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddHumanState(H_S_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
-
-				activateHumanControlUnitSelectors()
 
 				catchButton.Disable()
 				bombButton.Disable()
@@ -535,7 +590,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				skillButton.Disable()
 				stealButton.Disable()
 				rideButton.Disable()
-				healOneButton.Disable()
 			})
 			rideButton.Importance = widget.HighImportance
 
@@ -544,9 +598,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelectorDialog.Show()
 
 				trainButton.Disable()
-				healSelfButton.Disable()
 				bombButton.Disable()
 				stealButton.Disable()
+				healOneButton.Disable()
+				healMultiButton.Disable()
 			})
 			healSelfButton.Importance = widget.HighImportance
 
@@ -606,6 +661,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petHealSelfButton *widget.Button
 			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
+			var petOffRideButton *widget.Button
 
 			var idSelectorDialog *dialog.CustomDialog
 			idSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
@@ -649,8 +705,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				activatePetControlUnitSelectors()
-
 				petAttackButton.Disable()
 				petHangButton.Disable()
 				petSkillButton.Disable()
@@ -689,14 +743,25 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelectorDialog.Show()
 
 				petRideButton.Disable()
+				petOffRideButton.Disable()
 			})
 			petRideButton.Importance = widget.HighImportance
+
+			petOffRideButton = widget.NewButton(P_OFF_RIDE, func() {
+				worker.ActionState.AddPetState(P_OFF_RIDE)
+				idSelectorDialog.Show()
+
+				petRideButton.Disable()
+				petOffRideButton.Disable()
+			})
+			petOffRideButton.Importance = widget.HighImportance
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
 				petSkillButton,
 				petDefenceButton,
 				petRideButton,
+				petOffRideButton,
 				petHealSelfButton,
 				petHealOneButton,
 				petHangButton,
@@ -777,12 +842,21 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 			if param := actionState.GetHumanParams()[i]; param != "" {
 				tag = fmt.Sprintf("%s:%s", tag, param)
 			}
-			if successControlUnit := actionState.GetHumanSuccessControlUnits()[i]; successControlUnit != "" {
-				tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:1]))
+
+			id := 0
+			successControlUnit := actionState.GetHumanSuccessControlUnits()[i]
+			if len(successControlUnit) > 0 {
+				id = 1
 			}
-			if failureControlUnit := actionState.GetHumanFailureControlUnits()[i]; failureControlUnit != "" {
-				tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:1]))
+			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:id]))
+
+			id = 0
+			failureControlUnit := actionState.GetHumanFailureControlUnits()[i]
+			if len(failureControlUnit) > 0 {
+				id = 1
 			}
+			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:id]))
+
 		} else {
 			if v := actionState.GetPetSkillIds()[i]; v != "" {
 				tag = fmt.Sprintf("%s:%s", tag, v)
@@ -790,12 +864,20 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 			if param := actionState.GetPetParams()[i]; param != "" {
 				tag = fmt.Sprintf("%s:%s", tag, param)
 			}
-			if successControlUnit := actionState.GetPetSuccessControlUnits()[i]; successControlUnit != "" {
-				tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:1]))
+
+			id := 0
+			successControlUnit := actionState.GetPetSuccessControlUnits()[i]
+			if len(successControlUnit) > 0 {
+				id = 1
 			}
-			if failureControlUnit := actionState.GetPetFailureControlUnits()[i]; failureControlUnit != "" {
-				tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:1]))
+			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:id]))
+
+			id = 0
+			failureControlUnit := actionState.GetPetFailureControlUnits()[i]
+			if len(failureControlUnit) > 0 {
+				id = 1
 			}
+			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:id]))
 		}
 
 		tagTextCanvas := canvas.NewText(tag, color.White)
