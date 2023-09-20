@@ -248,7 +248,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.aim(target, HumanTargetingChecker) {
+					if isHumanOutOfMana(b.hWnd, x, y) {
+						b.logH("is out of mana")
+						b.IsOutOfMana = true
+					} else if b.aim(target, HumanTargetingChecker) {
 						b.logH("healed an ally")
 						cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 					} else {
@@ -274,7 +277,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.humanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if b.aim(&PLAYER_L_3_H, HumanTargetingChecker) {
+					if isHumanOutOfMana(b.hWnd, x, y) {
+						b.logH("is out of mana")
+						b.IsOutOfMana = true
+					} else if b.aim(&PLAYER_L_3_H, HumanTargetingChecker) {
 						b.logH("healed allies")
 						cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 					} else {
@@ -417,7 +423,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
 		case P_SE_HEAL:
-			if self, ok := getSelfTarget(b.hWnd, false); ok {
+			if self, ok := getSelfTarget(b.hWnd, false || isOnRide(b.hWnd)); ok {
 				ratio, _ := strconv.ParseFloat(b.petParams[b.nextPetStateId], 32)
 				if !isLifeBelow(b.hWnd, float32(ratio), self) {
 					b.logP("is a healthy boy")
@@ -589,6 +595,7 @@ func (b *BattleActionState) recall() {
 func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindow(b.hWnd)
 	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
+	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(b.hWnd)
 }
 
