@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cg/game"
 	"cg/system"
 	"os"
 
@@ -27,13 +26,17 @@ var (
 )
 
 func test() {
-	hWnd := getHWND()
-	PrintColor(
-		hWnd,
-		game.BATTLE_WINDOW_SKILL_FIRST.GetX(),
-		game.BATTLE_WINDOW_SKILL_FIRST.GetY(),
-		game.BATTLE_WINDOW_SKILL_FIRST.GetX(),
-		200)
+	// hWnd := getHWND()
+	// system.MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	// time.Sleep(200 * time.Millisecond)
+	// PrintColor(
+	// 	hWnd,
+	// 	362,
+	// 	156,
+	// 	372,
+	// 	166,
+	// )
+
 	os.Exit(0)
 }
 

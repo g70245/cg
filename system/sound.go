@@ -51,10 +51,12 @@ func CreateBeeper(path string) {
 	}()
 }
 
-func PlayBeeper() {
+func PlayBeeper() bool {
 	if alertPausedChan != nil {
 		alertPausedChan <- false
+		return true
 	}
+	return false
 }
 
 func StopBeeper() {

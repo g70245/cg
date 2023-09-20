@@ -169,7 +169,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			return
 		case H_O_BOMB:
 			openWindowByShortcut(b.hWnd, 0x45)
-			if px, py, isPivotFound := getItemWindowPos(b.hWnd); isPivotFound {
+			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_BOMB_9A); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if b.attack(humanAttackOrder, HumanTargetingChecker) {

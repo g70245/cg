@@ -60,7 +60,8 @@ const (
 	COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA = 11575428
 
 	COLOR_WINDOW_ITEM_CAN_NOT_BE_USED = 255
-	COLOR_WINDOW_ITEM_PIVOT           = 16777215
+	COLOR_WINDOW_ITEM_EMPTY           = 15793151
+	COLOR_WINDOW_ITEM_PIVOT           = 15967
 
 	COLOR_ITEM_BOMB_9A = 8388607
 )
@@ -112,6 +113,8 @@ var (
 	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{156, 140, COLOR_WINDOW_SKILL_UNSELECTED}
 	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
+
+	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 144, COLOR_WINDOW_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
@@ -188,7 +191,7 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func getItemWindowPos(hWnd HWND) (int32, int32, bool) {
+func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= 160 {
 		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
@@ -201,6 +204,54 @@ func getItemWindowPos(hWnd HWND) (int32, int32, bool) {
 		x += 2
 	}
 	return 0, 0, false
+}
+
+func getNItemWindowPos(hWnd HWND) (int32, int32, bool) {
+	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
+	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
+		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
+		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+44 {
+			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_CLUMN.color {
+				return x, y, true
+			}
+			y += 2
+		}
+		x += 2
+	}
+	return 0, 0, false
+}
+
+func isAnyItemColFree(hWnd HWND, px, py int32) bool {
+	var len int32 = 50
+
+	x := px
+	y := py + 20
+	var i, j int32
+
+	for i = 0; i < 5; i++ {
+		for j = 0; j < 4; j++ {
+			if isSlotEmpty(hWnd, x+i*len, y+j*len) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isSlotEmpty(hWnd HWND, px, py int32) bool {
+	x := px
+	for x < px+30 {
+		y := py
+		for y < py+30 {
+			if sys.GetColor(hWnd, x, y) != COLOR_WINDOW_ITEM_EMPTY {
+				return false
+			}
+			y += 5
+		}
+		x += 5
+	}
+	return true
 }
 
 func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
@@ -324,7 +375,6 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 				}
 				y--
 			}
-
 			x++
 		}
 	}

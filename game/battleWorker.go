@@ -2,6 +2,7 @@ package game
 
 import (
 	. "cg/system"
+	"log"
 
 	"fmt"
 	"time"
@@ -10,8 +11,11 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL = 800
-	LOG_CHECKER_INTERVAL   = 100
+	BATTLE_WORKER_INTERVAL               = 800
+	BATTLE_RESULT_DISAPPEARING_TIME      = 2
+	LOG_CHECKER_INTERVAL                 = 100
+	ITEM_CHECKER_INTERVAL                = 30
+	ITEM_CHECKER_WAITING_OTHERS_INTERVAL = 400
 )
 
 type BattleWorker struct {
@@ -51,21 +55,22 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
+	packageCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL * time.Second)
 
 	logCheckerStopChan := make(chan bool, 1)
 	isTPedChan := make(chan bool, 1)
 
 	if *w.logDir != "" {
-		checkerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
+		logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
 		go func() {
-			defer checkerTicker.Stop()
+			defer logCheckerTicker.Stop()
 
 			for {
 				select {
 				case <-logCheckerStopChan:
 					return
-				case <-checkerTicker.C:
+				case <-logCheckerTicker.C:
 					if isTPedToOtherMap(*w.logDir) {
 						isTPedChan <- true
 						return
@@ -83,6 +88,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		w.ActionState.IsOutOfMana = false
 		isTPed := false
 		isPlayingBeeper := false
+		isPackageFull := false
 
 		for {
 			select {
@@ -105,13 +111,29 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case isTPed = <-isTPedChan:
 				PlayBeeper()
 				logCheckerStopChan <- true
+			case <-packageCheckerTicker.C:
+				isPackageFull = CheckPackageFull(w.hWnd)
+				log.Printf("Handle %d is package full: %t\n", w.hWnd, isPackageFull)
 			default:
-				if !isPlayingBeeper && w.ActionState.IsOutOfMana {
-					PlayBeeper()
-					isPlayingBeeper = true
+				if !isPlayingBeeper && (w.ActionState.IsOutOfMana || isPackageFull) {
+					isPlayingBeeper = PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
 			}
 		}
 	}()
+}
+
+func CheckPackageFull(hWnd HWND) bool {
+	time.Sleep(BATTLE_RESULT_DISAPPEARING_TIME * time.Second)
+	closeAllWindow(hWnd)
+	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	openWindowByShortcut(hWnd, 0x45)
+	defer closeAllWindow(hWnd)
+	defer time.Sleep(ITEM_CHECKER_WAITING_OTHERS_INTERVAL * time.Millisecond)
+
+	if px, py, ok := getNItemWindowPos(hWnd); ok {
+		return !isAnyItemColFree(hWnd, px, py)
+	}
+	return false
 }
