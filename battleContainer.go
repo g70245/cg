@@ -49,7 +49,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 				return
 			}
 
-			idleGames.Remove(maps.Keys(newGroup))
+			// idleGames.Remove(maps.Keys(newGroup))
 			var newTabItem *container.TabItem
 
 			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup, func(id int) func() {
@@ -57,7 +57,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 					delete(autoGroups, id)
 					delete(stopChans, id)
 
-					idleGames.Add(newGroup)
+					// idleGames.Add(newGroup)
 
 					groupTabs.Remove(newTabItem)
 					if len(autoGroups) == 0 {
@@ -743,7 +743,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idSelectorDialog.Show()
 
 				petRideButton.Disable()
-				petOffRideButton.Disable()
 			})
 			petRideButton.Importance = widget.HighImportance
 
@@ -751,7 +750,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddPetState(P_OFF_RIDE)
 				idSelectorDialog.Show()
 
-				petRideButton.Disable()
 				petOffRideButton.Disable()
 			})
 			petOffRideButton.Importance = widget.HighImportance

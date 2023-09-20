@@ -59,7 +59,7 @@ const (
 var ControlUnitOptions = []string{C_U_START_OVER, C_U_CONTINUE, C_U_REPEAT}
 var HealOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
 var statesWithParam = []string{H_O_SE_HEAL, H_O_O_HEAL, H_O_M_HEAL, H_O_POTION, P_SE_HEAL, P_O_HEAL}
-var statesWithoutFailure = []string{H_A_DEFEND, H_A_MOVE, H_A_ESCAPE, H_S_HANG, H_O_PET_RECALL, H_O_RIDE, P_HANG, P_OFF_RIDE, P_RIDE}
+var statesWithoutFailure = []string{H_A_DEFEND, H_A_MOVE, H_A_ESCAPE, H_S_HANG, H_O_PET_RECALL, P_HANG}
 
 type BattleActionState struct {
 	hWnd                     HWND
@@ -78,13 +78,10 @@ type BattleActionState struct {
 	petSuccessControlUnits []string
 	petFailureControlUnits []string
 
-	Enabled         bool
-	IsOutOfMana     bool
-	isTrainingSkill bool
-	isHumanHanging  bool
-	isPetHanging    bool
-
-	petMachineContinuousCounter int
+	Enabled        bool
+	IsOutOfMana    bool
+	isHumanHanging bool
+	isPetHanging   bool
 }
 
 func (b *BattleActionState) Act() {
@@ -111,8 +108,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
 		}
-
-		b.petMachineContinuousCounter = 0
 
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -344,12 +339,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 func (b *BattleActionState) executePetStateMachiine() {
 
-	for _, state := range b.humanStates {
-		if state == H_S_TRAIN_SKILL {
-			b.isTrainingSkill = true
-		}
-	}
-
 	for b.nextPetStateId < len(b.petStates) && getScene(b.hWnd) == BATTLE_SCENE && !isHumanStageStable(b.hWnd) {
 		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
 			if !b.Enabled {
@@ -378,7 +367,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				usePetSkill(b.hWnd, x, y, 1)
 				if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("attacked")
-					b.petMachineContinuousCounter++
 					cu = b.petSuccessControlUnits[b.nextPetStateId]
 				} else {
 					b.logP("missed a hit")
@@ -399,7 +387,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 					b.IsOutOfMana = true
 				} else if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("used a skill")
-					b.petMachineContinuousCounter++
 					cu = b.petSuccessControlUnits[b.nextPetStateId]
 				} else {
 					b.logP("missed a hit")
@@ -412,7 +399,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case P_HANG:
 			b.logP("is hanging")
 			b.isPetHanging = true
-			b.petMachineContinuousCounter++
 			return
 		case P_DEFEND:
 			b.openPetSkillWindow()
@@ -424,7 +410,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 					b.IsOutOfMana = true
 				} else {
 					b.logP("defended")
-					b.petMachineContinuousCounter++
 					cu = b.petSuccessControlUnits[b.nextPetStateId]
 				}
 			} else {
@@ -449,7 +434,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 						b.IsOutOfMana = true
 					} else {
 						b.logP("healed self")
-						b.petMachineContinuousCounter++
 						cu = b.petSuccessControlUnits[b.nextPetStateId]
 					}
 				} else {
@@ -461,7 +445,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
 		case P_RIDE:
-			if b.petMachineContinuousCounter != 0 {
+			if isOnRide(b.hWnd) {
 				b.logP("is on ride")
 				cu = b.petSuccessControlUnits[b.nextPetStateId]
 				break
@@ -472,14 +456,14 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
-				b.petMachineContinuousCounter++
+				return
 			} else {
 				b.logP("cannot find the position of window")
+				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
-			return
 		case P_OFF_RIDE:
-			if b.petMachineContinuousCounter == 0 {
-				b.logP("is off ride?")
+			if !isOnRide(b.hWnd) {
+				b.logP("is off ride")
 				cu = b.petSuccessControlUnits[b.nextPetStateId]
 				break
 			}
@@ -489,11 +473,11 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
-				b.petMachineContinuousCounter++
+				return
 			} else {
 				b.logP("cannot find the position of window")
+				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
-			return
 		case P_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
@@ -505,7 +489,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 					usePetSkill(b.hWnd, x, y, id)
 					if b.aim(target, PetTargetingChecker) {
 						b.logP("healed an ally")
-						b.petMachineContinuousCounter++
 						cu = b.petSuccessControlUnits[b.nextPetStateId]
 					} else {
 						b.logP("cannot target")
