@@ -170,7 +170,13 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case H_O_BOMB:
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
-				if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_BOMB_9A); ok {
+				var bomb Item
+				for i := range Bombs {
+					if Bombs[i].name == b.humanParams[b.nextHumanStateId] {
+						bomb = Bombs[i]
+					}
+				}
+				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if b.attack(humanAttackOrder, HumanTargetingChecker) {
 						b.logH("throwed a bomb")
@@ -601,17 +607,17 @@ func (b *BattleActionState) openPetSkillWindow() {
 
 func (b *BattleActionState) logH(message string) {
 	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.humanStates[b.nextHumanStateId], "*"))
-	log.Printf("%-28s %s",
+	log.Printf("%-26s %s",
 		header,
-		fmt.Sprintf("Pet %s", message),
+		message,
 	)
 }
 
 func (b *BattleActionState) logP(message string) {
 	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.petStates[b.nextPetStateId], "*"))
-	log.Printf("%-28s %s",
+	log.Printf("%-26s %s",
 		header,
-		fmt.Sprintf("Pet %s", message),
+		message,
 	)
 }
 
@@ -759,4 +765,10 @@ func (b *BattleActionState) GetPetSuccessControlUnits() []string {
 
 func (b *BattleActionState) GetPetFailureControlUnits() []string {
 	return b.petFailureControlUnits
+}
+
+func TT(hWnd HWND) (int32, int32, bool) {
+	openWindowByShortcut(hWnd, 0x45)
+	px, py, _ := getBSItemWindowPos(hWnd)
+	return getItemPos(hWnd, px, py, COLOR_ITEM_BOMB_9A)
 }

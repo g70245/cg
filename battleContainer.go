@@ -435,7 +435,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			bombButton = widget.NewButton(H_O_BOMB, func() {
 				worker.ActionState.AddHumanState(H_O_BOMB)
 
-				activateHumanControlUnitSelectors()
+				activateSelector(
+					Bombs.GetOptions(),
+					paramsSelector,
+					paramsSelectorDialog,
+					humanParamsOnChanged,
+					paramsDialogChan,
+				)
+				paramsDialogChan <- true
 
 				catchButton.Disable()
 				escapeButton.Disable()

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	"os"
 	"time"
 
 	"github.com/lxn/win"
@@ -63,8 +62,6 @@ func KeyCombination() {
 }
 
 func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
-	defer os.Exit(0)
-
 	x := oX
 	for x <= dX {
 		y := oY
@@ -81,8 +78,6 @@ func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
 }
 
 func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
-	defer os.Exit(0)
-
 	x := oX
 	for x <= dX {
 		y := oY
@@ -99,5 +94,10 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 }
 
 func getHWND() win.HWND {
+	for _, h := range maps.Values(system.FindWindows(TARGET_CLASS)) {
+		if fmt.Sprint(h) == "9768800" {
+			return h
+		}
+	}
 	return maps.Values(system.FindWindows(TARGET_CLASS))[0]
 }

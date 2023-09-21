@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	GAME_WIDTH  = 640
-	GAME_HEIGHT = 480
+	GAME_WIDTH   = 640
+	GAME_HEIGHT  = 480
+	ITEM_COL_LEN = 50
 )
 
 type CheckTarget struct {
@@ -61,9 +62,11 @@ const (
 
 	COLOR_WINDOW_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_WINDOW_ITEM_EMPTY           = 15793151
-	COLOR_WINDOW_ITEM_PIVOT           = 15967
+	COLOR_NS_ITEM_PIVOT               = 15967
+	COLOR_BS_ITEM_PIVOT               = 15967 //6190476 //16777215
 
-	COLOR_ITEM_BOMB_9A = 8388607
+	COLOR_ITEM_BOMB_8B = 8388607
+	COLOR_ITEM_BOMB_9A = 45823
 )
 
 var (
@@ -111,10 +114,10 @@ var (
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
 	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{156, 140, COLOR_WINDOW_SKILL_UNSELECTED}
-	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{140, 120, COLOR_WINDOW_ITEM_PIVOT}
+	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
-	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 144, COLOR_WINDOW_ITEM_PIVOT}
+	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 144, COLOR_NS_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
@@ -193,11 +196,11 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 
 func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
-	for x <= 160 {
+	for x <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.x+50 {
 		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
-		for y <= 166 {
+		for y <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.y+50 {
 			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color {
-				return x, y, true
+				return x - 78, y + 20, true
 			}
 			y += 2
 		}
@@ -206,13 +209,13 @@ func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func getNItemWindowPos(hWnd HWND) (int32, int32, bool) {
+func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
 		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
 		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+44 {
 			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_CLUMN.color {
-				return x, y, true
+				return x, y + 20, true
 			}
 			y += 2
 		}
@@ -221,16 +224,15 @@ func getNItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func isAnyItemColFree(hWnd HWND, px, py int32) bool {
-	var len int32 = 50
+func isAnyItemFree(hWnd HWND, px, py int32) bool {
 
 	x := px
-	y := py + 20
+	y := py
 	var i, j int32
 
 	for i = 0; i < 5; i++ {
 		for j = 0; j < 4; j++ {
-			if isSlotEmpty(hWnd, x+i*len, y+j*len) {
+			if isSlotEmpty(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
 				return true
 			}
 		}
@@ -255,16 +257,32 @@ func isSlotEmpty(hWnd HWND, px, py int32) bool {
 }
 
 func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
-	x := px - 10
-	for x <= px+45*5 {
-		y := py + 10
-		for y <= py+45*4 {
+	x := px
+	y := py
+	var i, j int32
+
+	for i = 0; i < 5; i++ {
+		for j = 0; j < 4; j++ {
+			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color); found {
+				return tx, ty, found
+			}
+		}
+	}
+
+	return 0, 0, false
+}
+
+func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
+	x := px
+	for x < px+30 {
+		y := py
+		for y < py+30 {
 			if sys.GetColor(hWnd, x, y) == color {
 				return x, y, true
 			}
-			y += 4
+			y += 5
 		}
-		x += 4
+		x += 5
 	}
 	return 0, 0, false
 }

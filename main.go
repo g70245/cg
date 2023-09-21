@@ -27,14 +27,12 @@ var (
 
 func test() {
 	// hWnd := getHWND()
-	// system.MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
-	// time.Sleep(200 * time.Millisecond)
 	// PrintColor(
 	// 	hWnd,
-	// 	362,
-	// 	156,
-	// 	372,
-	// 	166,
+	// 	188,
+	// 	134,
+	// 	198,
+	// 	144,
 	// )
 
 	os.Exit(0)

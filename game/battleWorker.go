@@ -112,7 +112,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 				PlayBeeper()
 				logCheckerStopChan <- true
 			case <-packageCheckerTicker.C:
-				isPackageFull = CheckPackageFull(w.hWnd)
+				isPackageFull = checkIsPackageFull(w.hWnd)
 				log.Printf("Handle %d is package full: %t\n", w.hWnd, isPackageFull)
 			default:
 				if !isPlayingBeeper && (w.ActionState.IsOutOfMana || isPackageFull) {
@@ -124,7 +124,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	}()
 }
 
-func CheckPackageFull(hWnd HWND) bool {
+func checkIsPackageFull(hWnd HWND) bool {
 	time.Sleep(BATTLE_RESULT_DISAPPEARING_TIME * time.Second)
 	closeAllWindow(hWnd)
 	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
@@ -132,8 +132,8 @@ func CheckPackageFull(hWnd HWND) bool {
 	defer closeAllWindow(hWnd)
 	defer time.Sleep(ITEM_CHECKER_WAITING_OTHERS_INTERVAL * time.Millisecond)
 
-	if px, py, ok := getNItemWindowPos(hWnd); ok {
-		return !isAnyItemColFree(hWnd, px, py)
+	if px, py, ok := getNSItemWindowPos(hWnd); ok {
+		return !isAnyItemFree(hWnd, px, py)
 	}
 	return false
 }

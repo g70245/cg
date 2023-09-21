@@ -3,12 +3,14 @@ package system
 import (
 	"time"
 
+	"github.com/lxn/win"
 	. "github.com/lxn/win"
 )
 
 const (
-	CLICK_DURATION = 60
-	KEY_DURATION   = 140
+	CLICK_DURATION      = 60
+	KEY_DURATION        = 140
+	MOUSE_MOVE_DURATION = 80
 )
 
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
@@ -21,22 +23,26 @@ func MoveToNowhere(hWnd HWND) {
 	MouseMsg(hWnd, int32(-1), int32(-1), WM_MOUSEMOVE)
 }
 
+func MoveMouse(hWnd HWND, x, y int32) {
+	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	time.Sleep(MOUSE_MOVE_DURATION * time.Millisecond)
+}
+
 func LeftClick(hWnd HWND, x, y int32) {
-	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
-	time.Sleep(CLICK_DURATION * time.Millisecond)
+	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
+	time.Sleep(CLICK_DURATION * time.Millisecond)
 }
 
 func DoubleClick(hWnd HWND, x, y int32) {
-	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
+	MoveMouse(hWnd, x, y)
+	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(CLICK_DURATION * time.Millisecond)
-	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDBLCLK)
 }
 
 func RightClick(hWnd HWND, x, y int32) {
-	MouseMsg(hWnd, int32(x), int32(y), WM_MOUSEMOVE)
-	time.Sleep(CLICK_DURATION * time.Millisecond)
+	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONDOWN)
 	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONUP)
 }
