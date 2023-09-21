@@ -29,9 +29,9 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	groupTabs.Hide()
 
 	newGroupButton := widget.NewButtonWithIcon("New Group", theme.ContentAddIcon(), func() {
-		if len(autoGroups) == 3 {
-			return
-		}
+		// if len(autoGroups) == 3 {
+		// 	return
+		// }
 
 		var newGroup map[string]HWND
 		gamesChoosingCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
