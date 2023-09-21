@@ -10,7 +10,7 @@ import (
 const (
 	CLICK_DURATION      = 60
 	KEY_DURATION        = 140
-	MOUSE_MOVE_DURATION = 80
+	MOUSE_MOVE_DURATION = 20
 )
 
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
