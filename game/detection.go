@@ -224,7 +224,7 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func isAnyItemFree(hWnd HWND, px, py int32) bool {
+func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 
 	x := px
 	y := py
