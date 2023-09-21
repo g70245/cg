@@ -27,14 +27,14 @@ var (
 
 func test() {
 	// hWnd := getHWND()
-	// PrintColor(
+	// CheckColor(
 	// 	hWnd,
-	// 	188,
-	// 	134,
-	// 	198,
-	// 	144,
+	// 	400,
+	// 	200,
+	// 	500,
+	// 	300,
+	// 	13974896,
 	// )
-
 	os.Exit(0)
 }
 
