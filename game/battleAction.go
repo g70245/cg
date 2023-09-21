@@ -603,7 +603,7 @@ func (b *BattleActionState) recall() {
 func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindow(b.hWnd)
 	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
-	time.Sleep(ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(b.hWnd)
 }
 

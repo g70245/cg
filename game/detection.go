@@ -74,16 +74,16 @@ var (
 	NORMAL_SCENE  = CheckTarget{92, 26, COLOR_SCENE_NORMAL}
 	BATTLE_SCENE  = CheckTarget{108, 10, COLOR_SCENE_BATTLE}
 
-	MON_POS_T_1 = CheckTarget{28, 256, COLOR_ANY}
-	MON_POS_T_2 = CheckTarget{90, 218, COLOR_ANY}
-	MON_POS_T_3 = CheckTarget{156, 184, COLOR_ANY}
-	MON_POS_T_4 = CheckTarget{216, 146, COLOR_ANY}
-	MON_POS_T_5 = CheckTarget{282, 112, COLOR_ANY}
-	MON_POS_B_1 = CheckTarget{92, 310, COLOR_ANY}
-	MON_POS_B_2 = CheckTarget{152, 268, COLOR_ANY}
-	MON_POS_B_3 = CheckTarget{214, 226, COLOR_ANY}
-	MON_POS_B_4 = CheckTarget{278, 192, COLOR_ANY}
-	MON_POS_B_5 = CheckTarget{346, 162, COLOR_ANY}
+	MON_POS_T_1 = CheckTarget{26, 238, COLOR_ANY}
+	MON_POS_T_2 = CheckTarget{92, 204, COLOR_ANY}
+	MON_POS_T_3 = CheckTarget{162, 171, COLOR_ANY}
+	MON_POS_T_4 = CheckTarget{225, 133, COLOR_ANY}
+	MON_POS_T_5 = CheckTarget{282, 94, COLOR_ANY}
+	MON_POS_B_1 = CheckTarget{93, 289, COLOR_ANY}
+	MON_POS_B_2 = CheckTarget{156, 254, COLOR_ANY}
+	MON_POS_B_3 = CheckTarget{216, 218, COLOR_ANY}
+	MON_POS_B_4 = CheckTarget{284, 187, COLOR_ANY}
+	MON_POS_B_5 = CheckTarget{343, 148, COLOR_ANY}
 
 	MENU_Q          = CheckTarget{60, 468, COLOR_MENU_BUTTON_NORMAL}
 	MENU_W          = CheckTarget{136, 468, COLOR_MENU_BUTTON_NORMAL}

@@ -107,7 +107,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 					// do nothing
 				}
 			case <-stopChan:
-				w.ActionState.Enabled = false
+				StopBeeper()
 				return
 			case isTPed = <-isTPedChan:
 				PlayBeeper()

@@ -50,14 +50,20 @@ func main() {
 
 	robot := generateRobotContainer()
 	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
-		content.Remove(robot.main)
-		robot.close()
+		refreshDialog := dialog.NewConfirm("Refresh check", "Do you really want to refresh?", func(isRefreshing bool) {
+			if isRefreshing {
+				content.Remove(robot.main)
+				robot.close()
 
-		robot = generateRobotContainer()
+				robot = generateRobotContainer()
 
-		content.Add(robot.main)
-		window.SetContent(window.Content())
-		window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+				content.Add(robot.main)
+				window.SetContent(window.Content())
+				window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+			}
+		}, window)
+		refreshDialog.SetConfirmImportance(widget.DangerImportance)
+		refreshDialog.Show()
 	})
 	refreshButton.Importance = widget.DangerImportance
 

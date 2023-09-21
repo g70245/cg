@@ -129,9 +129,20 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	lever.Importance = widget.WarningImportance
 
 	delete := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		stop(stopChan)
-		close(stopChan)
-		destroy()
+		deleteDialog := dialog.NewConfirm("Delete check", "Do you really want to delete this group?", func(isDeleting bool) {
+			if isDeleting {
+				for i := range workers {
+					workers[i].ActionState.Enabled = false
+					workers[i].StopInventoryChecker()
+				}
+
+				stop(stopChan)
+				close(stopChan)
+				destroy()
+			}
+		}, window)
+		deleteDialog.SetConfirmImportance(widget.DangerImportance)
+		deleteDialog.Show()
 	})
 	delete.Importance = widget.DangerImportance
 
