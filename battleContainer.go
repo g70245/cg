@@ -41,7 +41,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			}
 		})
 		gamesChoosingCheckGroup.Horizontal = true
-		gamesChoosingDialog := dialog.NewCustom("Choose games", "Create", gamesChoosingCheckGroup, window)
+		gamesChoosingDialog := dialog.NewCustom("Select games", "Create", gamesChoosingCheckGroup, window)
 		gamesChoosingDialog.Resize(fyne.NewSize(240, 166))
 
 		gamesChoosingDialog.SetOnClosed(func() {
@@ -99,7 +99,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		if leadHandle != "" {
 			leadSelectorButton.SetText("Lead: " + leadHandle)
 		} else {
-			leadSelectorButton.SetText("Choose Lead")
+			leadSelectorButton.SetText("Select Lead")
 		}
 		leadSelectorDialog.Hide()
 	})
@@ -129,7 +129,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	lever.Importance = widget.WarningImportance
 
 	delete := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		deleteDialog := dialog.NewConfirm("Delete check", "Do you really want to delete this group?", func(isDeleting bool) {
+		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
 			if isDeleting {
 				for i := range workers {
 					workers[i].ActionState.Enabled = false
@@ -191,7 +191,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			movementModeDialog.Hide()
 		})
-		movementModeDialog = dialog.NewCustomWithoutButtons("Choose a Move Way", movementModeSelector, window)
+		movementModeDialog = dialog.NewCustomWithoutButtons("Select a Move Way", movementModeSelector, window)
 		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
@@ -291,7 +291,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		paramsSelector := widget.NewRadioGroup(nil, nil)
 		paramsSelector.Horizontal = true
 		paramsSelector.Required = true
-		paramsDialog = dialog.NewCustomWithoutButtons("Choose param", selector, window)
+		paramsDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
 		paramsDialog.SetOnClosed(onClosed)
 
 		hHealingRatioSelectorDialog := SelectorDialog{
@@ -327,7 +327,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				idDialog.Hide()
 			}
 		}
-		idDialog = dialog.NewCustomWithoutButtons("Choose skill id", selector, window)
+		idDialog = dialog.NewCustomWithoutButtons("Select skill id", selector, window)
 		idDialog.SetOnClosed(onClosed)
 		hIdSelectorDialog := SelectorDialog{
 			idDialog,
@@ -350,7 +350,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				levelDialog.Hide()
 			}
 		}
-		levelDialog = dialog.NewCustomWithoutButtons("Choose skill level", selector, window)
+		levelDialog = dialog.NewCustomWithoutButtons("Select skill level", selector, window)
 		levelDialog.SetOnClosed(onClosed)
 
 		levelSelectorDialog := SelectorDialog{

@@ -49,8 +49,8 @@ func main() {
 	var content *fyne.Container
 
 	robot := generateRobotContainer()
-	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
-		refreshDialog := dialog.NewConfirm("Refresh check", "Do you really want to refresh?", func(isRefreshing bool) {
+	refreshButton := widget.NewButtonWithIcon("Refresh games", theme.ViewRefreshIcon(), func() {
+		refreshDialog := dialog.NewConfirm("Refresh games", "Do you really want to refresh?", func(isRefreshing bool) {
 			if isRefreshing {
 				content.Remove(robot.main)
 				robot.close()
