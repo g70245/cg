@@ -19,10 +19,11 @@ const (
 )
 
 type BattleWorker struct {
-	hWnd          HWND
-	MovementState BattleMovementState
-	ActionState   BattleActionState
-	logDir        *string
+	hWnd                    HWND
+	MovementState           BattleMovementState
+	ActionState             BattleActionState
+	logDir                  *string
+	inventoryCheckerEnabled bool
 }
 
 type BattleWorkers []BattleWorker
@@ -55,7 +56,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	packageCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL * time.Second)
+	inventoryCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL * time.Second)
 
 	logCheckerStopChan := make(chan bool, 1)
 	isTPedChan := make(chan bool, 1)
@@ -111,9 +112,11 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case isTPed = <-isTPedChan:
 				PlayBeeper()
 				logCheckerStopChan <- true
-			case <-packageCheckerTicker.C:
-				isInventoryFull = checkInventory(w.hWnd)
-				log.Printf("Handle %d is package full: %t\n", w.hWnd, isInventoryFull)
+			case <-inventoryCheckerTicker.C:
+				if w.inventoryCheckerEnabled {
+					isInventoryFull = checkInventory(w.hWnd)
+					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
+				}
 			default:
 				if !isPlayingBeeper && (w.ActionState.IsOutOfMana || isInventoryFull) {
 					isPlayingBeeper = PlayBeeper()
@@ -122,6 +125,14 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			}
 		}
 	}()
+}
+
+func (w *BattleWorker) StopInventoryChecker() {
+	w.inventoryCheckerEnabled = false
+}
+
+func (w *BattleWorker) StartInventoryChecker() {
+	w.inventoryCheckerEnabled = true
 }
 
 func checkInventory(hWnd HWND) bool {

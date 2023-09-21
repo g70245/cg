@@ -103,8 +103,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		}
 		leadSelectorDialog.Hide()
 	})
-	leadSelectorDialog = dialog.NewCustomWithoutButtons("Choose a lead with this group", leadSelector, window)
-	leadSelectorButton = widget.NewButton("Choose Lead", func() {
+	leadSelectorDialog = dialog.NewCustomWithoutButtons("Select a lead with this group", leadSelector, window)
+	leadSelectorButton = widget.NewButton("Select Lead", func() {
 		leadSelectorDialog.Show()
 	})
 	leadSelectorButton.Importance = widget.HighImportance
@@ -134,7 +134,25 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		destroy()
 	})
 	delete.Importance = widget.DangerImportance
-	mainButtons := container.NewGridWithColumns(3, leadSelectorButton, delete, lever)
+
+	var inventoryCheck *widget.Button
+	inventoryCheck = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
+		switch inventoryCheck.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range workers {
+				workers[i].StopInventoryChecker()
+			}
+			turn(theme.CheckButtonIcon(), inventoryCheck)
+		case theme.CheckButtonIcon():
+			for i := range workers {
+				workers[i].StartInventoryChecker()
+			}
+			turn(theme.CheckButtonCheckedIcon(), inventoryCheck)
+		}
+	})
+	inventoryCheck.Importance = widget.HighImportance
+
+	mainButtons := container.NewGridWithColumns(4, leadSelectorButton, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widget */
