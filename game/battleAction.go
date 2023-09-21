@@ -57,7 +57,9 @@ const (
 )
 
 var ControlUnitOptions = []string{C_U_START_OVER, C_U_CONTINUE, C_U_REPEAT}
-var HealOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
+var HealingOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
+var IdOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+var LevelOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
 var statesWithParam = []string{H_O_SE_HEAL, H_O_O_HEAL, H_O_M_HEAL, H_O_POTION, P_SE_HEAL, P_O_HEAL}
 var statesWithoutFailure = []string{H_A_DEFEND, H_A_MOVE, H_A_ESCAPE, H_S_HANG, H_O_PET_RECALL, P_HANG}
 
@@ -679,15 +681,15 @@ func (b *BattleActionState) AddHumanSkillLevel(newLevel string) {
 	b.humanSkillLevels[len(b.humanSkillLevels)-1] = newLevel
 }
 
-func (b *BattleActionState) AddHumanParams(param string) {
+func (b *BattleActionState) AddHumanParam(param string) {
 	b.humanParams[len(b.humanParams)-1] = param
 }
 
-func (b *BattleActionState) AddHumanSuccessControlUnits(param string) {
+func (b *BattleActionState) AddHumanSuccessControlUnit(param string) {
 	b.humanSuccessControlUnits[len(b.humanSuccessControlUnits)-1] = param
 }
 
-func (b *BattleActionState) AddHumanFailureControlUnits(param string) {
+func (b *BattleActionState) AddHumanFailureControlUnit(param string) {
 	b.humanFailureControlUnits[len(b.humanFailureControlUnits)-1] = param
 }
 
@@ -695,15 +697,15 @@ func (b *BattleActionState) AddPetSkillId(newSkillId string) {
 	b.petSkillIds[len(b.petSkillIds)-1] = newSkillId
 }
 
-func (b *BattleActionState) AddPetParams(param string) {
+func (b *BattleActionState) AddPetParam(param string) {
 	b.petParams[len(b.petParams)-1] = param
 }
 
-func (b *BattleActionState) AddPetSuccessControlUnits(param string) {
+func (b *BattleActionState) AddPetSuccessControlUnit(param string) {
 	b.petSuccessControlUnits[len(b.petSuccessControlUnits)-1] = param
 }
 
-func (b *BattleActionState) AddPetFailureControlUnits(param string) {
+func (b *BattleActionState) AddPetFailureControlUnit(param string) {
 	b.petFailureControlUnits[len(b.petFailureControlUnits)-1] = param
 }
 

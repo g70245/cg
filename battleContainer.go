@@ -168,149 +168,168 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		})
 
 		var statesViewer *fyne.Container
+		var selector = widget.NewRadioGroup(nil, nil)
+		selector.Horizontal = true
+		selector.Required = true
+		enableChan := make(chan bool)
 
-		/* Control Unit Selectors */
-		cuSelectorDialogChan := make(chan bool)
-		var humanSuccessCUSelectorDialog *dialog.CustomDialog
-		var humanFailureCUSelectorDialog *dialog.CustomDialog
-		var petSuccessCUSelectorDialog *dialog.CustomDialog
-		var petFailureCUSelectorDialog *dialog.CustomDialog
-		successCUSelector := widget.NewRadioGroup(nil, nil)
-		failureCUSelector := widget.NewRadioGroup(nil, nil)
-		humanSuccessCUOnChanged := func(s string) {
+		onClosed := func() {
+			enableChan <- true
+		}
+
+		/* Control Unit Dialogs */
+		var hCUSuccessDialog *dialog.CustomDialog
+		var hCUFailureDialog *dialog.CustomDialog
+		var pCUSuccessDialog *dialog.CustomDialog
+		var pCUFailureDialog *dialog.CustomDialog
+		hCUSuccesOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanSuccessControlUnits(s)
-				humanSuccessCUSelectorDialog.Hide()
+				worker.ActionState.AddHumanSuccessControlUnit(s)
+				hCUSuccessDialog.Hide()
 			}
 		}
-		humanFailureCUOnChanged := func(s string) {
+		hCUFailureOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanFailureControlUnits(s)
-				humanFailureCUSelectorDialog.Hide()
+				worker.ActionState.AddHumanFailureControlUnit(s)
+				hCUFailureDialog.Hide()
 			}
 		}
-		petSuccessCUOnChanged := func(s string) {
+		pCUSuccessOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetSuccessControlUnits(s)
-				petSuccessCUSelectorDialog.Hide()
+				worker.ActionState.AddPetSuccessControlUnit(s)
+				pCUSuccessDialog.Hide()
 			}
 		}
-		petFailureCUOnChanged := func(s string) {
+		pCUFailureOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetFailureControlUnits(s)
-				petFailureCUSelectorDialog.Hide()
+				worker.ActionState.AddPetFailureControlUnit(s)
+				pCUFailureDialog.Hide()
 			}
 		}
-		successCUSelector.Horizontal = true
-		successCUSelector.Required = true
-		failureCUSelector.Horizontal = true
-		failureCUSelector.Required = true
-		humanSuccessCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose success control unit", successCUSelector, window)
-		humanSuccessCUSelectorDialog.SetOnClosed(func() {
-			successCUSelector.SetSelected("")
+		cuOnClosed := func() {
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
+			enableChan <- true
+		}
+		hCUSuccessDialog = dialog.NewCustomWithoutButtons("Select next move after successful execution", selector, window)
+		hCUSuccessDialog.SetOnClosed(cuOnClosed)
+		hCUFailureDialog = dialog.NewCustomWithoutButtons("Select next move after failed execution", selector, window)
+		hCUFailureDialog.SetOnClosed(cuOnClosed)
+		pCUSuccessDialog = dialog.NewCustomWithoutButtons("Select next move after successful execution", selector, window)
+		pCUSuccessDialog.SetOnClosed(cuOnClosed)
+		pCUFailureDialog = dialog.NewCustomWithoutButtons("Select next move after failed execution", selector, window)
+		pCUFailureDialog.SetOnClosed(cuOnClosed)
 
-			// activate the humanFailureCUSelectorDialog
-			if worker.ActionState.DoesHumanStateNeedFailureControlUnit() {
-				cuSelectorDialogChan <- true
-			}
-		})
-		humanFailureCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose failure control unit", failureCUSelector, window)
-		humanFailureCUSelectorDialog.SetOnClosed(func() {
-			failureCUSelector.SetSelected("")
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
-		})
-
-		petSuccessCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose success control unit", successCUSelector, window)
-		petSuccessCUSelectorDialog.SetOnClosed(func() {
-			successCUSelector.SetSelected("")
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
-
-			// activate the petFailureCUSelectorDialog
-			if worker.ActionState.DoesPetStateNeedFailureControlUnit() {
-				cuSelectorDialogChan <- true
-			}
-		})
-		petFailureCUSelectorDialog = dialog.NewCustomWithoutButtons("Choose failure control unit", failureCUSelector, window)
-		petFailureCUSelectorDialog.SetOnClosed(func() {
-			failureCUSelector.SetSelected("")
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
-		})
-
-		activateHumanControlUnitSelectors := func() {
-			activateSelector(
-				ControlUnitOptions,
-				successCUSelector,
-				humanSuccessCUSelectorDialog,
-				humanSuccessCUOnChanged,
-				cuSelectorDialogChan,
-			)
-
-			// activate humanSuccessCUSelectorDialog
-			cuSelectorDialogChan <- true
-
-			if worker.ActionState.DoesHumanStateNeedFailureControlUnit() {
-				activateSelector(
-					ControlUnitOptions,
-					failureCUSelector,
-					humanFailureCUSelectorDialog,
-					humanFailureCUOnChanged,
-					cuSelectorDialogChan,
-				)
-			}
+		hCUSuccessSelectorDialog := SelectorDialog{
+			hCUSuccessDialog,
+			selector,
+			ControlUnitOptions,
+			hCUSuccesOnChanged,
+		}
+		hCUFailureSelectorDialog := SelectorDialog{
+			hCUFailureDialog,
+			selector,
+			ControlUnitOptions,
+			hCUFailureOnChanged,
+		}
+		pCUSuccessSelectorDialog := SelectorDialog{
+			pCUSuccessDialog,
+			selector,
+			ControlUnitOptions,
+			pCUSuccessOnChanged,
+		}
+		pCUFailureSelectorDialog := SelectorDialog{
+			pCUFailureDialog,
+			selector,
+			ControlUnitOptions,
+			pCUFailureOnChanged,
 		}
 
-		activatePetControlUnitSelectors := func() {
-			activateSelector(
-				ControlUnitOptions,
-				successCUSelector,
-				petSuccessCUSelectorDialog,
-				petSuccessCUOnChanged,
-				cuSelectorDialogChan,
-			)
-
-			// activate petSuccessCUSelectorDialog
-			cuSelectorDialogChan <- true
-
-			if worker.ActionState.DoesPetStateNeedFailureControlUnit() {
-				activateSelector(
-					ControlUnitOptions,
-					failureCUSelector,
-					petFailureCUSelectorDialog,
-					petFailureCUOnChanged,
-					cuSelectorDialogChan,
-				)
-			}
-		}
-
-		/* Param Selector */
-		paramsDialogChan := make(chan bool)
-		var paramsSelectorDialog *dialog.CustomDialog
-		paramsSelector := widget.NewRadioGroup(nil, nil)
+		/* Param Dialog */
+		var paramsDialog *dialog.CustomDialog
 		humanParamsOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanParams(s)
-				paramsSelectorDialog.Hide()
-				activateHumanControlUnitSelectors()
+				worker.ActionState.AddHumanParam(s)
+				paramsDialog.Hide()
 			}
 		}
 		petParamsOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetParams(s)
-				paramsSelectorDialog.Hide()
-				activatePetControlUnitSelectors()
+				worker.ActionState.AddPetParam(s)
+				paramsDialog.Hide()
 			}
 		}
+		paramsSelector := widget.NewRadioGroup(nil, nil)
 		paramsSelector.Horizontal = true
 		paramsSelector.Required = true
-		paramsSelectorDialog = dialog.NewCustomWithoutButtons("Choose param", paramsSelector, window)
-		paramsSelectorDialog.SetOnClosed(func() {
-			paramsSelector.SetSelected("")
-		})
+		paramsDialog = dialog.NewCustomWithoutButtons("Choose param", selector, window)
+		paramsDialog.SetOnClosed(onClosed)
+
+		hHealingRatioSelectorDialog := SelectorDialog{
+			paramsDialog,
+			selector,
+			HealingOptions,
+			humanParamsOnChanged,
+		}
+		pHealingRatioSelectorDialog := SelectorDialog{
+			paramsDialog,
+			selector,
+			HealingOptions,
+			petParamsOnChanged,
+		}
+		bombsSelectorDialog := SelectorDialog{
+			paramsDialog,
+			selector,
+			Bombs.GetOptions(),
+			humanParamsOnChanged,
+		}
+
+		/* Id Dialog */
+		var idDialog *dialog.CustomDialog
+		hIdOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddHumanSkillId(s)
+				idDialog.Hide()
+			}
+		}
+		pIdOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddPetSkillId(s)
+				idDialog.Hide()
+			}
+		}
+		idDialog = dialog.NewCustomWithoutButtons("Choose skill id", selector, window)
+		idDialog.SetOnClosed(onClosed)
+		hIdSelectorDialog := SelectorDialog{
+			idDialog,
+			selector,
+			IdOptions,
+			hIdOnChanged,
+		}
+		pIdSelectorDialog := SelectorDialog{
+			idDialog,
+			selector,
+			IdOptions,
+			pIdOnChanged,
+		}
+
+		/* Level Dialog */
+		var levelDialog *dialog.CustomDialog
+		levelOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddHumanSkillLevel(s)
+				levelDialog.Hide()
+			}
+		}
+		levelDialog = dialog.NewCustomWithoutButtons("Choose skill level", selector, window)
+		levelDialog.SetOnClosed(onClosed)
+
+		levelSelectorDialog := SelectorDialog{
+			levelDialog,
+			selector,
+			LevelOptions,
+			levelOnChanged,
+		}
 
 		humanStateSelector := widget.NewButtonWithIcon("Man Action", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanStates()
@@ -318,7 +337,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			statesViewer.Refresh()
 
 			var attackButton *widget.Button
-			var defenceButton *widget.Button
+			var defendButton *widget.Button
 			var escapeButton *widget.Button
 			var catchButton *widget.Button
 			var bombButton *widget.Button
@@ -334,86 +353,37 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var healOneButton *widget.Button
 			var healMultiButton *widget.Button
 
-			var levelSelectorDialog *dialog.CustomDialog
-			levelSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddHumanSkillLevel(s)
-					levelSelectorDialog.Hide()
-				}
-			})
-			levelSelector.Horizontal = true
-			levelSelector.Required = true
-			levelSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill level", levelSelector, window)
-			levelSelectorDialog.SetOnClosed(func() {
-				levelSelector.SetSelected("")
-
-				if worker.ActionState.DoesHumanStateNeedParam() {
-					activateSelector(
-						HealOptions,
-						paramsSelector,
-						paramsSelectorDialog,
-						humanParamsOnChanged,
-						paramsDialogChan,
-					)
-					paramsDialogChan <- true
-				} else {
-					activateHumanControlUnitSelectors()
-				}
-			})
-
-			var idSelector *widget.RadioGroup
-			var idSelectorDialog *dialog.CustomDialog
-			idSelector = widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddHumanSkillId(s)
-					idSelectorDialog.Hide()
-				}
-			})
-			idSelector.Horizontal = true
-			idSelector.Required = true
-			idSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill index", idSelector, window)
-			idSelectorDialog.SetOnClosed(func() {
-				levelSelectorDialog.Show()
-				idSelector.SetSelected("")
-			})
-
 			attackButton = widget.NewButton(H_A_ATTACK, func() {
 				worker.ActionState.AddHumanState(H_A_ATTACK)
 
-				activateHumanControlUnitSelectors()
+				dialogs := []SelectorDialog{
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				trainButton.Disable()
 				stealButton.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
 
-			defenceButton = widget.NewButton(H_A_DEFEND, func() {
+			defendButton = widget.NewButton(H_A_DEFEND, func() {
 				worker.ActionState.AddHumanState(H_A_DEFEND)
 
-				activateSelector(
-					ControlUnitOptions,
-					successCUSelector,
-					humanSuccessCUSelectorDialog,
-					humanSuccessCUOnChanged,
-					cuSelectorDialogChan,
-				)
-
-				cuSelectorDialogChan <- true
+				dialogs := []SelectorDialog{
+					hCUSuccessSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
-			defenceButton.Importance = widget.WarningImportance
+			defendButton.Importance = widget.WarningImportance
 
 			escapeButton = widget.NewButton(H_A_ESCAPE, func() {
 				worker.ActionState.AddHumanState(H_A_ESCAPE)
 
-				activateSelector(
-					ControlUnitOptions,
-					failureCUSelector,
-					humanFailureCUSelectorDialog,
-					humanFailureCUOnChanged,
-					cuSelectorDialogChan,
-				)
-
-				cuSelectorDialogChan <- true
+				dialogs := []SelectorDialog{
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disable()
 				stealButton.Disable()
@@ -426,7 +396,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			catchButton = widget.NewButton(H_S_CATCH, func() {
 				worker.ActionState.AddHumanState(H_S_CATCH)
 
-				activateHumanControlUnitSelectors()
+				dialogs := []SelectorDialog{
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				trainButton.Disable()
 			})
@@ -435,14 +409,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			bombButton = widget.NewButton(H_O_BOMB, func() {
 				worker.ActionState.AddHumanState(H_O_BOMB)
 
-				activateSelector(
-					Bombs.GetOptions(),
-					paramsSelector,
-					paramsSelectorDialog,
-					humanParamsOnChanged,
-					paramsDialogChan,
-				)
-				paramsDialogChan <- true
+				dialogs := []SelectorDialog{
+					bombsSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				catchButton.Disable()
 				escapeButton.Disable()
@@ -459,31 +431,22 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			potionButton = widget.NewButton(H_O_POTION, func() {
 				worker.ActionState.AddHumanState(H_O_POTION)
 
-				// directly activate paramsSelector
-				activateSelector(
-					HealOptions,
-					paramsSelector,
-					paramsSelectorDialog,
-					humanParamsOnChanged,
-					paramsDialogChan,
-				)
-				paramsDialogChan <- true
-
+				dialogs := []SelectorDialog{
+					hHealingRatioSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			potionButton.Importance = widget.HighImportance
 
 			recallButton = widget.NewButton(H_O_PET_RECALL, func() {
 				worker.ActionState.AddHumanState(H_O_PET_RECALL)
 
-				activateSelector(
-					ControlUnitOptions,
-					successCUSelector,
-					humanSuccessCUSelectorDialog,
-					humanSuccessCUOnChanged,
-					cuSelectorDialogChan,
-				)
-
-				cuSelectorDialogChan <- true
+				dialogs := []SelectorDialog{
+					hCUSuccessSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				rideButton.Disable()
 			})
@@ -492,16 +455,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			moveButton = widget.NewButton(H_A_MOVE, func() {
 				worker.ActionState.AddHumanState(H_A_MOVE)
 
-				activateSelector(
-					ControlUnitOptions,
-					successCUSelector,
-					humanSuccessCUSelectorDialog,
-					humanSuccessCUOnChanged,
-					cuSelectorDialogChan,
-				)
-
-				cuSelectorDialogChan <- true
-
+				dialogs := []SelectorDialog{
+					hCUSuccessSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			moveButton.Importance = widget.WarningImportance
 
@@ -526,7 +483,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			skillButton = widget.NewButton(H_O_SKILL, func() {
 				worker.ActionState.AddHumanState(H_O_SKILL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disabled()
 				catchButton.Disable()
@@ -537,7 +501,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			stealButton = widget.NewButton(H_S_STEAL, func() {
 				worker.ActionState.AddHumanState(H_S_STEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disable()
 				healOneButton.Disable()
@@ -550,7 +521,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			trainButton = widget.NewButton(H_S_TRAIN_SKILL, func() {
 				worker.ActionState.AddHumanState(H_S_TRAIN_SKILL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disable()
 				stealButton.Disable()
@@ -567,7 +545,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			rideButton = widget.NewButton(H_O_RIDE, func() {
 				worker.ActionState.AddHumanState(H_O_RIDE)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				catchButton.Disable()
 				escapeButton.Disable()
@@ -583,7 +568,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			healSelfButton = widget.NewButton(H_O_SE_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_SE_HEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hHealingRatioSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				trainButton.Disable()
 				bombButton.Disable()
@@ -595,7 +588,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			healOneButton = widget.NewButton(H_O_O_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_O_HEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hHealingRatioSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				healSelfButton.Disable()
 				bombButton.Disable()
@@ -605,7 +606,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			healMultiButton = widget.NewButton(H_O_M_HEAL, func() {
 				worker.ActionState.AddHumanState(H_O_M_HEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hHealingRatioSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				trainButton.Disable()
 				healSelfButton.Disable()
@@ -616,7 +625,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				attackButton,
-				defenceButton,
+				defendButton,
 				escapeButton,
 				moveButton,
 				skillButton,
@@ -652,37 +661,14 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petRideButton *widget.Button
 			var petOffRideButton *widget.Button
 
-			var idSelectorDialog *dialog.CustomDialog
-			idSelector := widget.NewRadioGroup([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, func(s string) {
-				if s != "" {
-					worker.ActionState.AddPetSkillId(s)
-					idSelectorDialog.Hide()
-				}
-			})
-			idSelector.Horizontal = true
-			idSelector.Required = true
-			idSelectorDialog = dialog.NewCustomWithoutButtons("Choose skill index", idSelector, window)
-			idSelectorDialog.SetOnClosed(func() {
-				idSelector.SetSelected("")
-
-				if worker.ActionState.DoesPetStateNeedParam() {
-					activateSelector(
-						HealOptions,
-						paramsSelector,
-						paramsSelectorDialog,
-						petParamsOnChanged,
-						paramsDialogChan,
-					)
-					paramsDialogChan <- true
-				} else {
-					activatePetControlUnitSelectors()
-				}
-			})
-
 			petAttackButton = widget.NewButton(P_ATTACK, func() {
 				worker.ActionState.AddPetState(P_ATTACK)
 
-				activatePetControlUnitSelectors()
+				dialogs := []SelectorDialog{
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petAttackButton.Importance = widget.WarningImportance
 
@@ -702,31 +688,63 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			petSkillButton = widget.NewButton(P_SkILL, func() {
 				worker.ActionState.AddPetState(P_SkILL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petSkillButton.Importance = widget.HighImportance
 
 			petDefenceButton = widget.NewButton(P_DEFEND, func() {
 				worker.ActionState.AddPetState(P_DEFEND)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petDefenceButton.Importance = widget.HighImportance
 
 			petHealSelfButton = widget.NewButton(P_SE_HEAL, func() {
 				worker.ActionState.AddPetState(P_SE_HEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pHealingRatioSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petHealSelfButton.Importance = widget.HighImportance
 
 			petHealOneButton = widget.NewButton(P_O_HEAL, func() {
 				worker.ActionState.AddPetState(P_O_HEAL)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pHealingRatioSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petHealOneButton.Importance = widget.HighImportance
 
 			petRideButton = widget.NewButton(P_RIDE, func() {
 				worker.ActionState.AddPetState(P_RIDE)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				petRideButton.Disable()
 			})
@@ -734,7 +752,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			petOffRideButton = widget.NewButton(P_OFF_RIDE, func() {
 				worker.ActionState.AddPetState(P_OFF_RIDE)
-				idSelectorDialog.Show()
+
+				dialogs := []SelectorDialog{
+					pIdSelectorDialog,
+					pCUSuccessSelectorDialog,
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 				petOffRideButton.Disable()
 			})
@@ -743,15 +767,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			petEscapeButton = widget.NewButton(P_ESCAPE, func() {
 				worker.ActionState.AddPetState(P_ESCAPE)
 
-				activateSelector(
-					ControlUnitOptions,
-					failureCUSelector,
-					petFailureCUSelectorDialog,
-					petFailureCUOnChanged,
-					cuSelectorDialogChan,
-				)
-
-				cuSelectorDialogChan <- true
+				dialogs := []SelectorDialog{
+					pCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 			})
 			petEscapeButton.Importance = widget.HighImportance
 
@@ -796,6 +815,36 @@ func activateSelector(options []string, selector *widget.RadioGroup, dialog *dia
 		selector.OnChanged = onChanged
 		dialog.Show()
 	}()
+}
+
+type SelectorDialog struct {
+	dialog    *dialog.CustomDialog
+	selector  *widget.RadioGroup
+	options   []string
+	onChanged func(s string)
+}
+
+func activateDialogs(selectorDialogs []SelectorDialog, enableChan chan bool) {
+
+	go func() {
+		for i, sd := range selectorDialogs {
+			<-enableChan
+			sd.selector.Disable()
+			sd.selector.Options = sd.options
+			sd.selector.OnChanged = sd.onChanged
+			sd.selector.Selected = ""
+			sd.selector.Enable()
+			sd.dialog.Show()
+
+			if i == len(selectorDialogs)-1 {
+				go func() {
+					<-enableChan
+				}()
+			}
+		}
+	}()
+
+	enableChan <- true
 }
 
 func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
