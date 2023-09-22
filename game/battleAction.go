@@ -178,7 +178,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						bomb = Bombs[i]
 					}
 				}
-				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color); ok {
+				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 5); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if b.attack(humanAttackOrder, HumanTargetingChecker) {
 						b.logH("throwed a bomb")
@@ -187,10 +187,41 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						b.logH("missed a hit")
 						cu = b.humanFailureControlUnits[b.nextHumanStateId]
 					}
+				} else {
+					b.logH("cannot find a bomb")
+					cu = b.humanFailureControlUnits[b.nextHumanStateId]
 				}
 			} else {
 				b.logH("cannot find the position of window")
 				cu = b.humanFailureControlUnits[b.nextHumanStateId]
+			}
+		case H_O_POTION:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
+			ratio, _ := strconv.ParseFloat(b.humanParams[b.nextHumanStateId], 32)
+			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
+				openWindowByShortcut(b.hWnd, 0x45)
+				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
+					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 2); ok {
+						sys.DoubleClick(HWND(b.hWnd), x, y)
+						if b.aim(target, HumanTargetingChecker) {
+							b.logH("healed an ally")
+							cu = b.humanSuccessControlUnits[b.nextHumanStateId]
+						} else {
+							b.logH("cannot target")
+							cu = b.humanFailureControlUnits[b.nextHumanStateId]
+						}
+					} else {
+						b.logH("cannot find a potion")
+						cu = b.humanFailureControlUnits[b.nextHumanStateId]
+					}
+				} else {
+					b.logH("cannot find the position of window")
+					cu = b.humanFailureControlUnits[b.nextHumanStateId]
+				}
+			} else {
+				b.logH("found no one needed to be taken care of")
+				cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_O_RIDE:
 			openWindowByShortcut(b.hWnd, 0x57)
@@ -769,8 +800,11 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 	return b.petFailureControlUnits
 }
 
-func TT(hWnd HWND) (int32, int32, bool) {
+func Test(hWnd HWND) (x int32, y int32, successful bool) {
+	closeAllWindow(hWnd)
+	clearChat(hWnd)
 	openWindowByShortcut(hWnd, 0x45)
-	px, py, _ := getBSItemWindowPos(hWnd)
-	return getItemPos(hWnd, px, py, COLOR_ITEM_BOMB_9A)
+	x, y, successful = getBSItemWindowPos(hWnd)
+	// return getItemPos(hWnd, x, y, COLOR_ITEM_POTION, 3)
+	return
 }

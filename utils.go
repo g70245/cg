@@ -84,8 +84,8 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 	x := oX
 	for x <= dX {
 		y := oY
-		MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
-		time.Sleep(200 * time.Millisecond)
+		// MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+		// time.Sleep(200 * time.Millisecond)
 		for y <= dY {
 			fmt.Printf("(%d, %d) %d\n", x, y, GetColor(hWnd, x, y))
 			y += 1
@@ -98,7 +98,7 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 
 func getHWND() win.HWND {
 	for _, h := range maps.Values(system.FindWindows(TARGET_CLASS)) {
-		if fmt.Sprint(h) == "9768800" {
+		if fmt.Sprint(h) == "460650" {
 			return h
 		}
 	}

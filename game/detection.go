@@ -67,6 +67,7 @@ const (
 
 	COLOR_ITEM_BOMB_8B = 8388607
 	COLOR_ITEM_BOMB_9A = 13974896
+	COLOR_ITEM_POTION  = 8948665
 )
 
 var (
@@ -119,16 +120,16 @@ var (
 
 	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 144, COLOR_NS_ITEM_PIVOT}
 
-	PLAYER_L_1_H = CheckTarget{329, 457 - 26, COLOR_ANY}
-	PLAYER_L_2_H = CheckTarget{394, 422 - 26, COLOR_ANY}
-	PLAYER_L_3_H = CheckTarget{460, 387 - 26, COLOR_ANY}
-	PLAYER_L_4_H = CheckTarget{524, 352 - 26, COLOR_ANY}
-	PLAYER_L_5_H = CheckTarget{589, 317 - 26, COLOR_ANY}
-	PLAYER_L_1_P = CheckTarget{269, 412 - 26, COLOR_ANY}
-	PLAYER_L_2_P = CheckTarget{333, 376 - 26, COLOR_ANY}
-	PLAYER_L_3_P = CheckTarget{397, 340 - 26, COLOR_ANY}
-	PLAYER_L_4_P = CheckTarget{460, 303 - 26, COLOR_ANY}
-	PLAYER_L_5_P = CheckTarget{524, 267 - 26, COLOR_ANY}
+	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
+	PLAYER_L_2_H = CheckTarget{394, 396, COLOR_ANY}
+	PLAYER_L_3_H = CheckTarget{460, 361, COLOR_ANY}
+	PLAYER_L_4_H = CheckTarget{524, 326, COLOR_ANY}
+	PLAYER_L_5_H = CheckTarget{589, 291, COLOR_ANY}
+	PLAYER_L_1_P = CheckTarget{269, 386, COLOR_ANY}
+	PLAYER_L_2_P = CheckTarget{333, 350, COLOR_ANY}
+	PLAYER_L_3_P = CheckTarget{397, 314, COLOR_ANY}
+	PLAYER_L_4_P = CheckTarget{460, 277, COLOR_ANY}
+	PLAYER_L_5_P = CheckTarget{524, 241, COLOR_ANY}
 )
 
 func getScene(hWnd HWND) CheckTarget {
@@ -256,14 +257,14 @@ func isSlotEmpty(hWnd HWND, px, py int32) bool {
 	return true
 }
 
-func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
+func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
 	x := px
 	y := py
 	var i, j int32
 
 	for i = 0; i < 5; i++ {
 		for j = 0; j < 4; j++ {
-			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color); found {
+			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
 				return tx, ty, found
 			}
 		}
@@ -272,7 +273,7 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF) (int32, int32, bool) {
+func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
 	x := px
 	for x < px+30 {
 		y := py
@@ -280,9 +281,9 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF) (int32, int32, 
 			if sys.GetColor(hWnd, x, y) == color {
 				return x, y, true
 			}
-			y += 5
+			y += granularity
 		}
-		x += 5
+		x += granularity
 	}
 	return 0, 0, false
 }

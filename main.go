@@ -27,13 +27,15 @@ var (
 
 func test() {
 	// hWnd := getHWND()
+	// x, y, _ := game.Test(hWnd)
+	// system.MoveMouse(hWnd, x, y)
 	// CheckColor(
 	// 	hWnd,
-	// 	400,
-	// 	200,
-	// 	500,
-	// 	300,
-	// 	13974896,
+	// 	x,
+	// 	y,
+	// 	x+250,
+	// 	y+200,
+	// 	8948665,
 	// )
 	os.Exit(0)
 }
