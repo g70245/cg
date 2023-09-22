@@ -9,10 +9,10 @@ import (
 
 const (
 	CLICK_DURATION                   = 60
-	DOUBLE_CLICK_DURATION            = 160
+	DOUBLE_CLICK_DURATION            = 180
 	KEY_DURATION                     = 140
 	MOUSE_MOVE_DURATION              = 80
-	BAD_COMPUTER_MOUSE_MOVE_DURATION = 160
+	BAD_COMPUTER_MOUSE_MOVE_DURATION = 180
 )
 
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
