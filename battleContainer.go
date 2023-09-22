@@ -444,6 +444,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			catchButton = widget.NewButton(H_S_CATCH, func() {
 				worker.ActionState.AddHumanState(H_S_CATCH)
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
 
 				trainButton.Disable()
 			})
@@ -813,6 +815,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			petCatchButton = widget.NewButton(P_CATCH, func() {
 				worker.ActionState.AddPetState(P_CATCH)
+				statesViewer.Objects = generateTags(*worker)
+				statesViewer.Refresh()
 
 			})
 			petCatchButton.Importance = widget.SuccessImportance
@@ -878,7 +882,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer.Add(loadSettingButton)
 		workerMenuContainer.Add(saveSettingButton)
 
-		statesViewer = container.NewAdaptiveGrid(5, generateTags(*worker)...)
+		statesViewer = container.NewAdaptiveGrid(7, generateTags(*worker)...)
 
 		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
 		configContainer.Add(workerContainer)

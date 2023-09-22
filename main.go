@@ -17,7 +17,7 @@ const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
 	APP_WIDTH    = 960
-	APP_HEIGHT   = 460
+	APP_HEIGHT   = 420
 )
 
 var (
