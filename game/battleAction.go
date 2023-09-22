@@ -4,6 +4,7 @@ import (
 	sys "cg/system"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -595,7 +596,10 @@ var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_
 var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
 
 func (b *BattleActionState) attack(attackedTargets []CheckTarget, stateChecker func(hwnd HWND) bool) bool {
-	for _, target := range attackedTargets {
+	newTargets := slices.Clone(attackedTargets)
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	rand.Shuffle(len(newTargets), func(i, j int) { newTargets[i], newTargets[j] = newTargets[j], newTargets[i] })
+	for _, target := range newTargets {
 		sys.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(ATTACK_INTERVAL * time.Millisecond)
 		if stateChecker(b.hWnd) {
