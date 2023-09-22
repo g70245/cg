@@ -201,7 +201,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						bomb = Bombs[i]
 					}
 				}
-				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 3); ok {
+				if x, y, ok := getItemPosThreadVer(b.hWnd, px, py, bomb.color, 3); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if b.attack(humanAttackOrder, HumanTargetingChecker) {
 						b.logH("throwed a bomb")

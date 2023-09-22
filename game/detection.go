@@ -176,14 +176,17 @@ func isPetSkillWindowOpendWhileRiding(hWnd HWND) bool {
 }
 
 func HumanTargetingChecker(hWnd HWND) bool {
+	sys.MoveToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
 
 func PetTargetingChecker(hWnd HWND) bool {
+	sys.MoveToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
 	x := BATTLE_WINDOW_SKILL_FIRST.x
 	for x <= 164 {
 		y := BATTLE_WINDOW_SKILL_FIRST.y
@@ -199,6 +202,7 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
 	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.x+50 {
 		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
@@ -214,6 +218,7 @@ func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
 	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
 		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
@@ -229,7 +234,7 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
-
+	sys.MoveToNowhere(hWnd)
 	x := px
 	y := py
 	var i, j int32
@@ -266,6 +271,28 @@ type pos struct {
 }
 
 func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
+
+	x := px
+	y := py
+	var i, j int32
+
+	for i = 0; i < 5; i++ {
+
+		for j = 0; j < 4; j++ {
+			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
+				return tx, ty, found
+			}
+		}
+
+	}
+
+	return 0, 0, false
+}
+
+func getItemPosThreadVer(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
+
 	x := px
 	y := py
 
@@ -359,6 +386,8 @@ func DoesEncounterBaby(dir string) bool {
 }
 
 func canRecall(hWnd HWND) bool {
+	sys.MoveToNowhere(hWnd)
+
 	return sys.GetColor(hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
@@ -382,6 +411,8 @@ func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
 }
 
 func searchOneLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
+	sys.MoveToNowhere(hWnd)
+
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
 			return &allTargets[i], true
@@ -391,6 +422,8 @@ func searchOneLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 }
 
 func countLifeBelow(hWnd HWND, ratio float32) (count int) {
+	sys.MoveToNowhere(hWnd)
+
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
 			count++
@@ -416,6 +449,8 @@ var allPets = []CheckTarget{
 }
 
 func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
+	sys.MoveToNowhere(hWnd)
+
 	targets := allHumans
 	if !isHuman {
 		targets = allPets

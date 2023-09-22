@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ACTION_INTERVAL = 170
+	ACTION_INTERVAL = 200
 )
 
 func closeAllWindow(hWnd HWND) {

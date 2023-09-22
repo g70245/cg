@@ -5,7 +5,6 @@ import (
 )
 
 func GetColor(hWnd HWND, x, y int32) (color COLORREF) {
-	MoveToNowhere(hWnd)
 	hdc := GetDC(hWnd)
 	color = GetPixel(hdc, x, y)
 	ReleaseDC(hWnd, hdc)
