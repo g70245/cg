@@ -3,8 +3,12 @@ package main
 import (
 	. "cg/game"
 	. "cg/system"
+	"encoding/json"
 	"image/color"
+	"io"
+	"log"
 	"math"
+	"os"
 	"strings"
 
 	"fmt"
@@ -834,12 +838,36 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		petStateSelector.Importance = widget.MediumImportance
 
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
-			fmt.Println(window.Content().Size())
+			dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+				if uc != nil {
+					var actionState BattleActionState
+					file, openErr := os.Open(uc.URI().Path())
+					defer file.Close()
+					if openErr == nil {
+						if buffer, readErr := io.ReadAll(file); readErr == nil {
+							if json.Unmarshal(buffer, &actionState) == nil {
+								worker.ActionState = actionState
+								statesViewer.Objects = generateTags(*worker)
+								statesViewer.Refresh()
+							}
+						}
+					}
+				}
+			}, window).Show()
+
 		})
 		loadSettingButton.Importance = widget.MediumImportance
 
 		saveSettingButton := widget.NewButtonWithIcon("Save", theme.DownloadIcon(), func() {
-
+			dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
+				if uc != nil {
+					if setting, marshalErr := json.Marshal(worker.ActionState); marshalErr == nil {
+						if writeErr := os.WriteFile(uc.URI().Path(), setting, 0644); writeErr != nil {
+							log.Fatalf("Cannot write to file: %s\n", uc.URI().Path())
+						}
+					}
+				}
+			}, window).Show()
 		})
 		saveSettingButton.Importance = widget.MediumImportance
 
