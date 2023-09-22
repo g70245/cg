@@ -402,8 +402,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var healOneButton *widget.Button
 			var healMultiButton *widget.Button
 
-			attackButton = widget.NewButton(H_A_ATTACK, func() {
-				worker.ActionState.AddHumanState(H_A_ATTACK)
+			attackButton = widget.NewButton(H_F_ATTACK, func() {
+				worker.ActionState.AddHumanState(H_F_ATTACK)
 
 				dialogs := []SelectorDialog{
 					hCUSuccessSelectorDialog,
@@ -416,8 +416,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			attackButton.Importance = widget.WarningImportance
 
-			defendButton = widget.NewButton(H_A_DEFEND, func() {
-				worker.ActionState.AddHumanState(H_A_DEFEND)
+			defendButton = widget.NewButton(H_F_DEFEND, func() {
+				worker.ActionState.AddHumanState(H_F_DEFEND)
 
 				dialogs := []SelectorDialog{
 					hCUSuccessSelectorDialog,
@@ -426,8 +426,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			defendButton.Importance = widget.WarningImportance
 
-			escapeButton = widget.NewButton(H_A_ESCAPE, func() {
-				worker.ActionState.AddHumanState(H_A_ESCAPE)
+			escapeButton = widget.NewButton(H_F_ESCAPE, func() {
+				worker.ActionState.AddHumanState(H_F_ESCAPE)
 
 				dialogs := []SelectorDialog{
 					hCUFailureSelectorDialog,
@@ -451,8 +451,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			catchButton.Importance = widget.SuccessImportance
 
-			bombButton = widget.NewButton(H_O_BOMB, func() {
-				worker.ActionState.AddHumanState(H_O_BOMB)
+			bombButton = widget.NewButton(H_C_BOMB, func() {
+				worker.ActionState.AddHumanState(H_C_BOMB)
 
 				dialogs := []SelectorDialog{
 					bombsSelectorDialog,
@@ -473,8 +473,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			bombButton.Importance = widget.HighImportance
 
-			potionButton = widget.NewButton(H_O_POTION, func() {
-				worker.ActionState.AddHumanState(H_O_POTION)
+			potionButton = widget.NewButton(H_C_POTION, func() {
+				worker.ActionState.AddHumanState(H_C_POTION)
 
 				dialogs := []SelectorDialog{
 					hHealingRatioSelectorDialog,
@@ -485,8 +485,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			potionButton.Importance = widget.HighImportance
 
-			recallButton = widget.NewButton(H_O_PET_RECALL, func() {
-				worker.ActionState.AddHumanState(H_O_PET_RECALL)
+			recallButton = widget.NewButton(H_C_PET_RECALL, func() {
+				worker.ActionState.AddHumanState(H_C_PET_RECALL)
 
 				dialogs := []SelectorDialog{
 					hCUSuccessSelectorDialog,
@@ -497,8 +497,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			recallButton.Importance = widget.HighImportance
 
-			moveButton = widget.NewButton(H_A_MOVE, func() {
-				worker.ActionState.AddHumanState(H_A_MOVE)
+			moveButton = widget.NewButton(H_F_MOVE, func() {
+				worker.ActionState.AddHumanState(H_F_MOVE)
 
 				dialogs := []SelectorDialog{
 					hCUSuccessSelectorDialog,
@@ -526,8 +526,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			hangButton.Importance = widget.SuccessImportance
 
-			skillButton = widget.NewButton(H_O_SKILL, func() {
-				worker.ActionState.AddHumanState(H_O_SKILL)
+			skillButton = widget.NewButton(H_C_SKILL, func() {
+				worker.ActionState.AddHumanState(H_C_SKILL)
 
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
@@ -588,8 +588,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			trainButton.Importance = widget.SuccessImportance
 
-			rideButton = widget.NewButton(H_O_RIDE, func() {
-				worker.ActionState.AddHumanState(H_O_RIDE)
+			rideButton = widget.NewButton(H_C_RIDE, func() {
+				worker.ActionState.AddHumanState(H_C_RIDE)
 
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
@@ -604,8 +604,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			rideButton.Importance = widget.HighImportance
 
-			healSelfButton = widget.NewButton(H_O_SE_HEAL, func() {
-				worker.ActionState.AddHumanState(H_O_SE_HEAL)
+			healSelfButton = widget.NewButton(H_C_SE_HEAL, func() {
+				worker.ActionState.AddHumanState(H_C_SE_HEAL)
 
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
@@ -624,8 +624,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			healSelfButton.Importance = widget.HighImportance
 
-			healOneButton = widget.NewButton(H_O_O_HEAL, func() {
-				worker.ActionState.AddHumanState(H_O_O_HEAL)
+			healOneButton = widget.NewButton(H_C_O_HEAL, func() {
+				worker.ActionState.AddHumanState(H_C_O_HEAL)
 
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
@@ -642,8 +642,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			healOneButton.Importance = widget.HighImportance
 
-			healMultiButton = widget.NewButton(H_O_M_HEAL, func() {
-				worker.ActionState.AddHumanState(H_O_M_HEAL)
+			healMultiButton = widget.NewButton(H_C_M_HEAL, func() {
+				worker.ActionState.AddHumanState(H_C_M_HEAL)
 
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
@@ -692,7 +692,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petAttackButton *widget.Button
 			var petHangButton *widget.Button
 			var petSkillButton *widget.Button
-			var petDefenceButton *widget.Button
+			var petDefendButton *widget.Button
 			var petEscapeButton *widget.Button
 			var petHealSelfButton *widget.Button
 			var petHealOneButton *widget.Button
@@ -700,8 +700,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petOffRideButton *widget.Button
 			var petCatchButton *widget.Button
 
-			petAttackButton = widget.NewButton(P_ATTACK, func() {
-				worker.ActionState.AddPetState(P_ATTACK)
+			petAttackButton = widget.NewButton(P_F_ATTACK, func() {
+				worker.ActionState.AddPetState(P_F_ATTACK)
 
 				dialogs := []SelectorDialog{
 					pCUSuccessSelectorDialog,
@@ -711,8 +711,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petAttackButton.Importance = widget.WarningImportance
 
-			petHangButton = widget.NewButton(P_HANG, func() {
-				worker.ActionState.AddPetState(P_HANG)
+			petHangButton = widget.NewButton(P_S_HANG, func() {
+				worker.ActionState.AddPetState(P_S_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
@@ -720,13 +720,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petHangButton.Disable()
 				petSkillButton.Disable()
 				petRideButton.Disable()
-				petDefenceButton.Disable()
+				petDefendButton.Disable()
 				petHealSelfButton.Disable()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
-			petSkillButton = widget.NewButton(P_SkILL, func() {
-				worker.ActionState.AddPetState(P_SkILL)
+			petSkillButton = widget.NewButton(P_C_SkILL, func() {
+				worker.ActionState.AddPetState(P_C_SkILL)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -737,8 +737,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petSkillButton.Importance = widget.HighImportance
 
-			petDefenceButton = widget.NewButton(P_DEFEND, func() {
-				worker.ActionState.AddPetState(P_DEFEND)
+			petDefendButton = widget.NewButton(P_C_DEFEND, func() {
+				worker.ActionState.AddPetState(P_C_DEFEND)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -747,10 +747,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 			})
-			petDefenceButton.Importance = widget.HighImportance
+			petDefendButton.Importance = widget.HighImportance
 
-			petHealSelfButton = widget.NewButton(P_SE_HEAL, func() {
-				worker.ActionState.AddPetState(P_SE_HEAL)
+			petHealSelfButton = widget.NewButton(P_C_SE_HEAL, func() {
+				worker.ActionState.AddPetState(P_C_SE_HEAL)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -762,8 +762,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petHealSelfButton.Importance = widget.HighImportance
 
-			petHealOneButton = widget.NewButton(P_O_HEAL, func() {
-				worker.ActionState.AddPetState(P_O_HEAL)
+			petHealOneButton = widget.NewButton(P_C_O_HEAL, func() {
+				worker.ActionState.AddPetState(P_C_O_HEAL)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -775,8 +775,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petHealOneButton.Importance = widget.HighImportance
 
-			petRideButton = widget.NewButton(P_RIDE, func() {
-				worker.ActionState.AddPetState(P_RIDE)
+			petRideButton = widget.NewButton(P_C_RIDE, func() {
+				worker.ActionState.AddPetState(P_C_RIDE)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -789,8 +789,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petRideButton.Importance = widget.HighImportance
 
-			petOffRideButton = widget.NewButton(P_OFF_RIDE, func() {
-				worker.ActionState.AddPetState(P_OFF_RIDE)
+			petOffRideButton = widget.NewButton(P_C_OFF_RIDE, func() {
+				worker.ActionState.AddPetState(P_C_OFF_RIDE)
 
 				dialogs := []SelectorDialog{
 					pIdSelectorDialog,
@@ -803,18 +803,18 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petOffRideButton.Importance = widget.HighImportance
 
-			petEscapeButton = widget.NewButton(P_ESCAPE, func() {
-				worker.ActionState.AddPetState(P_ESCAPE)
+			petEscapeButton = widget.NewButton(P_F_ESCAPE, func() {
+				worker.ActionState.AddPetState(P_F_ESCAPE)
 
 				dialogs := []SelectorDialog{
 					pCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
-			petEscapeButton.Importance = widget.HighImportance
+			petEscapeButton.Importance = widget.WarningImportance
 
-			petCatchButton = widget.NewButton(P_CATCH, func() {
-				worker.ActionState.AddPetState(P_CATCH)
+			petCatchButton = widget.NewButton(P_S_CATCH, func() {
+				worker.ActionState.AddPetState(P_S_CATCH)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
@@ -823,9 +823,9 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
-				petSkillButton,
-				petDefenceButton,
 				petEscapeButton,
+				petDefendButton,
+				petSkillButton,
 				petRideButton,
 				petOffRideButton,
 				petHealSelfButton,
@@ -938,10 +938,12 @@ func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
 }
 
 var (
-	humanFinishingTagColor   = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
-	humanConditionedTagColor = color.RGBA{0, 28, 245, uint8(math.Round(0.8 * 255))}
-	humanSpecialTagColor     = color.RGBA{35, 128, 24, uint8(math.Round(0.8 * 255))}
-	petTagColor              = color.RGBA{92, 14, 99, uint8(math.Round(0.8 * 255))}
+	humanFinishingTagColor   = color.RGBA{235, 206, 100, uint8(math.Round(1 * 255))}
+	humanConditionalTagColor = color.RGBA{100, 206, 235, uint8(math.Round(1 * 255))}
+	humanSpecialTagColor     = color.RGBA{206, 235, 100, uint8(math.Round(1 * 255))}
+	petFinishingTagColor     = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
+	petConditionalTagColor   = color.RGBA{0, 79, 245, uint8(math.Round(0.8 * 255))}
+	petSpecialTagColor       = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
 )
 
 func createTagContainer(actionState BattleActionState, isHuman bool) (tagContainers []fyne.CanvasObject) {
@@ -953,15 +955,24 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 	}
 
 	for i, tag := range tags {
-		tagColor := petTagColor
+		tagColor := petSpecialTagColor
 		if isHuman {
 			switch {
 			case strings.Contains(tag, "**"):
 				tagColor = humanFinishingTagColor
 			case strings.Contains(tag, "*"):
-				tagColor = humanConditionedTagColor
+				tagColor = humanConditionalTagColor
 			default:
 				tagColor = humanSpecialTagColor
+			}
+		} else {
+			switch {
+			case strings.Contains(tag, "**"):
+				tagColor = petFinishingTagColor
+			case strings.Contains(tag, "*"):
+				tagColor = petConditionalTagColor
+			default:
+				tagColor = petSpecialTagColor
 			}
 		}
 

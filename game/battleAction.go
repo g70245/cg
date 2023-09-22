@@ -21,35 +21,35 @@ const (
 )
 
 const (
-	H_A_ATTACK = "**Attack"
-	H_A_DEFEND = "**Defend"
-	H_A_ESCAPE = "**Escape"
-	H_A_MOVE   = "**Move"
+	H_F_ATTACK = "**Attack"
+	H_F_DEFEND = "**Defend"
+	H_F_ESCAPE = "**Escape"
+	H_F_MOVE   = "**Move"
 
-	H_O_BOMB       = "*Bomb"
-	H_O_PET_RECALL = "*Recall Pet"
-	H_O_POTION     = "*Potion"
-	H_O_SKILL      = "*Skill"
-	H_O_SE_HEAL    = "*Heal Self"
-	H_O_O_HEAL     = "*Heal One"
-	H_O_M_HEAL     = "*Heal Multi"
-	H_O_RIDE       = "*Ride"
+	H_C_BOMB       = "*Bomb"
+	H_C_PET_RECALL = "*Recall Pet"
+	H_C_POTION     = "*Potion"
+	H_C_SKILL      = "*Skill"
+	H_C_SE_HEAL    = "*Heal Self"
+	H_C_O_HEAL     = "*Heal One"
+	H_C_M_HEAL     = "*Heal Multi"
+	H_C_RIDE       = "*Ride"
 
 	H_S_HANG        = "Hang"
 	H_S_STEAL       = "Steal"
 	H_S_CATCH       = "Catch"
 	H_S_TRAIN_SKILL = "Train Skill"
 
-	P_ATTACK   = "Pet Attack"
-	P_HANG     = "Pet Hang"
-	P_SkILL    = "Pet Skill"
-	P_DEFEND   = "Pet Defend"
-	P_ESCAPE   = "Pet Escape"
-	P_SE_HEAL  = "Pet Heal Self"
-	P_O_HEAL   = "Pet Heal One"
-	P_RIDE     = "Pet Ride"
-	P_OFF_RIDE = "Pet Off Ride"
-	P_CATCH    = "Pet Catch"
+	P_F_ATTACK   = "**Pet Attack"
+	P_F_ESCAPE   = "**Pet Escape"
+	P_C_SkILL    = "*Pet Skill"
+	P_C_DEFEND   = "*Pet Defend"
+	P_C_SE_HEAL  = "*Pet Heal Self"
+	P_C_O_HEAL   = "*Pet Heal One"
+	P_C_RIDE     = "*Pet Ride"
+	P_C_OFF_RIDE = "*Pet Off Ride"
+	P_S_CATCH    = "*Pet Catch"
+	P_S_HANG     = "Pet Hang"
 )
 
 const (
@@ -127,7 +127,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		var cu string
 
 		switch b.HumanStates[b.nextHumanStateId] {
-		case H_A_ATTACK:
+		case H_F_ATTACK:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -140,7 +140,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("missed a hit")
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
-		case H_O_SKILL:
+		case H_C_SKILL:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -164,15 +164,15 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find the position of window")
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
-		case H_A_DEFEND:
+		case H_F_DEFEND:
 			b.defend()
 			b.logH("defended")
 			cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
-		case H_A_MOVE:
+		case H_F_MOVE:
 			b.move()
 			b.logH("moved")
 			cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
-		case H_A_ESCAPE:
+		case H_F_ESCAPE:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -188,7 +188,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.logH("is hanging")
 			b.isHumanHanging = true
 			return
-		case H_O_BOMB:
+		case H_C_BOMB:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -218,7 +218,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find the position of window")
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
-		case H_O_POTION:
+		case H_C_POTION:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
@@ -246,7 +246,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found no one needed to be taken care of")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
-		case H_O_RIDE:
+		case H_C_RIDE:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -262,7 +262,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				} else {
 					b.logH("is tring to get on a pet")
 					for i, v := range b.PetStates {
-						if v == P_RIDE {
+						if v == P_C_RIDE {
 							b.nextPetStateId = i
 							break
 						}
@@ -273,7 +273,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find the position of window")
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
-		case H_O_SE_HEAL:
+		case H_C_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 
@@ -304,7 +304,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find self")
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
-		case H_O_O_HEAL:
+		case H_C_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
@@ -332,7 +332,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found no one needed to be taken care of")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
-		case H_O_M_HEAL:
+		case H_C_M_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
@@ -361,7 +361,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found all good")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
-		case H_O_PET_RECALL:
+		case H_C_PET_RECALL:
 			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
 				break
 			}
@@ -450,7 +450,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		var cu string
 
 		switch b.PetStates[b.nextPetStateId] {
-		case P_ATTACK:
+		case P_F_ATTACK:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -470,7 +470,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 
-		case P_SkILL:
+		case P_C_SkILL:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -493,7 +493,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
-		case P_HANG:
+		case P_S_HANG:
 			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
 				break
 			}
@@ -501,7 +501,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.logP("is hanging")
 			b.isPetHanging = true
 			return
-		case P_DEFEND:
+		case P_C_DEFEND:
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
@@ -517,7 +517,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
-		case P_SE_HEAL:
+		case P_C_SE_HEAL:
 			if self, ok := getSelfTarget(b.hWnd, false || isOnRide(b.hWnd)); ok {
 				ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
 				if !isLifeBelow(b.hWnd, float32(ratio), self) {
@@ -545,7 +545,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find self")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
-		case P_RIDE:
+		case P_C_RIDE:
 			if isOnRide(b.hWnd) {
 				b.logP("is on ride")
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
@@ -562,7 +562,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
-		case P_OFF_RIDE:
+		case P_C_OFF_RIDE:
 			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
 				break
 			}
@@ -583,7 +583,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
-		case P_O_HEAL:
+		case P_C_O_HEAL:
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
@@ -608,7 +608,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("found no one needed to be taken care of")
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
 			}
-		case P_ESCAPE:
+		case P_F_ESCAPE:
 			if b.isEncounteringBaBy {
 				break
 			}
@@ -621,7 +621,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.escape()
 			b.logP("escaped")
 			cu = b.PetFailureControlUnits[b.nextPetStateId]
-		case P_CATCH:
+		case P_S_CATCH:
 			if *b.logDir == "" {
 				b.logH("please set up the log directory")
 				break
@@ -736,13 +736,13 @@ func (b *BattleActionState) logP(message string) {
 func CreateNewBattleActionState(hWnd HWND, logDir *string) BattleActionState {
 	return BattleActionState{
 		hWnd:                     hWnd,
-		HumanStates:              []string{H_A_ATTACK},
+		HumanStates:              []string{H_F_ATTACK},
 		HumanSkillIds:            []string{""},
 		HumanSkillLevels:         []string{""},
 		HumanParams:              []string{""},
 		HumanSuccessControlUnits: []string{C_U_CONTINUE},
 		HumanFailureControlUnits: []string{C_U_CONTINUE},
-		PetStates:                []string{P_ATTACK},
+		PetStates:                []string{P_F_ATTACK},
 		PetSkillIds:              []string{""},
 		PetParams:                []string{""},
 		PetSuccessControlUnits:   []string{C_U_CONTINUE},
