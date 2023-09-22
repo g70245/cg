@@ -850,6 +850,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 					if openErr == nil {
 						if buffer, readErr := io.ReadAll(file); readErr == nil {
 							if json.Unmarshal(buffer, &actionState) == nil {
+								actionState.SetHWND(worker.ActionState.GetHWND())
 								worker.ActionState = actionState
 								statesViewer.Objects = generateTags(*worker)
 								statesViewer.Refresh()

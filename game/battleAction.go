@@ -201,7 +201,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						bomb = Bombs[i]
 					}
 				}
-				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 5); ok {
+				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 3); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if b.attack(humanAttackOrder, HumanTargetingChecker) {
 						b.logH("throwed a bomb")
@@ -749,6 +749,14 @@ func CreateNewBattleActionState(hWnd HWND, logDir *string) BattleActionState {
 		PetFailureControlUnits:   []string{C_U_CONTINUE},
 		logDir:                   logDir,
 	}
+}
+
+func (b *BattleActionState) GetHWND() HWND {
+	return b.hWnd
+}
+
+func (b *BattleActionState) SetHWND(hWnd HWND) {
+	b.hWnd = hWnd
 }
 
 func (b *BattleActionState) AddHumanState(newState string) {
