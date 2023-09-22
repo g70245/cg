@@ -34,17 +34,19 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 		// }
 
 		var newGroup map[string]HWND
-		gamesChoosingCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
+		gamesSelectingCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
 			newGroup = make(map[string]HWND)
 			for _, game := range games {
 				newGroup[game] = idleGames.Peek(game)
 			}
 		})
-		gamesChoosingCheckGroup.Horizontal = true
-		gamesChoosingDialog := dialog.NewCustom("Select games", "Create", gamesChoosingCheckGroup, window)
-		gamesChoosingDialog.Resize(fyne.NewSize(240, 166))
+		gamesSelectingCheckGroup.Horizontal = true
+		groupNameEntry := widget.NewEntry()
+		groupNameEntry.SetPlaceHolder("Enter group name")
+		gamesSelectingDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesSelectingCheckGroup), window)
+		gamesSelectingDialog.Resize(fyne.NewSize(240, 166))
 
-		gamesChoosingDialog.SetOnClosed(func() {
+		gamesSelectingDialog.SetOnClosed(func() {
 			if len(newGroup) == 0 {
 				return
 			}
@@ -70,7 +72,13 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			autoGroups[id] = newGroup
 			stopChans[id] = stopChan
 
-			newTabItem = container.NewTabItem("Group "+fmt.Sprint(id), newGroupContainer)
+			var groupName string
+			if groupNameEntry.Text != "" {
+				groupName = groupNameEntry.Text
+			} else {
+				groupName = "Group " + fmt.Sprint(id)
+			}
+			newTabItem = container.NewTabItem(groupName, newGroupContainer)
 			groupTabs.Append(newTabItem)
 			groupTabs.Show()
 
@@ -78,7 +86,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 			id++
 		})
-		gamesChoosingDialog.Show()
+		gamesSelectingDialog.Show()
 	})
 
 	menu := container.NewVBox(newGroupButton)
@@ -172,12 +180,20 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer := container.NewGridWithColumns(4)
 		worker := &workers[i]
 
-		gameNameLabelContainer := container.NewStack()
-		gameNameLabel := canvas.NewText(worker.GetHandle(), color.RGBA{11, 86, 107, 255})
-		gameNameLabel.Alignment = fyne.TextAlignCenter
-		gameNameLabel.TextStyle = fyne.TextStyle{TabWidth: 1, Bold: true}
-		gameNameLabel.TextSize = 16
-		gameNameLabelContainer.Add(gameNameLabel)
+		var nicknameButton *widget.Button
+		nicknameEntry := widget.NewEntry()
+		nicknameEntry.SetPlaceHolder("Enter nickname")
+		nicknameButton = widget.NewButtonWithIcon(worker.GetHandle(), theme.AccountIcon(), func() {
+			nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
+			nicknameDialog.SetOnClosed(func() {
+				nickname := ""
+				if nicknameEntry.Text != "" {
+					nickname = fmt.Sprintf("(%s)", nicknameEntry.Text)
+				}
+				nicknameButton.SetText(fmt.Sprintf("%s%s", worker.GetHandle(), nickname))
+			})
+			nicknameDialog.Show()
+		})
 
 		var movementModeButton *widget.Button
 		var movementModeDialog *dialog.CustomDialog
@@ -191,7 +207,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			movementModeDialog.Hide()
 		})
-		movementModeDialog = dialog.NewCustomWithoutButtons("Select a Move Way", movementModeSelector, window)
+		movementModeDialog = dialog.NewCustomWithoutButtons("Select a move way", movementModeSelector, window)
 		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
@@ -817,7 +833,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		humanStateSelector.Importance = widget.MediumImportance
 		petStateSelector.Importance = widget.MediumImportance
 
-		workerMenuContainer.Add(gameNameLabelContainer)
+		workerMenuContainer.Add(nicknameButton)
 		workerMenuContainer.Add(movementModeButton)
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
