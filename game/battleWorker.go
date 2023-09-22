@@ -37,7 +37,7 @@ func CreateBattleWorkers(hWnds []HWND, logDir *string) BattleWorkers {
 				hWnd: hWnd,
 				Mode: NONE,
 			},
-			ActionState: CreateNewBattleActionState(hWnd),
+			ActionState: CreateNewBattleActionState(hWnd, logDir),
 			logDir:      logDir,
 		})
 	}
@@ -86,7 +86,8 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	go func() {
 		defer workerTicker.Stop()
 		w.ActionState.Enabled = true
-		w.ActionState.IsOutOfMana = false
+		w.ActionState.isOutOfMana = false
+		w.ActionState.isEncounteringBaBy = false
 		isTPed := false
 		isPlayingBeeper := false
 		isInventoryFull := false
@@ -118,7 +119,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
 				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.IsOutOfMana || isInventoryFull) {
+				if !isPlayingBeeper && (w.ActionState.isOutOfMana || isInventoryFull) {
 					isPlayingBeeper = PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)

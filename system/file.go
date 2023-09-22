@@ -37,7 +37,7 @@ func FindLastModifiedFileBefore(dir string, t time.Time) (path string, info os.F
 	return
 }
 
-func GetLastLineWithSeek(filepath string) string {
+func GetLinesWithSeek(filepath string, lineNumber int) []string {
 	fileHandle, err := os.Open(filepath)
 
 	if err != nil {
@@ -45,6 +45,7 @@ func GetLastLineWithSeek(filepath string) string {
 	}
 	defer fileHandle.Close()
 
+	lines := make([]string, 0)
 	var buffer []byte
 
 	var cursor int64 = -2
@@ -58,8 +59,12 @@ func GetLastLineWithSeek(filepath string) string {
 		fileHandle.Read(char)
 
 		if cursor != -1 && (char[0] == 10 || char[0] == 13) {
-
-			break
+			lines = append(lines, byteToString(buffer))
+			if len(lines) == lineNumber {
+				break
+			} else {
+				cursor--
+			}
 		}
 
 		buffer = append([]byte{char[0]}, buffer...)
@@ -70,6 +75,10 @@ func GetLastLineWithSeek(filepath string) string {
 
 	}
 
+	return lines
+}
+
+func byteToString(buffer []byte) string {
 	transformReader := transform.NewReader(bytes.NewReader(buffer), traditionalchinese.Big5.NewDecoder())
 	decBytes, _ := io.ReadAll(transformReader)
 	return string(decBytes)
@@ -77,5 +86,10 @@ func GetLastLineWithSeek(filepath string) string {
 
 func GetLastLineOfLog(logDir string) string {
 	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return GetLastLineWithSeek(path)
+	return GetLinesWithSeek(path, 1)[0]
+}
+
+func GetLinesOfLog(logDir string, lineNumber int) []string {
+	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return GetLinesWithSeek(path, lineNumber)
 }

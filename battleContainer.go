@@ -425,12 +425,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			catchButton = widget.NewButton(H_S_CATCH, func() {
 				worker.ActionState.AddHumanState(H_S_CATCH)
 
-				dialogs := []SelectorDialog{
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
-				}
-				activateDialogs(dialogs, enableChan)
-
 				trainButton.Disable()
 			})
 			catchButton.Importance = widget.SuccessImportance
@@ -583,15 +577,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				catchButton.Disable()
-				escapeButton.Disable()
 				bombButton.Disable()
-				recallButton.Disable()
-				moveButton.Disable()
-				hangButton.Disable()
-				skillButton.Disable()
 				stealButton.Disable()
-				rideButton.Disable()
 			})
 			rideButton.Importance = widget.HighImportance
 
@@ -689,6 +676,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
 			var petOffRideButton *widget.Button
+			var petCatchButton *widget.Button
 
 			petAttackButton = widget.NewButton(P_ATTACK, func() {
 				worker.ActionState.AddPetState(P_ATTACK)
@@ -803,6 +791,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			petEscapeButton.Importance = widget.HighImportance
 
+			petCatchButton = widget.NewButton(P_CATCH, func() {
+				worker.ActionState.AddPetState(P_CATCH)
+
+			})
+			petCatchButton.Importance = widget.SuccessImportance
+
 			actionStatesContainer := container.NewGridWithColumns(4,
 				petAttackButton,
 				petSkillButton,
@@ -812,6 +806,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				petOffRideButton,
 				petHealSelfButton,
 				petHealOneButton,
+				petCatchButton,
 				petHangButton,
 			)
 

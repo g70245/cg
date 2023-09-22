@@ -41,11 +41,6 @@ func usePetSkill(hWnd HWND, x, y int32, id int) {
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
-func getLastLineOfLog(logDir string) string {
-	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return GetLastLineWithSeek(path)
-}
-
 func clearChat(hWnd HWND) {
 	KeyMsg(hWnd, VK_HOME)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)

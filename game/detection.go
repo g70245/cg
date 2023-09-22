@@ -2,8 +2,10 @@ package game
 
 import (
 	sys "cg/system"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	. "github.com/lxn/win"
 )
@@ -331,10 +333,29 @@ func isOnRide(hWnd HWND) bool {
 			sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
 }
 
-var stopWords = []string{"被不可思"}
+var stopWords = []string{"被不可思", "發現野生一級"}
 
 func isTPedToOtherMap(dir string) bool {
 	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
+}
+
+func DoesEncounterBaby(dir string) bool {
+	lines := sys.GetLinesOfLog(dir, 5)
+	now := time.Now()
+	for i := range lines {
+		h, hErr := strconv.Atoi(lines[i][1:3])
+		m, mErrr := strconv.Atoi(lines[i][4:6])
+		s, sErr := strconv.Atoi(lines[i][7:9])
+		if hErr != nil || mErrr != nil || sErr != nil {
+			continue
+		}
+
+		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
+		if !logTime.Before(now.Add(-8*time.Minute)) && strings.Contains(lines[i], stopWords[1]) {
+			return true
+		}
+	}
+	return false
 }
 
 func canRecall(hWnd HWND) bool {
@@ -378,7 +399,7 @@ func countLifeBelow(hWnd HWND, ratio float32) (count int) {
 	return
 }
 
-var allPlayers = []CheckTarget{
+var allHumans = []CheckTarget{
 	PLAYER_L_1_H,
 	PLAYER_L_2_H,
 	PLAYER_L_3_H,
@@ -395,7 +416,7 @@ var allPets = []CheckTarget{
 }
 
 func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
-	targets := allPlayers
+	targets := allHumans
 	if !isHuman {
 		targets = allPets
 	}

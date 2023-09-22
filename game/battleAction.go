@@ -17,7 +17,7 @@ const (
 	TURN_INTERVAL          = 300
 	WAITING_LOOP_INTERVAL  = 200
 	ATTACK_INTERVAL        = 160
-	BATTLE_ACTION_INTERVAL = 140
+	BATTLE_ACTION_INTERVAL = 160
 )
 
 const (
@@ -44,11 +44,12 @@ const (
 	P_HANG     = "Pet Hang"
 	P_SkILL    = "Pet Skill"
 	P_DEFEND   = "Pet Defend"
+	P_ESCAPE   = "Pet Escape"
 	P_SE_HEAL  = "Pet Heal Self"
 	P_O_HEAL   = "Pet Heal One"
 	P_RIDE     = "Pet Ride"
 	P_OFF_RIDE = "Pet Off Ride"
-	P_ESCAPE   = "Pet Escape"
+	P_CATCH    = "Pet Catch"
 )
 
 const (
@@ -61,8 +62,6 @@ var ControlUnitOptions = []string{C_U_START_OVER, C_U_CONTINUE, C_U_REPEAT}
 var HealingOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
 var IdOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
 var LevelOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
-var statesWithParam = []string{H_O_SE_HEAL, H_O_O_HEAL, H_O_M_HEAL, H_O_POTION, P_SE_HEAL, P_O_HEAL}
-var statesWithoutFailure = []string{H_A_DEFEND, H_A_MOVE, H_A_ESCAPE, H_S_HANG, H_O_PET_RECALL, P_HANG}
 
 type BattleActionState struct {
 	hWnd                     HWND
@@ -81,10 +80,13 @@ type BattleActionState struct {
 	petSuccessControlUnits []string
 	petFailureControlUnits []string
 
-	Enabled        bool
-	IsOutOfMana    bool
-	isHumanHanging bool
-	isPetHanging   bool
+	Enabled            bool
+	isOutOfMana        bool
+	isHumanHanging     bool
+	isPetHanging       bool
+	isEncounteringBaBy bool
+
+	logDir *string
 }
 
 func (b *BattleActionState) Act() {
@@ -126,6 +128,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 		switch b.humanStates[b.nextHumanStateId] {
 		case H_A_ATTACK:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			b.enableBattleCommandAttack()
 			if b.attack(humanAttackOrder, HumanTargetingChecker) {
 				b.logH("attacked")
@@ -135,6 +141,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.humanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_O_SKILL:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
@@ -142,7 +152,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
-					b.IsOutOfMana = true
+					b.isOutOfMana = true
 				} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
 					b.logH("used a skill")
 					cu = b.humanSuccessControlUnits[b.nextHumanStateId]
@@ -163,14 +173,26 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.logH("moved")
 			cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 		case H_A_ESCAPE:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			b.escape()
 			b.logH("escaped")
 			cu = b.humanFailureControlUnits[b.nextHumanStateId]
 		case H_S_HANG:
+			if slices.Contains(b.humanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+				break
+			}
+
 			b.logH("is hanging")
 			b.isHumanHanging = true
 			return
 		case H_O_BOMB:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 				var bomb Item
@@ -225,6 +247,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_O_RIDE:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.humanSkillIds[b.nextHumanStateId])
@@ -232,7 +258,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
-					b.IsOutOfMana = true
+					b.isOutOfMana = true
 				} else {
 					b.logH("is tring to get on a pet")
 					for i, v := range b.petStates {
@@ -264,7 +290,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if isHumanOutOfMana(b.hWnd, x, y) {
 						b.logH("is out of mana")
-						b.IsOutOfMana = true
+						b.isOutOfMana = true
 					} else {
 						b.logH("healed self")
 						cu = b.humanSuccessControlUnits[b.nextHumanStateId]
@@ -290,7 +316,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if isHumanOutOfMana(b.hWnd, x, y) {
 						b.logH("is out of mana")
-						b.IsOutOfMana = true
+						b.isOutOfMana = true
 					} else if b.aim(target, HumanTargetingChecker) {
 						b.logH("healed an ally")
 						cu = b.humanSuccessControlUnits[b.nextHumanStateId]
@@ -319,7 +345,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if isHumanOutOfMana(b.hWnd, x, y) {
 						b.logH("is out of mana")
-						b.IsOutOfMana = true
+						b.isOutOfMana = true
 					} else if b.aim(&PLAYER_L_3_H, HumanTargetingChecker) {
 						b.logH("healed allies")
 						cu = b.humanSuccessControlUnits[b.nextHumanStateId]
@@ -336,14 +362,19 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_O_PET_RECALL:
+			if slices.Contains(b.humanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+				break
+			}
+
 			openWindowByShortcut(b.hWnd, 0x52)
 			if canRecall(b.hWnd) {
 				b.recall()
 				b.logH("recalled")
+				return
 			} else {
 				b.logH("already recalled")
+				cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 			}
-			cu = b.humanSuccessControlUnits[b.nextHumanStateId]
 		case H_S_TRAIN_SKILL:
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
@@ -352,7 +383,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
-					b.IsOutOfMana = true
+					b.isOutOfMana = true
 				} else if b.aim(&PLAYER_L_3_P, HumanTargetingChecker) {
 					b.logH("is training")
 					cu = b.humanSuccessControlUnits[b.nextHumanStateId]
@@ -361,7 +392,19 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find the position of window")
 				cu = b.humanFailureControlUnits[b.nextHumanStateId]
 			}
-		default:
+		case H_S_CATCH:
+			if *b.logDir == "" {
+				b.logH("please set up the log directory")
+				break
+			}
+
+			if !DoesEncounterBaby(*b.logDir) {
+				break
+			}
+
+			b.logH("encounters a baby")
+			b.isEncounteringBaBy = true
+			sys.PlayBeeper()
 		}
 
 		switch cu {
@@ -408,6 +451,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		switch b.petStates[b.nextPetStateId] {
 		case P_ATTACK:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				usePetSkill(b.hWnd, x, y, 1)
@@ -424,13 +471,17 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 		case P_SkILL:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.petSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
-					b.IsOutOfMana = true
+					b.isOutOfMana = true
 				} else if b.attack(petAttackOrder, PetTargetingChecker) {
 					b.logP("used a skill")
 					cu = b.petSuccessControlUnits[b.nextPetStateId]
@@ -443,6 +494,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
 		case P_HANG:
+			if slices.Contains(b.humanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+				break
+			}
+
 			b.logP("is hanging")
 			b.isPetHanging = true
 			return
@@ -453,7 +508,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				usePetSkill(b.hWnd, x, y, id)
 				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
-					b.IsOutOfMana = true
+					b.isOutOfMana = true
 				} else {
 					b.logP("defended")
 					cu = b.petSuccessControlUnits[b.nextPetStateId]
@@ -477,7 +532,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					usePetSkill(b.hWnd, x, y, id)
 					if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
 						b.logP("is out of mana")
-						b.IsOutOfMana = true
+						b.isOutOfMana = true
 					} else {
 						b.logP("healed self")
 						cu = b.petSuccessControlUnits[b.nextPetStateId]
@@ -508,6 +563,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.petFailureControlUnits[b.nextPetStateId]
 			}
 		case P_OFF_RIDE:
+			if slices.Contains(b.humanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+				break
+			}
+
 			if !isOnRide(b.hWnd) {
 				b.logP("is off ride")
 				cu = b.petSuccessControlUnits[b.nextPetStateId]
@@ -550,6 +609,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.petSuccessControlUnits[b.nextPetStateId]
 			}
 		case P_ESCAPE:
+			if b.isEncounteringBaBy {
+				break
+			}
+
 			if !isOnRide(b.hWnd) {
 				b.logP("cannot escape while off ride")
 				break
@@ -558,7 +621,19 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.escape()
 			b.logP("escaped")
 			cu = b.petFailureControlUnits[b.nextPetStateId]
-		default:
+		case P_CATCH:
+			if *b.logDir == "" {
+				b.logH("please set up the log directory")
+				break
+			}
+
+			if !DoesEncounterBaby(*b.logDir) {
+				break
+			}
+
+			b.logH("encounters a baby")
+			b.isEncounteringBaBy = true
+			sys.PlayBeeper()
 		}
 
 		switch cu {
@@ -658,23 +733,7 @@ func (b *BattleActionState) logP(message string) {
 	)
 }
 
-func (b *BattleActionState) DoesHumanStateNeedParam() bool {
-	return slices.Contains(statesWithParam, b.humanStates[len(b.humanStates)-1])
-}
-
-func (b *BattleActionState) DoesPetStateNeedParam() bool {
-	return slices.Contains(statesWithParam, b.petStates[len(b.petStates)-1])
-}
-
-func (b *BattleActionState) DoesHumanStateNeedFailureControlUnit() bool {
-	return !slices.Contains(statesWithoutFailure, b.humanStates[len(b.humanStates)-1])
-}
-
-func (b *BattleActionState) DoesPetStateNeedFailureControlUnit() bool {
-	return !slices.Contains(statesWithoutFailure, b.petStates[len(b.petStates)-1])
-}
-
-func CreateNewBattleActionState(hWnd HWND) BattleActionState {
+func CreateNewBattleActionState(hWnd HWND, logDir *string) BattleActionState {
 	return BattleActionState{
 		hWnd:                     hWnd,
 		humanStates:              []string{H_A_ATTACK},
@@ -688,6 +747,7 @@ func CreateNewBattleActionState(hWnd HWND) BattleActionState {
 		petParams:                []string{""},
 		petSuccessControlUnits:   []string{C_U_CONTINUE},
 		petFailureControlUnits:   []string{C_U_CONTINUE},
+		logDir:                   logDir,
 	}
 }
 
