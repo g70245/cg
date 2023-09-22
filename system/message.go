@@ -11,7 +11,7 @@ const (
 	CLICK_INTERVAL                   = 60
 	DOUBLE_CLICK_INTERVAL            = 180
 	KEY_DURATION                     = 140
-	MOUSE_MOVE_INTERVAL              = 80
+	MOUSE_MOVE_INTERVAL              = 160
 	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
 
