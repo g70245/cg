@@ -3,6 +3,7 @@ package game
 import (
 	sys "cg/system"
 	"strings"
+	"sync"
 
 	. "github.com/lxn/win"
 )
@@ -257,20 +258,35 @@ func isSlotEmpty(hWnd HWND, px, py int32) bool {
 	return true
 }
 
+type pos struct {
+	x, y  int32
+	found bool
+}
+
 func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
 	x := px
 	y := py
+
+	var wg sync.WaitGroup
+	wg.Add(5)
+
 	var i, j int32
+	target := pos{}
 
 	for i = 0; i < 5; i++ {
-		for j = 0; j < 4; j++ {
-			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
-				return tx, ty, found
+		go func(i int32, wg *sync.WaitGroup) {
+			defer wg.Done()
+
+			for j = 0; j < 4; j++ {
+				if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
+					target = pos{tx, ty, found}
+				}
 			}
-		}
+		}(i, &wg)
 	}
 
-	return 0, 0, false
+	wg.Wait()
+	return target.x, target.y, target.found
 }
 
 func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
