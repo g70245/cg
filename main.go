@@ -16,8 +16,8 @@ import (
 const (
 	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
-	APP_WIDTH    = 761
-	APP_HEIGHT   = 428
+	APP_WIDTH    = 960
+	APP_HEIGHT   = 460
 )
 
 var (
@@ -46,7 +46,6 @@ func main() {
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
-	window.Content().Move(fyne.NewPos(600, 600))
 
 	var content *fyne.Container
 

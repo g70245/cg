@@ -177,7 +177,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	/* Configuration Widget */
 	configContainer := container.NewVBox()
 	for i := range workers {
-		workerMenuContainer := container.NewGridWithColumns(4)
+		workerMenuContainer := container.NewGridWithColumns(6)
 		worker := &workers[i]
 
 		var nicknameButton *widget.Button
@@ -376,7 +376,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			levelOnChanged,
 		}
 
-		humanStateSelector := widget.NewButtonWithIcon("Man Action", theme.ContentAddIcon(), func() {
+		humanStateSelector := widget.NewButtonWithIcon("Man Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanStates()
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
@@ -678,7 +678,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			actionStatesDialog.Show()
 		})
 
-		petStateSelector := widget.NewButtonWithIcon("Pet Action", theme.ContentAddIcon(), func() {
+		petStateSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearPetStates()
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
@@ -833,10 +833,22 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		humanStateSelector.Importance = widget.MediumImportance
 		petStateSelector.Importance = widget.MediumImportance
 
+		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
+			fmt.Println(window.Content().Size())
+		})
+		loadSettingButton.Importance = widget.MediumImportance
+
+		saveSettingButton := widget.NewButtonWithIcon("Save", theme.DownloadIcon(), func() {
+
+		})
+		saveSettingButton.Importance = widget.MediumImportance
+
 		workerMenuContainer.Add(nicknameButton)
 		workerMenuContainer.Add(movementModeButton)
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
+		workerMenuContainer.Add(loadSettingButton)
+		workerMenuContainer.Add(saveSettingButton)
 
 		statesViewer = container.NewAdaptiveGrid(5, generateTags(*worker)...)
 
