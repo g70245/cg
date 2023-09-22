@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	CLICK_DURATION                   = 60
-	DOUBLE_CLICK_DURATION            = 180
+	CLICK_INTERVAL                   = 60
+	DOUBLE_CLICK_INTERVAL            = 180
 	KEY_DURATION                     = 140
-	MOUSE_MOVE_DURATION              = 80
-	BAD_COMPUTER_MOUSE_MOVE_DURATION = 180
+	MOUSE_MOVE_INTERVAL              = 80
+	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
 
 func MouseMsg(hWnd HWND, x, y int32, action uint32) {
@@ -32,21 +32,21 @@ func MoveMouseWithDuration(hWnd HWND, x, y int32, d time.Duration) {
 
 func MoveMouse(hWnd HWND, x, y int32) {
 	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
-	time.Sleep(MOUSE_MOVE_DURATION * time.Millisecond)
+	time.Sleep(MOUSE_MOVE_INTERVAL * time.Millisecond)
 }
 
 func LeftClick(hWnd HWND, x, y int32) {
 	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
 	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
-	time.Sleep(CLICK_DURATION * time.Millisecond)
+	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
 func DoubleClick(hWnd HWND, x, y int32) {
-	MoveMouseWithDuration(hWnd, x, y, BAD_COMPUTER_MOUSE_MOVE_DURATION)
+	MoveMouseWithDuration(hWnd, x, y, BAD_COMPUTER_MOUSE_MOVE_INTERVAL)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
-	time.Sleep(DOUBLE_CLICK_DURATION * time.Millisecond)
+	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
 }
 
 func RightClick(hWnd HWND, x, y int32) {

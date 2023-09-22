@@ -12,9 +12,9 @@ import (
 
 const (
 	BATTLE_WORKER_INTERVAL               = 800
-	BATTLE_RESULT_DISAPPEARING_TIME      = 2
+	BATTLE_RESULT_DISAPPEARING_SECOND    = 2
 	LOG_CHECKER_INTERVAL                 = 100
-	ITEM_CHECKER_INTERVAL                = 30
+	ITEM_CHECKER_INTERVAL_SECOND         = 30
 	ITEM_CHECKER_WAITING_OTHERS_INTERVAL = 400
 )
 
@@ -56,7 +56,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	inventoryCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL * time.Second)
+	inventoryCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL_SECOND * time.Second)
 
 	logCheckerStopChan := make(chan bool, 1)
 	isTPedChan := make(chan bool, 1)
@@ -137,7 +137,7 @@ func (w *BattleWorker) StartInventoryChecker() {
 }
 
 func checkInventory(hWnd HWND) bool {
-	time.Sleep(BATTLE_RESULT_DISAPPEARING_TIME * time.Second)
+	time.Sleep(BATTLE_RESULT_DISAPPEARING_SECOND * time.Second)
 	closeAllWindow(hWnd)
 	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 	openWindowByShortcut(hWnd, 0x45)
