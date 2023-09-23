@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL               = 800
-	BATTLE_RESULT_DISAPPEARING_SECOND    = 2
-	LOG_CHECKER_INTERVAL                 = 100
-	ITEM_CHECKER_INTERVAL_SECOND         = 30
-	ITEM_CHECKER_WAITING_OTHERS_INTERVAL = 400
+	BATTLE_WORKER_INTERVAL                    = 800
+	BATTLE_RESULT_DISAPPEARING_SECOND         = 2
+	LOG_CHECKER_INTERVAL                      = 100
+	INVENTORY_CHECKER_INTERVAL_SECOND         = 30
+	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400
 )
 
 type BattleWorker struct {
@@ -56,7 +56,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	inventoryCheckerTicker := time.NewTicker(ITEM_CHECKER_INTERVAL_SECOND * time.Second)
+	inventoryCheckerTicker := time.NewTicker(INVENTORY_CHECKER_INTERVAL_SECOND * time.Second)
 
 	logCheckerStopChan := make(chan bool, 1)
 	isTPedChan := make(chan bool, 1)
@@ -142,7 +142,7 @@ func checkInventory(hWnd HWND) bool {
 	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 	openWindowByShortcut(hWnd, 0x45)
 	defer closeAllWindow(hWnd)
-	defer time.Sleep(ITEM_CHECKER_WAITING_OTHERS_INTERVAL * time.Millisecond)
+	defer time.Sleep(INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL * time.Millisecond)
 
 	if px, py, ok := getNSItemWindowPos(hWnd); ok {
 		return !isAnyItemSlotFree(hWnd, px, py)
