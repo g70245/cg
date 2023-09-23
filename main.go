@@ -3,6 +3,7 @@ package main
 import (
 	"cg/system"
 	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -70,7 +71,7 @@ func main() {
 
 	var alertDialogButton *widget.Button
 	alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
-		if uc != nil {
+		if strings.Contains(uc.URI().Path(), "mp3") {
 			system.CloseBeeper()
 			system.CreateBeeper(uc.URI().Path())
 			alertDialogButton.SetIcon(theme.MediaMusicIcon())

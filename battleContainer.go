@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	. "github.com/lxn/win"
@@ -842,11 +843,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		petStateSelector.Importance = widget.MediumImportance
 
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
-			dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+			var fileOpenDialog *dialog.FileDialog
+			fileOpenDialog = dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 				if uc != nil {
 					var actionState BattleActionState
 					file, openErr := os.Open(uc.URI().Path())
 					defer file.Close()
+
 					if openErr == nil {
 						if buffer, readErr := io.ReadAll(file); readErr == nil {
 							if json.Unmarshal(buffer, &actionState) == nil {
@@ -858,13 +861,17 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 						}
 					}
 				}
-			}, window).Show()
+			}, window)
 
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI("D:\\CG\\actions"))
+			fileOpenDialog.SetLocation(listableURI)
+			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
+			fileOpenDialog.Show()
 		})
 		loadSettingButton.Importance = widget.MediumImportance
 
 		saveSettingButton := widget.NewButtonWithIcon("Save", theme.DownloadIcon(), func() {
-			dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
+			fileSaveDialog := dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
 				if uc != nil {
 					if setting, marshalErr := json.Marshal(worker.ActionState); marshalErr == nil {
 						if writeErr := os.WriteFile(uc.URI().Path(), setting, 0644); writeErr != nil {
@@ -872,7 +879,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 						}
 					}
 				}
-			}, window).Show()
+			}, window)
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI("D:\\CG\\actions"))
+			fileSaveDialog.SetFileName("default.ac")
+			fileSaveDialog.SetLocation(listableURI)
+			fileSaveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
+			fileSaveDialog.Show()
 		})
 		saveSettingButton.Importance = widget.MediumImportance
 
