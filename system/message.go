@@ -10,7 +10,7 @@ import (
 const (
 	CLICK_INTERVAL                   = 60
 	DOUBLE_CLICK_INTERVAL            = 180
-	KEY_DURATION                     = 140
+	KEY_INTERVAL                     = 140
 	MOUSE_MOVE_INTERVAL              = 160
 	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
@@ -22,7 +22,7 @@ func MouseMsg(hWnd HWND, x, y int32, action uint32) {
 }
 
 func MoveToNowhere(hWnd HWND) {
-	MouseMsg(hWnd, int32(-1), int32(-1), WM_MOUSEMOVE)
+	MouseMsg(hWnd, -1, -1, WM_MOUSEMOVE)
 }
 
 func MoveMouseWithDuration(hWnd HWND, x, y int32, d time.Duration) {
@@ -37,8 +37,8 @@ func MoveMouse(hWnd HWND, x, y int32) {
 
 func LeftClick(hWnd HWND, x, y int32) {
 	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONDOWN)
-	MouseMsg(hWnd, int32(x), int32(y), WM_LBUTTONUP)
+	MouseMsg(hWnd, x, y, WM_LBUTTONDOWN)
+	MouseMsg(hWnd, x, y, WM_LBUTTONUP)
 	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
@@ -51,8 +51,9 @@ func DoubleClick(hWnd HWND, x, y int32) {
 
 func RightClick(hWnd HWND, x, y int32) {
 	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONDOWN)
-	MouseMsg(hWnd, int32(x), int32(y), WM_RBUTTONUP)
+	MouseMsg(hWnd, x, y, WM_RBUTTONDOWN)
+	MouseMsg(hWnd, x, y, WM_RBUTTONUP)
+	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
 func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
@@ -64,7 +65,7 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 	PostMessage(hWnd, WM_KEYDOWN, lkey, uintptr(llParam))
 	PostMessage(hWnd, WM_KEYDOWN, rkey, uintptr(rlParam))
 
-	time.Sleep(KEY_DURATION * time.Millisecond)
+	time.Sleep(KEY_INTERVAL * time.Millisecond)
 
 	llParam |= 0xC0000000
 	rlParam |= 0xC0000000
@@ -74,6 +75,6 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 
 func KeyMsg(hWnd HWND, key uintptr) {
 	PostMessage(hWnd, WM_KEYDOWN, key, 0)
-	time.Sleep(KEY_DURATION * time.Millisecond)
+	time.Sleep(KEY_INTERVAL * time.Millisecond)
 	PostMessage(hWnd, WM_KEYDOWN, key, 0)
 }
