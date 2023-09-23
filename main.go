@@ -3,12 +3,12 @@ package main
 import (
 	"cg/system"
 	"os"
-	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"golang.org/x/exp/maps"
@@ -19,6 +19,7 @@ const (
 	APP_NAME     = "CG"
 	APP_WIDTH    = 960
 	APP_HEIGHT   = 420
+	DEFAULT_ROOT = `D:\CG`
 )
 
 var (
@@ -69,32 +70,36 @@ func main() {
 	})
 	refreshButton.Importance = widget.DangerImportance
 
+	listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT))
 	var alertDialogButton *widget.Button
-	alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
-		if strings.Contains(uc.URI().Path(), "mp3") {
-			system.CloseBeeper()
-			system.CreateBeeper(uc.URI().Path())
-			alertDialogButton.SetIcon(theme.MediaMusicIcon())
-		} else {
-			system.CloseBeeper()
-			alertDialogButton.SetIcon(theme.FolderIcon())
-		}
-	}, window)
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
+		alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+			if uc != nil {
+				system.CloseBeeper()
+				system.CreateBeeper(uc.URI().Path())
+				alertDialogButton.SetIcon(theme.MediaMusicIcon())
+			} else {
+				system.CloseBeeper()
+				alertDialogButton.SetIcon(theme.FolderIcon())
+			}
+		}, window)
+		alertDialog.SetLocation(listableURI)
+		alertDialog.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
 		alertDialog.Show()
 	})
 	alertDialogButton.Importance = widget.HighImportance
 
 	var logDialogButton *widget.Button
-	logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
-		if lu != nil {
-			*logDir = lu.Path()
-			logDialogButton.SetIcon(theme.FolderOpenIcon())
-		} else {
-			logDialogButton.SetIcon(theme.FolderIcon())
-		}
-	}, window)
 	logDialogButton = widget.NewButtonWithIcon("Log Directory", theme.FolderIcon(), func() {
+		logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
+			if lu != nil {
+				*logDir = lu.Path()
+				logDialogButton.SetIcon(theme.FolderOpenIcon())
+			} else {
+				logDialogButton.SetIcon(theme.FolderIcon())
+			}
+		}, window)
+		logDirDialog.SetLocation(listableURI)
 		logDirDialog.Show()
 	})
 	logDialogButton.Importance = widget.HighImportance

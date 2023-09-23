@@ -863,7 +863,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 			}, window)
 
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI("D:\\CG\\actions"))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
 			fileOpenDialog.SetLocation(listableURI)
 			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
 			fileOpenDialog.Show()
@@ -880,7 +880,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 					}
 				}
 			}, window)
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI("D:\\CG\\actions"))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
 			fileSaveDialog.SetFileName("default.ac")
 			fileSaveDialog.SetLocation(listableURI)
 			fileSaveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
