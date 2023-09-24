@@ -70,7 +70,7 @@ const (
 	COLOR_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_ITEM_BOMB_8B         = 14614527 // 8388607, 4194303
 	COLOR_ITEM_BOMB_9A         = 30719    // 5626258
-	COLOR_ITEM_POTION          = 8948665
+	COLOR_ITEM_POTION          = 16448250 // 8948665
 )
 
 var (
@@ -265,8 +265,8 @@ func isSlotEmpty(hWnd HWND, px, py int32) bool {
 	return true
 }
 
-func isItemWindowStillOpened(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color
+func isBSItemWindowStillOpened(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color
 }
 
 type pos struct {

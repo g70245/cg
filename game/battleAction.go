@@ -215,7 +215,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				}
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 3); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
-					if isItemWindowStillOpened(b.hWnd, px+78, py-20) {
+					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 					} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
@@ -243,7 +243,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 2); ok {
 						sys.DoubleClick(HWND(b.hWnd), x, y)
-						if isItemWindowStillOpened(b.hWnd, px+78, py-20) {
+						if isBSItemWindowStillOpened(b.hWnd, px, py) {
 							b.logH("failed at double clicking")
 							cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 						} else if b.aim(target, HumanTargetingChecker) {
@@ -922,6 +922,6 @@ func Test(hWnd HWND) (x int32, y int32, successful bool) {
 	clearChat(hWnd)
 	openWindowByShortcut(hWnd, 0x45)
 	x, y, successful = getBSItemWindowPos(hWnd)
-	return getItemPos(hWnd, x, y, 14614527, 1)
+	return getItemPos(hWnd, x, y, 16448250, 3)
 	// return searchSlotForColor(hWnd, x, y, 30719, 1)
 }
