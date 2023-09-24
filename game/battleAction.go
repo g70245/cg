@@ -241,7 +241,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x45)
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
-					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 2); ok {
+					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
 						sys.DoubleClick(HWND(b.hWnd), x, y)
 						if isBSItemWindowStillOpened(b.hWnd, px, py) {
 							b.logH("failed at double clicking")
