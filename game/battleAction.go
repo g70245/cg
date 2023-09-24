@@ -101,7 +101,7 @@ func (b *BattleActionState) Act() {
 
 	b.nextHumanStateId = 0
 	b.nextPetStateId = 0
-	log.Printf("# Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
+	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
 }
 
 func (b *BattleActionState) executeHumanStateMachine() {
