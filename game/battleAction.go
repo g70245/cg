@@ -117,11 +117,22 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 		if b.isPetHanging {
 			b.isPetHanging = false
-			switch b.PetSuccessControlUnits[b.nextPetStateId] {
+			cu := b.PetSuccessControlUnits[b.nextPetStateId]
+
+			var offset int
+			if strings.Contains(cu, C_U_JUMP) {
+				i, _ := strconv.Atoi(cu[4:])
+				offset = i
+				cu = cu[:4]
+			}
+
+			switch cu {
 			case C_U_START_OVER:
 				b.nextPetStateId = 0
 			case C_U_CONTINUE:
 				b.nextPetStateId++
+			case C_U_JUMP:
+				b.nextPetStateId = offset
 			}
 		}
 
@@ -408,6 +419,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			sys.PlayBeeper()
 		}
 
+		var offset int
+		if strings.Contains(cu, C_U_JUMP) {
+			i, _ := strconv.Atoi(cu[4:])
+			offset = i
+			cu = cu[:4]
+		}
 		switch cu {
 		case C_U_START_OVER:
 			b.nextHumanStateId = 0
@@ -415,6 +432,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.nextHumanStateId++
 		case C_U_REPEAT:
 			return
+		case C_U_JUMP:
+			b.nextHumanStateId = offset
 		default: // out of mana
 			b.nextHumanStateId++
 		}
@@ -440,11 +459,21 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		if b.isHumanHanging {
 			b.isHumanHanging = false
-			switch b.HumanSuccessControlUnits[b.nextHumanStateId] {
+			cu := b.HumanSuccessControlUnits[b.nextHumanStateId]
+
+			var offset int
+			if strings.Contains(cu, C_U_JUMP) {
+				i, _ := strconv.Atoi(cu[4:])
+				offset = i
+				cu = cu[:4]
+			}
+			switch cu {
 			case C_U_START_OVER:
 				b.nextHumanStateId = 0
 			case C_U_CONTINUE:
 				b.nextHumanStateId++
+			case C_U_JUMP:
+				b.nextHumanStateId = offset
 			}
 		}
 
@@ -637,6 +666,11 @@ func (b *BattleActionState) executePetStateMachiine() {
 			sys.PlayBeeper()
 		}
 
+		var offset int
+		if strings.Contains(cu, C_U_JUMP) {
+			i, _ := strconv.Atoi(cu[4:])
+			offset = i
+		}
 		switch cu {
 		case C_U_START_OVER:
 			b.nextPetStateId = 0
@@ -644,6 +678,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.nextPetStateId++
 		case C_U_REPEAT:
 			return
+		case C_U_JUMP:
+			b.nextPetStateId = offset
 		default: // out of mana
 			b.nextPetStateId++
 		}
