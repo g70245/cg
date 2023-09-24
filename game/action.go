@@ -17,8 +17,7 @@ func closeAllWindow(hWnd HWND) {
 }
 
 func openWindowByShortcut(hWnd HWND, key uintptr) {
-	KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
-	time.Sleep(ACTION_INTERVAL * time.Millisecond)
+	closeAllWindow(hWnd)
 	KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(hWnd)
@@ -42,6 +41,10 @@ func usePetSkill(hWnd HWND, x, y int32, id int) {
 }
 
 func clearChat(hWnd HWND) {
+	KeyMsg(hWnd, VK_HOME)
+	time.Sleep(ACTION_INTERVAL * time.Millisecond)
+	KeyMsg(hWnd, VK_HOME)
+	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 	KeyMsg(hWnd, VK_HOME)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }

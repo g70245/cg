@@ -293,6 +293,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_C_SE_HEAL:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 
@@ -555,6 +557,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 		case P_C_SE_HEAL:
+			closeAllWindow(b.hWnd)
+			clearChat(b.hWnd)
 			if self, ok := getSelfTarget(b.hWnd, false || isOnRide(b.hWnd)); ok {
 				ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
 				if !isLifeBelow(b.hWnd, float32(ratio), self) {
