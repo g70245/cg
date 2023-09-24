@@ -82,5 +82,5 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 func KeyMsg(hWnd HWND, key uintptr) {
 	PostMessage(hWnd, WM_KEYDOWN, key, 0)
 	time.Sleep(KEY_INTERVAL * time.Millisecond)
-	PostMessage(hWnd, WM_KEYDOWN, key, 0)
+	PostMessage(hWnd, WM_KEYUP, key, 0)
 }
