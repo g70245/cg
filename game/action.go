@@ -43,8 +43,4 @@ func usePetSkill(hWnd HWND, x, y int32, id int) {
 func clearChat(hWnd HWND) {
 	KeyMsg(hWnd, VK_HOME)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	KeyMsg(hWnd, VK_HOME)
-	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	KeyMsg(hWnd, VK_HOME)
-	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
