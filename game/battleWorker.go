@@ -115,6 +115,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case isTPed = <-isTPedChan:
 				PlayBeeper()
 				logCheckerStopChan <- true
+				log.Println("Has been teleported, need to stop the movement")
 			case <-inventoryCheckerTicker.C:
 				if w.inventoryCheckerEnabled {
 					isInventoryFull = checkInventory(w.hWnd)
