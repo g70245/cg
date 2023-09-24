@@ -4,11 +4,13 @@ import (
 	. "cg/game"
 	. "cg/system"
 	"encoding/json"
+	"errors"
 	"image/color"
 	"io"
 	"log"
 	"math"
 	"os"
+	"strconv"
 	"strings"
 
 	"fmt"
@@ -228,32 +230,78 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		}
 
 		/* Control Unit Dialogs */
-		var hCUSuccessDialog *dialog.CustomDialog
-		var hCUFailureDialog *dialog.CustomDialog
-		var pCUSuccessDialog *dialog.CustomDialog
-		var pCUFailureDialog *dialog.CustomDialog
+		var cuSuccessDialog *dialog.CustomDialog
+		var cuFailureDialog *dialog.CustomDialog
+
+		activateJumpDialog := func(totalStates int, callback func(cu string)) {
+			jumpEntry := widget.NewEntry()
+			jumpEntry.Validator = func(offsetStr string) error {
+				if offset, err := strconv.Atoi(offsetStr); err != nil {
+					return err
+				} else if offset >= totalStates-1 || offset < 1 {
+					return errors.New("not a valid offset")
+				}
+				return nil
+			}
+
+			jumpDialog := dialog.NewForm("Enter next action offset", "Ok", "Dismiss", []*widget.FormItem{widget.NewFormItem("Offset", jumpEntry)}, func(isValid bool) {
+				if isValid {
+					callback(C_U_JUMP + jumpEntry.Text)
+				}
+			}, window)
+			jumpDialog.Show()
+		}
+
 		hCUSuccesOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanSuccessControlUnit(s)
-				hCUSuccessDialog.Hide()
+				if s == C_U_JUMP {
+					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
+						worker.ActionState.AddHumanSuccessControlUnit(cu)
+						cuSuccessDialog.Hide()
+					})
+				} else {
+					worker.ActionState.AddHumanSuccessControlUnit(s)
+					cuSuccessDialog.Hide()
+				}
 			}
 		}
 		hCUFailureOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanFailureControlUnit(s)
-				hCUFailureDialog.Hide()
+				if s == C_U_JUMP {
+					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
+						worker.ActionState.AddHumanFailureControlUnit(cu)
+						cuFailureDialog.Hide()
+					})
+				} else {
+					worker.ActionState.AddHumanFailureControlUnit(s)
+					cuFailureDialog.Hide()
+				}
 			}
 		}
 		pCUSuccessOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetSuccessControlUnit(s)
-				pCUSuccessDialog.Hide()
+				if s == C_U_JUMP {
+					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
+						worker.ActionState.AddPetSuccessControlUnit(cu)
+						cuSuccessDialog.Hide()
+					})
+				} else {
+					worker.ActionState.AddPetSuccessControlUnit(s)
+					cuSuccessDialog.Hide()
+				}
 			}
 		}
 		pCUFailureOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetFailureControlUnit(s)
-				pCUFailureDialog.Hide()
+				if s == C_U_JUMP {
+					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
+						worker.ActionState.AddPetFailureControlUnit(cu)
+						cuFailureDialog.Hide()
+					})
+				} else {
+					worker.ActionState.AddPetFailureControlUnit(s)
+					cuFailureDialog.Hide()
+				}
 			}
 		}
 		cuOnClosed := func() {
@@ -261,35 +309,31 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			statesViewer.Refresh()
 			enableChan <- true
 		}
-		hCUSuccessDialog = dialog.NewCustomWithoutButtons("Select next move after successful execution", selector, window)
-		hCUSuccessDialog.SetOnClosed(cuOnClosed)
-		hCUFailureDialog = dialog.NewCustomWithoutButtons("Select next move after failed execution", selector, window)
-		hCUFailureDialog.SetOnClosed(cuOnClosed)
-		pCUSuccessDialog = dialog.NewCustomWithoutButtons("Select next move after successful execution", selector, window)
-		pCUSuccessDialog.SetOnClosed(cuOnClosed)
-		pCUFailureDialog = dialog.NewCustomWithoutButtons("Select next move after failed execution", selector, window)
-		pCUFailureDialog.SetOnClosed(cuOnClosed)
+		cuSuccessDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
+		cuSuccessDialog.SetOnClosed(cuOnClosed)
+		cuFailureDialog = dialog.NewCustomWithoutButtons("Select next action after failed execution", selector, window)
+		cuFailureDialog.SetOnClosed(cuOnClosed)
 
 		hCUSuccessSelectorDialog := SelectorDialog{
-			hCUSuccessDialog,
+			cuSuccessDialog,
 			selector,
 			ControlUnitOptions,
 			hCUSuccesOnChanged,
 		}
 		hCUFailureSelectorDialog := SelectorDialog{
-			hCUFailureDialog,
+			cuFailureDialog,
 			selector,
 			ControlUnitOptions,
 			hCUFailureOnChanged,
 		}
 		pCUSuccessSelectorDialog := SelectorDialog{
-			pCUSuccessDialog,
+			cuSuccessDialog,
 			selector,
 			ControlUnitOptions,
 			pCUSuccessOnChanged,
 		}
 		pCUFailureSelectorDialog := SelectorDialog{
-			pCUFailureDialog,
+			cuFailureDialog,
 			selector,
 			ControlUnitOptions,
 			pCUFailureOnChanged,
@@ -992,49 +1036,53 @@ func createTagContainer(actionState BattleActionState, isHuman bool) (tagContain
 		tagCanvas := canvas.NewRectangle(tagColor)
 		tagCanvas.SetMinSize(fyne.NewSize(60, 22))
 		tagContainer := container.NewStack(tagCanvas)
+
 		if isHuman {
 			if v := actionState.GetHumanSkillIds()[i]; v != "" {
 				tag = fmt.Sprintf("%s:%s:%s", tag, v, actionState.GetHumanSkillLevels()[i])
 			}
-			if param := actionState.GetHumanParams()[i]; param != "" {
-				tag = fmt.Sprintf("%s:%s", tag, param)
-			}
-
-			id := 0
-			successControlUnit := actionState.GetHumanSuccessControlUnits()[i]
-			if len(successControlUnit) > 0 {
-				id = 1
-			}
-			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:id]))
-
-			id = 0
-			failureControlUnit := actionState.GetHumanFailureControlUnits()[i]
-			if len(failureControlUnit) > 0 {
-				id = 1
-			}
-			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:id]))
-
 		} else {
 			if v := actionState.GetPetSkillIds()[i]; v != "" {
 				tag = fmt.Sprintf("%s:%s", tag, v)
 			}
-			if param := actionState.GetPetParams()[i]; param != "" {
-				tag = fmt.Sprintf("%s:%s", tag, param)
-			}
+		}
 
-			id := 0
-			successControlUnit := actionState.GetPetSuccessControlUnits()[i]
-			if len(successControlUnit) > 0 {
-				id = 1
-			}
-			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(successControlUnit[:id]))
+		var params []string
+		var successControlUnits []string
+		var failureControlUnits []string
 
-			id = 0
-			failureControlUnit := actionState.GetPetFailureControlUnits()[i]
-			if len(failureControlUnit) > 0 {
-				id = 1
+		if isHuman {
+			params = actionState.GetHumanParams()
+			successControlUnits = actionState.GetHumanSuccessControlUnits()
+			failureControlUnits = actionState.GetHumanFailureControlUnits()
+		} else {
+			params = actionState.GetPetParams()
+			successControlUnits = actionState.GetPetSuccessControlUnits()
+			failureControlUnits = actionState.GetPetFailureControlUnits()
+		}
+
+		if param := params[i]; param != "" {
+			tag = fmt.Sprintf("%s:%s", tag, param)
+		}
+
+		if len(successControlUnits[i]) > 0 {
+			cuFirstLetter := strings.ToLower(successControlUnits[i][:1])
+			tag = fmt.Sprintf("%s:%s", tag, cuFirstLetter)
+			if cuFirstLetter == "j" {
+				tag = fmt.Sprintf("%s%s", tag, successControlUnits[i][4:])
 			}
-			tag = fmt.Sprintf("%s:%s", tag, strings.ToLower(failureControlUnit[:id]))
+		} else {
+			tag = tag + ":"
+		}
+
+		if len(failureControlUnits[i]) > 0 {
+			cuFirstLetter := strings.ToLower(failureControlUnits[i][:1])
+			tag = fmt.Sprintf("%s:%s", tag, cuFirstLetter)
+			if cuFirstLetter == "j" {
+				tag = fmt.Sprintf("%s%s", tag, failureControlUnits[i][4:])
+			}
+		} else {
+			tag = tag + ":"
 		}
 
 		tagTextCanvas := canvas.NewText(tag, color.White)
