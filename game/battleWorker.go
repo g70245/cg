@@ -14,7 +14,7 @@ const (
 	BATTLE_WORKER_INTERVAL                    = 800
 	BATTLE_RESULT_DISAPPEARING_SECOND         = 2
 	LOG_CHECKER_INTERVAL                      = 100
-	INVENTORY_CHECKER_INTERVAL_SECOND         = 30
+	INVENTORY_CHECKER_INTERVAL_SECOND         = 60
 	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400
 )
 
@@ -65,11 +65,13 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
 		go func() {
+			log.Println("Log Checker enabled")
 			defer logCheckerTicker.Stop()
 
 			for {
 				select {
 				case <-logCheckerStopChan:
+					log.Println("Log Checker disabled")
 					return
 				case <-logCheckerTicker.C:
 					if isTPedToOtherMap(*w.logDir) {
