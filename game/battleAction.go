@@ -670,6 +670,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		if strings.Contains(cu, C_U_JUMP) {
 			i, _ := strconv.Atoi(cu[4:])
 			offset = i
+			cu = cu[:4]
 		}
 		switch cu {
 		case C_U_START_OVER:
