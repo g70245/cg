@@ -31,6 +31,7 @@ func test() {
 	// hWnd := getHWND()
 	// x, y, _ := game.Test(hWnd)
 	// system.MoveMouse(hWnd, x, y)
+	// fmt.Println(x, y)
 	// CheckColor(
 	// 	hWnd,
 	// 	x,

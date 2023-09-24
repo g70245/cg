@@ -213,15 +213,19 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						bomb = Bombs[i]
 					}
 				}
-				if x, y, ok := getItemPosThreadVer(b.hWnd, px, py, bomb.color, 2); ok {
+				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 3); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
-					if b.attack(humanAttackOrder, HumanTargetingChecker) {
+					if isItemWindowStillOpened(b.hWnd, px+78, py-20) {
+						b.logH("failed at double clicking")
+						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+					} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
 						b.logH("throwed a bomb")
 						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 					} else {
 						b.logH("missed a hit")
 						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 					}
+
 				} else {
 					b.logH("cannot find a bomb")
 					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
@@ -239,7 +243,10 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 2); ok {
 						sys.DoubleClick(HWND(b.hWnd), x, y)
-						if b.aim(target, HumanTargetingChecker) {
+						if isItemWindowStillOpened(b.hWnd, px+78, py-20) {
+							b.logH("failed at double clicking")
+							cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+						} else if b.aim(target, HumanTargetingChecker) {
 							b.logH("healed an ally")
 							cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 						} else {
@@ -915,6 +922,6 @@ func Test(hWnd HWND) (x int32, y int32, successful bool) {
 	clearChat(hWnd)
 	openWindowByShortcut(hWnd, 0x45)
 	x, y, successful = getBSItemWindowPos(hWnd)
-	// return getItemPos(hWnd, x, y, COLOR_ITEM_POTION, 3)
-	return
+	return getItemPos(hWnd, x, y, 14614527, 1)
+	// return searchSlotForColor(hWnd, x, y, 30719, 1)
 }

@@ -63,14 +63,14 @@ const (
 	COLOR_WINDOW_SKILL_UNSELECTED        = 4411988
 	COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA = 11575428
 
-	COLOR_WINDOW_ITEM_CAN_NOT_BE_USED = 255
-	COLOR_WINDOW_ITEM_EMPTY           = 15793151
-	COLOR_NS_ITEM_PIVOT               = 15967
-	COLOR_BS_ITEM_PIVOT               = 15967 //6190476 //16777215
+	COLOR_WINDOW_ITEM_EMPTY = 15793151
+	COLOR_NS_ITEM_PIVOT     = 15967
+	COLOR_BS_ITEM_PIVOT     = 15967
 
-	COLOR_ITEM_BOMB_8B = 8388607
-	COLOR_ITEM_BOMB_9A = 13974896
-	COLOR_ITEM_POTION  = 8948665
+	COLOR_ITEM_CAN_NOT_BE_USED = 255
+	COLOR_ITEM_BOMB_8B         = 14614527 // 8388607, 4194303
+	COLOR_ITEM_BOMB_9A         = 30719    // 5626258
+	COLOR_ITEM_POTION          = 8948665
 )
 
 var (
@@ -265,6 +265,10 @@ func isSlotEmpty(hWnd HWND, px, py int32) bool {
 	return true
 }
 
+func isItemWindowStillOpened(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color
+}
+
 type pos struct {
 	x, y  int32
 	found bool
@@ -277,14 +281,12 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int
 	y := py
 	var i, j int32
 
-	for i = 0; i < 5; i++ {
-
-		for j = 0; j < 4; j++ {
+	for j = 0; j < 4; j++ {
+		for i = 0; i < 5; i++ {
 			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
 				return tx, ty, found
 			}
 		}
-
 	}
 
 	return 0, 0, false
@@ -297,21 +299,22 @@ func getItemPosThreadVer(hWnd HWND, px, py int32, color COLORREF, granularity in
 	y := py
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(4)
 
 	var i, j int32
 	target := pos{}
 
-	for i = 0; i < 5; i++ {
-		go func(i int32, wg *sync.WaitGroup) {
+	for j = 0; j < 4; j++ {
+		go func(j int32, wg *sync.WaitGroup) {
 			defer wg.Done()
 
-			for j = 0; j < 4; j++ {
+			for i = 0; i < 5; i++ {
 				if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
 					target = pos{tx, ty, found}
+					return
 				}
 			}
-		}(i, &wg)
+		}(j, &wg)
 	}
 
 	wg.Wait()
@@ -323,8 +326,12 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if sys.GetColor(hWnd, x, y) == color {
+			// fmt.Println(x, y, sys.GetColor(hWnd, x, y))
+			currentColor := sys.GetColor(hWnd, x, y)
+			if currentColor == color {
 				return x, y, true
+			} else if currentColor == COLOR_ITEM_CAN_NOT_BE_USED {
+				return 0, 0, false
 			}
 			y += granularity
 		}

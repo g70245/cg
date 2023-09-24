@@ -98,7 +98,7 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 
 func getHWND() win.HWND {
 	for _, h := range maps.Values(system.FindWindows(TARGET_CLASS)) {
-		if fmt.Sprint(h) == "460650" {
+		if fmt.Sprint(h) == "526062" {
 			return h
 		}
 	}
