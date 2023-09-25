@@ -82,6 +82,7 @@ func KeyCombinationMsg(hWnd HWND, lkey, rkey uintptr) {
 	rlParam |= 0xC0000000
 	PostMessage(hWnd, WM_KEYUP, rkey, uintptr(rlParam))
 	PostMessage(hWnd, WM_KEYUP, lkey, uintptr(llParam))
+	KeyMsg(hWnd, 0x08)
 }
 
 func KeyMsg(hWnd HWND, key uintptr) {

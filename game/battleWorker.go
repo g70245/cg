@@ -80,7 +80,7 @@ func (w *BattleWorker) Work(manaChecker *string, stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.canMove() && !isTeleported {
+					if w.canMove() && !isTeleported && !w.ActionState.isOutOfMana {
 						w.MovementState.Move()
 					}
 				default:

@@ -465,15 +465,18 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		}
 	}
 
-	if b.isManaChecker && isAnyPlayOutOfMana(b.hWnd) {
-		b.isOutOfMana = true
-		b.logH("someone is out of mana")
-	}
-
 	if len(b.HumanStates) != 0 {
 		b.nextHumanStateId %= len(b.HumanStates)
 	} else {
 		b.nextHumanStateId = 0
+	}
+
+	if b.isManaChecker {
+		clearChat(b.hWnd)
+		if isAnyPlayerOutOfMana(b.hWnd) {
+			b.isOutOfMana = true
+			b.logH("someone is out of mana")
+		}
 	}
 }
 
@@ -723,15 +726,19 @@ func (b *BattleActionState) executePetStateMachiine() {
 		}
 	}
 
-	if b.isManaChecker && isAnyPlayOutOfMana(b.hWnd) {
-		b.isOutOfMana = true
-		b.logP("someone is out of mana")
-	}
-
 	if len(b.PetStates) != 0 {
 		b.nextPetStateId %= len(b.PetStates)
 	} else {
 		b.nextPetStateId = 0
+	}
+
+	if b.isManaChecker {
+		closeAllWindow(b.hWnd)
+		clearChat(b.hWnd)
+		if isAnyPlayerOutOfMana(b.hWnd) {
+			b.isOutOfMana = true
+			b.logP("someone is out of mana")
+		}
 	}
 }
 

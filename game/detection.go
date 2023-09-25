@@ -420,7 +420,7 @@ var allTargets = []CheckTarget{
 	PLAYER_L_5_P,
 }
 
-func isAnyPlayOutOfMana(hWnd HWND) bool {
+func isAnyPlayerOutOfMana(hWnd HWND) bool {
 	for _, h := range allHumans {
 		manaPoint := h.x + 2
 		y := h.y + 3
