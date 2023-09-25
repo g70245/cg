@@ -103,14 +103,15 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 }
 
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
-	manaChecker := new(string)
+	var manaChecker = new(string)
 	workers := CreateBattleWorkers(maps.Values(games), logDir, manaChecker)
 	stopChan = make(chan bool, len(workers))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
-	leadSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
+	manaCheckerSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
 		*manaChecker = s
+
 		if *manaChecker != "" {
 			manaCheckerSelectorButton.SetText("Mana Checker: " + *manaChecker)
 		} else {
@@ -118,7 +119,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		}
 		manaCheckerSelectorDialog.Hide()
 	})
-	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", leadSelector, window)
+	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
 	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
 		manaCheckerSelectorDialog.Show()
 	})
@@ -899,6 +900,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 							if json.Unmarshal(buffer, &actionState) == nil {
 								actionState.SetHWND(worker.ActionState.GetHWND())
 								worker.ActionState = actionState
+								worker.ActionState.LogDir = logDir
+								worker.ActionState.ManaChecker = manaChecker
 								statesViewer.Objects = generateTags(*worker)
 								statesViewer.Refresh()
 							}

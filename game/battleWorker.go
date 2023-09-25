@@ -22,6 +22,7 @@ type BattleWorker struct {
 	MovementState           BattleMovementState
 	ActionState             BattleActionState
 	logDir                  *string
+	manaChecker             *string
 	inventoryCheckerEnabled bool
 }
 
@@ -38,6 +39,7 @@ func CreateBattleWorkers(hWnds []HWND, logDir *string, manaChecker *string) Batt
 			},
 			ActionState: CreateNewBattleActionState(hWnd, logDir, manaChecker),
 			logDir:      logDir,
+			manaChecker: manaChecker,
 		})
 	}
 	return workers

@@ -88,14 +88,14 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled            bool    `json:"-"`
-	isOutOfMana        bool    `json:"-"`
-	isHumanHanging     bool    `json:"-"`
-	isPetHanging       bool    `json:"-"`
-	isEncounteringBaBy bool    `json:"-"`
-	manaChecker        *string `json:"-"`
+	Enabled            bool `json:"-"`
+	isOutOfMana        bool `json:"-"`
+	isHumanHanging     bool `json:"-"`
+	isPetHanging       bool `json:"-"`
+	isEncounteringBaBy bool `json:"-"`
 
-	logDir *string `json:"-"`
+	ManaChecker *string `json:"-"`
+	LogDir      *string `json:"-"`
 
 	enemies              []CheckTarget `json:"-"`
 	enemyDetectorCounter int           `json:"-"`
@@ -180,8 +180,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if doesMissSkillButton(b.hWnd, x, y) {
-					b.logH("missed the skill button")
-					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+					b.logH("missed the skill button or is out of mana")
 				} else if b.attack(HumanTargetingChecker) {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -293,8 +292,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if doesMissSkillButton(b.hWnd, x, y) {
-					b.logH("missed the skill button")
-					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+					b.logH("missed the skill button or is out of mana")
 				} else {
 					b.logH("is tring to get on a pet")
 					for i, v := range b.PetStates {
@@ -327,8 +325,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if doesMissSkillButton(b.hWnd, x, y) {
-						b.logH("missed the skill button")
-						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+						b.logH("missed the skill button or is out of mana")
 					} else {
 						b.logH("healed self")
 						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -353,8 +350,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if doesMissSkillButton(b.hWnd, x, y) {
-						b.logH("missed the skill button")
-						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+						b.logH("missed the skill button or is out of mana")
 					} else if b.aim(target, HumanTargetingChecker) {
 						b.logH("healed an ally")
 						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -382,8 +378,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if doesMissSkillButton(b.hWnd, x, y) {
-						b.logH("missed the skill button")
-						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+						b.logH("missed the skill button or is out of mana")
 					} else if b.aim(&PLAYER_L_3_H, HumanTargetingChecker) {
 						b.logH("healed allies")
 						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -420,8 +415,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if doesMissSkillButton(b.hWnd, x, y) {
-					b.logH("missed the skill button")
-					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+					b.logH("missed the skill button or is out of mana")
 				} else if b.aim(&PLAYER_L_3_P, HumanTargetingChecker) {
 					b.logH("is training")
 					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -431,12 +425,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_S_CATCH:
-			if *b.logDir == "" {
+			if *b.LogDir == "" {
 				b.logH("please set up the log directory")
 				break
 			}
 
-			if !DoesEncounterBaby(*b.logDir) {
+			if !DoesEncounterBaby(*b.LogDir) {
 				break
 			}
 
@@ -471,7 +465,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		b.nextHumanStateId = 0
 	}
 
-	if *b.manaChecker == fmt.Sprint(b.hWnd) {
+	if b.isManaChecker() {
 		closeAllWindow(b.hWnd)
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
@@ -549,8 +543,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
-					b.logP("missed the skill button")
-					cu = b.PetFailureControlUnits[b.nextPetStateId]
+					b.logP("missed the skill button or is out of mana")
 				} else if b.attack(PetTargetingChecker) {
 					b.logP("used a skill")
 					cu = b.PetSuccessControlUnits[b.nextPetStateId]
@@ -576,8 +569,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
-					b.logP("missed the skill button")
-					cu = b.PetFailureControlUnits[b.nextPetStateId]
+					b.logP("missed the skill button or is out of mana")
 				} else {
 					b.logP("defended")
 					cu = b.PetSuccessControlUnits[b.nextPetStateId]
@@ -602,8 +594,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
 					if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
-						b.logP("missed the skill button")
-						cu = b.PetFailureControlUnits[b.nextPetStateId]
+						b.logP("missed the skill button or is out of mana")
 					} else {
 						b.logP("healed self")
 						cu = b.PetSuccessControlUnits[b.nextPetStateId]
@@ -693,12 +684,12 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.logP("escaped")
 			cu = b.PetFailureControlUnits[b.nextPetStateId]
 		case P_S_CATCH:
-			if *b.logDir == "" {
+			if *b.LogDir == "" {
 				b.logH("please set up the log directory")
 				break
 			}
 
-			if !DoesEncounterBaby(*b.logDir) {
+			if !DoesEncounterBaby(*b.LogDir) {
 				break
 			}
 
@@ -733,7 +724,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		b.nextPetStateId = 0
 	}
 
-	if *b.manaChecker == fmt.Sprint(b.hWnd) {
+	if b.isManaChecker() {
 		closeAllWindow(b.hWnd)
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
@@ -741,6 +732,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.logP("someone is out of mana")
 		}
 	}
+}
+
+func (b BattleActionState) isManaChecker() bool {
+	return *b.ManaChecker == fmt.Sprint(b.hWnd)
 }
 
 func (b *BattleActionState) enableBattleCommandAttack() {
@@ -831,8 +826,8 @@ func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleAc
 		PetParams:                []string{""},
 		PetSuccessControlUnits:   []string{C_U_CONTINUE},
 		PetFailureControlUnits:   []string{C_U_CONTINUE},
-		logDir:                   logDir,
-		manaChecker:              manaChecker,
+		LogDir:                   logDir,
+		ManaChecker:              manaChecker,
 	}
 }
 
