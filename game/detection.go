@@ -14,6 +14,8 @@ const (
 	GAME_WIDTH   = 640
 	GAME_HEIGHT  = 480
 	ITEM_COL_LEN = 50
+
+	DETECT_MON_TARGET_MOUSE_MOV_INTERVAL = 80
 )
 
 type CheckTarget struct {
@@ -45,6 +47,7 @@ const (
 	COLOR_MENU_BUTTON_T        = 15201528
 	COLOR_MENU_BUTTON_POPOUT   = 10331818
 	COLOR_MENU_BUTTON_R_POPOUT = 10331817
+	COLOR_MENU_HIDDEN          = 7568253
 
 	COLOR_BATTLE_COMMAND_ENABLE  = 7125907
 	COLOR_BATTLE_COMMAND_DISABLE = 6991316
@@ -355,7 +358,7 @@ func isPetOutOfMana(hWnd HWND) bool {
 	return false
 }
 
-func isRidingOutOfMana(hWnd HWND) bool {
+func isOnRidingOutOfMana(hWnd HWND) bool {
 	if sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE {
 		return true
 	}
@@ -370,7 +373,7 @@ func isOnRide(hWnd HWND) bool {
 
 var stopWords = []string{"被不可思", "發現野生一級"}
 
-func isTPedToOtherMap(dir string) bool {
+func isTeleportedToOtherMap(dir string) bool {
 	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
 }
 
@@ -418,7 +421,7 @@ func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
 		sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_BLOOD_UPPER
 }
 
-func searchOneLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
+func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 	sys.MoveToNowhere(hWnd)
 
 	for i := range allTargets {
@@ -478,4 +481,29 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 		}
 	}
 	return nil, false
+}
+
+var allMonsterTargets = []CheckTarget{
+	MON_POS_T_1,
+	MON_POS_T_2,
+	MON_POS_T_3,
+	MON_POS_T_4,
+	MON_POS_T_5,
+	MON_POS_B_1,
+	MON_POS_B_2,
+	MON_POS_B_3,
+	MON_POS_B_4,
+	MON_POS_B_5,
+}
+
+func getEnemyTargets(hWnd HWND) []CheckTarget {
+	targets := []CheckTarget{}
+
+	for i := range allMonsterTargets {
+		sys.MoveMouseWithInterval(hWnd, allMonsterTargets[i].x, allMonsterTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
+		if sys.GetColor(hWnd, MENU_R.x, MENU_R.y) == COLOR_MENU_HIDDEN {
+			targets = append(targets, allMonsterTargets[i])
+		}
+	}
+	return targets
 }

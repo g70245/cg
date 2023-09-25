@@ -88,12 +88,16 @@ type BattleActionState struct {
 	isEncounteringBaBy bool `json:"-"`
 
 	logDir *string `json:"-"`
+
+	enemies []CheckTarget
 }
 
 func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+		b.detectEnemies()
+		fmt.Println(b.enemies)
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
@@ -145,7 +149,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 			b.enableBattleCommandAttack()
-			if b.attack(humanAttackOrder, HumanTargetingChecker) {
+			if b.attack(HumanTargetingChecker) {
 				b.logH("attacked")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			} else {
@@ -165,7 +169,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				if isHumanOutOfMana(b.hWnd, x, y) {
 					b.logH("is out of mana")
 					b.isOutOfMana = true
-				} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
+				} else if b.attack(HumanTargetingChecker) {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 				} else {
@@ -218,7 +222,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
-					} else if b.attack(humanAttackOrder, HumanTargetingChecker) {
+					} else if b.attack(HumanTargetingChecker) {
 						b.logH("throwed a bomb")
 						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 					} else {
@@ -238,7 +242,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
+			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x45)
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
@@ -329,7 +333,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
+			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
@@ -497,7 +501,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				usePetSkill(b.hWnd, x, y, 1)
-				if b.attack(petAttackOrder, PetTargetingChecker) {
+				if b.attack(PetTargetingChecker) {
 					b.logP("attacked")
 					cu = b.PetSuccessControlUnits[b.nextPetStateId]
 				} else {
@@ -518,10 +522,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+				if isPetOutOfMana(b.hWnd) || isOnRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
 					b.isOutOfMana = true
-				} else if b.attack(petAttackOrder, PetTargetingChecker) {
+				} else if b.attack(PetTargetingChecker) {
 					b.logP("used a skill")
 					cu = b.PetSuccessControlUnits[b.nextPetStateId]
 				} else {
@@ -545,7 +549,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+				if isPetOutOfMana(b.hWnd) || isOnRidingOutOfMana(b.hWnd) {
 					b.logP("is out of mana")
 					b.isOutOfMana = true
 				} else {
@@ -571,7 +575,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if isPetOutOfMana(b.hWnd) || isRidingOutOfMana(b.hWnd) {
+					if isPetOutOfMana(b.hWnd) || isOnRidingOutOfMana(b.hWnd) {
 						b.logP("is out of mana")
 						b.isOutOfMana = true
 					} else {
@@ -628,7 +632,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			closeAllWindow(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
-			if target, ok := searchOneLifeBelow(b.hWnd, float32(ratio)); ok {
+			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
 				b.openPetSkillWindow()
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
@@ -716,14 +720,10 @@ func (b *BattleActionState) useItem(x, y int32) {
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
-var humanAttackOrder = []CheckTarget{MON_POS_B_3, MON_POS_T_3, MON_POS_B_2, MON_POS_B_4, MON_POS_T_2, MON_POS_T_4, MON_POS_B_1, MON_POS_B_5, MON_POS_T_1, MON_POS_T_5}
-var petAttackOrder = []CheckTarget{MON_POS_T_3, MON_POS_B_3, MON_POS_T_2, MON_POS_T_4, MON_POS_B_2, MON_POS_B_4, MON_POS_T_1, MON_POS_T_5, MON_POS_B_1, MON_POS_B_5}
-
-func (b *BattleActionState) attack(attackedTargets []CheckTarget, stateChecker func(hwnd HWND) bool) bool {
-	newTargets := slices.Clone(attackedTargets)
+func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(newTargets), func(i, j int) { newTargets[i], newTargets[j] = newTargets[j], newTargets[i] })
-	for _, target := range newTargets {
+	rand.Shuffle(len(b.enemies), func(i, j int) { b.enemies[i], b.enemies[j] = b.enemies[j], b.enemies[i] })
+	for _, target := range b.enemies {
 		sys.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(ATTACK_INTERVAL * time.Millisecond)
 		if stateChecker(b.hWnd) {
@@ -919,6 +919,10 @@ func (b *BattleActionState) GetPetSuccessControlUnits() []string {
 
 func (b *BattleActionState) GetPetFailureControlUnits() []string {
 	return b.PetFailureControlUnits
+}
+
+func (b *BattleActionState) detectEnemies() {
+	b.enemies = getEnemyTargets(b.hWnd)
 }
 
 func Test(hWnd HWND) (x int32, y int32, successful bool) {

@@ -40,6 +40,11 @@ func MoveMouse(hWnd HWND, x, y int32) {
 	time.Sleep(MOUSE_MOVE_INTERVAL * time.Millisecond)
 }
 
+func MoveMouseWithInterval(hWnd HWND, x, y int32, interval time.Duration) {
+	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	time.Sleep(interval * time.Millisecond)
+}
+
 func LeftClick(hWnd HWND, x, y int32) {
 	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDOWN)

@@ -129,7 +129,7 @@ func (w *BattleWorker) activateLogChecker(logCheckerStopChan chan bool, isTelepo
 					log.Println("Log Checker disabled")
 					return
 				case <-logCheckerTicker.C:
-					if isTPedToOtherMap(*w.logDir) {
+					if isTeleportedToOtherMap(*w.logDir) {
 						isTeleportedChan <- true
 						return
 					}
