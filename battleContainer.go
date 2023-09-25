@@ -104,7 +104,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	manaChecker := new(string)
-	workers := CreateBattleWorkers(maps.Values(games), logDir)
+	workers := CreateBattleWorkers(maps.Values(games), logDir, manaChecker)
 	stopChan = make(chan bool, len(workers))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
@@ -129,7 +129,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
 			for i := range workers {
-				workers[i].Work(manaChecker, stopChan)
+				workers[i].Work(stopChan)
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():

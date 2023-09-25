@@ -88,12 +88,12 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled            bool `json:"-"`
-	isOutOfMana        bool `json:"-"`
-	isHumanHanging     bool `json:"-"`
-	isPetHanging       bool `json:"-"`
-	isEncounteringBaBy bool `json:"-"`
-	isManaChecker      bool `json:"-"`
+	Enabled            bool    `json:"-"`
+	isOutOfMana        bool    `json:"-"`
+	isHumanHanging     bool    `json:"-"`
+	isPetHanging       bool    `json:"-"`
+	isEncounteringBaBy bool    `json:"-"`
+	manaChecker        *string `json:"-"`
 
 	logDir *string `json:"-"`
 
@@ -471,7 +471,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		b.nextHumanStateId = 0
 	}
 
-	if b.isManaChecker {
+	if *b.manaChecker == fmt.Sprint(b.hWnd) {
+		closeAllWindow(b.hWnd)
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
 			b.isOutOfMana = true
@@ -732,7 +733,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		b.nextPetStateId = 0
 	}
 
-	if b.isManaChecker {
+	if *b.manaChecker == fmt.Sprint(b.hWnd) {
 		closeAllWindow(b.hWnd)
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
@@ -816,7 +817,7 @@ func (b *BattleActionState) logP(message string) {
 	)
 }
 
-func CreateNewBattleActionState(hWnd HWND, logDir *string) BattleActionState {
+func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleActionState {
 	return BattleActionState{
 		hWnd:                     hWnd,
 		HumanStates:              []string{H_F_ATTACK},
@@ -831,6 +832,7 @@ func CreateNewBattleActionState(hWnd HWND, logDir *string) BattleActionState {
 		PetSuccessControlUnits:   []string{C_U_CONTINUE},
 		PetFailureControlUnits:   []string{C_U_CONTINUE},
 		logDir:                   logDir,
+		manaChecker:              manaChecker,
 	}
 }
 

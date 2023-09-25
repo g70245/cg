@@ -27,7 +27,7 @@ type BattleWorker struct {
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND, logDir *string) BattleWorkers {
+func CreateBattleWorkers(hWnds []HWND, logDir *string, manaChecker *string) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range hWnds {
 		workers = append(workers, BattleWorker{
@@ -36,7 +36,7 @@ func CreateBattleWorkers(hWnds []HWND, logDir *string) BattleWorkers {
 				hWnd: hWnd,
 				Mode: NONE,
 			},
-			ActionState: CreateNewBattleActionState(hWnd, logDir),
+			ActionState: CreateNewBattleActionState(hWnd, logDir, manaChecker),
 			logDir:      logDir,
 		})
 	}
@@ -51,7 +51,7 @@ func (w BattleWorker) canMove() bool {
 	return w.MovementState.Mode != NONE
 }
 
-func (w *BattleWorker) Work(manaChecker *string, stopChan chan bool) {
+func (w *BattleWorker) Work(stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
@@ -66,7 +66,6 @@ func (w *BattleWorker) Work(manaChecker *string, stopChan chan bool) {
 		w.ActionState.Enabled = true
 		w.ActionState.isOutOfMana = false
 		w.ActionState.isEncounteringBaBy = false
-		w.ActionState.isManaChecker = (*manaChecker == w.GetHandle())
 		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
