@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	ACTION_INTERVAL = 200
+	ACTION_INTERVAL                         = 200
+	BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC = 2
+	INVENTORY_CHECKER_WAITING_INTERVAL      = 400
 )
 
 func closeAllWindow(hWnd HWND) {
@@ -43,4 +45,19 @@ func usePetSkill(hWnd HWND, x, y int32, id int) {
 func clearChat(hWnd HWND) {
 	KeyMsg(hWnd, VK_HOME)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
+}
+
+func checkInventory(hWnd HWND) bool {
+	defer closeAllWindow(hWnd)
+	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
+
+	time.Sleep(BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC * time.Second)
+	closeAllWindow(hWnd)
+	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	openWindowByShortcut(hWnd, 0x45)
+
+	if px, py, ok := getNSItemWindowPos(hWnd); ok {
+		return !isAnyItemSlotFree(hWnd, px, py)
+	}
+	return false
 }

@@ -358,7 +358,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 			count := countLifeBelow(b.hWnd, float32(ratio))
-			if count >= 6 {
+			if count >= 5 {
 				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])

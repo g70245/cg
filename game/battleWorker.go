@@ -12,7 +12,6 @@ import (
 
 const (
 	BATTLE_WORKER_INTERVAL                    = 800
-	BATTLE_RESULT_DISAPPEARING_SECOND         = 2
 	LOG_CHECKER_INTERVAL                      = 100
 	INVENTORY_CHECKER_INTERVAL_SECOND         = 60
 	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400
@@ -59,31 +58,8 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 	inventoryCheckerTicker := time.NewTicker(INVENTORY_CHECKER_INTERVAL_SECOND * time.Second)
 
 	logCheckerStopChan := make(chan bool, 1)
-	isTPedChan := make(chan bool, 1)
-
-	if *w.logDir != "" {
-		logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
-
-		go func() {
-			log.Println("Log Checker enabled")
-			defer logCheckerTicker.Stop()
-
-			for {
-				select {
-				case <-logCheckerStopChan:
-					log.Println("Log Checker disabled")
-					return
-				case <-logCheckerTicker.C:
-					if isTPedToOtherMap(*w.logDir) {
-						isTPedChan <- true
-						return
-					}
-				default:
-					time.Sleep(LOG_CHECKER_INTERVAL * time.Microsecond / 3)
-				}
-			}
-		}()
-	}
+	isTeleportedChan := make(chan bool, 1)
+	w.activateLogChecker(logCheckerStopChan, isTeleportedChan)
 
 	go func() {
 		defer workerTicker.Stop()
@@ -112,7 +88,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-stopChan:
 				StopBeeper()
 				return
-			case isTPed = <-isTPedChan:
+			case isTPed = <-isTeleportedChan:
 				PlayBeeper()
 				logCheckerStopChan <- true
 				log.Println("Has been teleported, need to stop the movement")
@@ -139,16 +115,28 @@ func (w *BattleWorker) StartInventoryChecker() {
 	w.inventoryCheckerEnabled = true
 }
 
-func checkInventory(hWnd HWND) bool {
-	time.Sleep(BATTLE_RESULT_DISAPPEARING_SECOND * time.Second)
-	closeAllWindow(hWnd)
-	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
-	openWindowByShortcut(hWnd, 0x45)
-	defer closeAllWindow(hWnd)
-	defer time.Sleep(INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL * time.Millisecond)
+func (w *BattleWorker) activateLogChecker(logCheckerStopChan chan bool, isTeleportedChan chan bool) {
+	if *w.logDir != "" {
+		logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
 
-	if px, py, ok := getNSItemWindowPos(hWnd); ok {
-		return !isAnyItemSlotFree(hWnd, px, py)
+		go func() {
+			log.Println("Log Checker enabled")
+			defer logCheckerTicker.Stop()
+
+			for {
+				select {
+				case <-logCheckerStopChan:
+					log.Println("Log Checker disabled")
+					return
+				case <-logCheckerTicker.C:
+					if isTPedToOtherMap(*w.logDir) {
+						isTeleportedChan <- true
+						return
+					}
+				default:
+					time.Sleep(LOG_CHECKER_INTERVAL * time.Microsecond / 3)
+				}
+			}
+		}()
 	}
-	return false
 }
