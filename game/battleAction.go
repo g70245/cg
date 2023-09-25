@@ -97,7 +97,6 @@ func (b *BattleActionState) Act() {
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.detectEnemies()
-		fmt.Println(b.enemies)
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
