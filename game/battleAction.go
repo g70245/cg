@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	TURN_INTERVAL          = 300
-	WAITING_LOOP_INTERVAL  = 200
-	ATTACK_INTERVAL        = 100
-	BATTLE_ACTION_INTERVAL = 160
+	BATTLE_START_INTERVAL_SEC = 2
+	TURN_INTERVAL             = 300
+	WAITING_LOOP_INTERVAL     = 200
+	ATTACK_INTERVAL           = 100
+	BATTLE_ACTION_INTERVAL    = 160
 )
 
 const (
@@ -96,7 +97,6 @@ func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-		b.detectEnemies()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(TURN_INTERVAL * time.Millisecond)
@@ -117,6 +117,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
 		}
+
+		b.detectEnemies()
 
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -467,6 +469,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
 			continue
+		}
+
+		if isOnRide(b.hWnd) {
+			b.detectEnemies()
 		}
 
 		if b.isHumanHanging {
@@ -921,6 +927,7 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 }
 
 func (b *BattleActionState) detectEnemies() {
+	closeAllWindow(b.hWnd)
 	b.enemies = getEnemyTargets(b.hWnd)
 }
 
