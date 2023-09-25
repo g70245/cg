@@ -66,7 +66,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		w.ActionState.Enabled = true
 		w.ActionState.isOutOfMana = false
 		w.ActionState.isEncounteringBaBy = false
-		isTPed := false
+		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
 
@@ -79,7 +79,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.canMove(*leadHandle) && !isTPed {
+					if w.canMove(*leadHandle) && !isTeleported {
 						w.MovementState.Move()
 					}
 				default:
@@ -88,7 +88,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 			case <-stopChan:
 				StopBeeper()
 				return
-			case isTPed = <-isTeleportedChan:
+			case isTeleported = <-isTeleportedChan:
 				PlayBeeper()
 				logCheckerStopChan <- true
 				log.Println("Has been teleported, need to stop the movement")
