@@ -371,10 +371,15 @@ func isOnRide(hWnd HWND) bool {
 			sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
 }
 
-var stopWords = []string{"被不可思", "發現野生一級"}
+var teleportedWords = []string{"被不可思", "你感覺到一股"}
 
 func isTeleportedToOtherMap(dir string) bool {
-	return strings.Contains(sys.GetLastLineOfLog(dir), stopWords[0])
+	for _, stopWord := range teleportedWords {
+		if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
+			return true
+		}
+	}
+	return false
 }
 
 func DoesEncounterBaby(dir string) bool {
@@ -389,7 +394,7 @@ func DoesEncounterBaby(dir string) bool {
 		}
 
 		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
-		if !logTime.Before(now.Add(-8*time.Minute)) && strings.Contains(lines[i], stopWords[1]) {
+		if !logTime.Before(now.Add(-8*time.Minute)) && strings.Contains(lines[i], "發現野生一級") {
 			return true
 		}
 	}
