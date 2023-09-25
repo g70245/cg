@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -90,11 +91,14 @@ type BattleActionState struct {
 
 	logDir *string `json:"-"`
 
-	enemies []CheckTarget
+	enemies              []CheckTarget
+	enemyDetectorCounter int
 }
 
 func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
+
+	b.enemies = allMonsterTargets
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
@@ -928,7 +932,19 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 
 func (b *BattleActionState) detectEnemies() {
 	closeAllWindow(b.hWnd)
-	b.enemies = getEnemyTargets(b.hWnd)
+
+	if b.enemyDetectorCounter <= 6 {
+		newEnemies := getEnemyTargets(b.hWnd, b.enemies)
+		if reflect.DeepEqual(b.enemies, newEnemies) {
+			b.enemyDetectorCounter++
+		} else {
+			b.enemyDetectorCounter = 0
+		}
+		b.enemies = newEnemies
+	} else {
+		b.enemies = getEnemyTargets(b.hWnd, allMonsterTargets)
+		b.enemyDetectorCounter = 0
+	}
 }
 
 func Test(hWnd HWND) (x int32, y int32, successful bool) {

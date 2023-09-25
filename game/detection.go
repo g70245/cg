@@ -496,13 +496,13 @@ var allMonsterTargets = []CheckTarget{
 	MON_POS_B_5,
 }
 
-func getEnemyTargets(hWnd HWND) []CheckTarget {
+func getEnemyTargets(hWnd HWND, checkTargets []CheckTarget) []CheckTarget {
 	targets := []CheckTarget{}
 
-	for i := range allMonsterTargets {
-		sys.MoveMouseWithInterval(hWnd, allMonsterTargets[i].x, allMonsterTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
-		if sys.GetColor(hWnd, MENU_R.x, MENU_R.y) == COLOR_MENU_HIDDEN {
-			targets = append(targets, allMonsterTargets[i])
+	for i := range checkTargets {
+		sys.MoveMouseWithInterval(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
+		if sys.GetColor(hWnd, MENU_T.x, MENU_T.y) == COLOR_MENU_HIDDEN {
+			targets = append(targets, checkTargets[i])
 		}
 	}
 	return targets
