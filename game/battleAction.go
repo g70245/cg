@@ -93,7 +93,7 @@ type BattleActionState struct {
 	isHumanHanging     bool `json:"-"`
 	isPetHanging       bool `json:"-"`
 	isEncounteringBaBy bool `json:"-"`
-	isLeader           bool `json:"-"`
+	isManaChecker      bool `json:"-"`
 
 	logDir *string `json:"-"`
 
@@ -465,7 +465,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		}
 	}
 
-	if b.isLeader && isAnyPlayOutOfMana(b.hWnd) {
+	if b.isManaChecker && isAnyPlayOutOfMana(b.hWnd) {
 		b.isOutOfMana = true
 		b.logH("someone is out of mana")
 	}
@@ -723,7 +723,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		}
 	}
 
-	if b.isLeader && isAnyPlayOutOfMana(b.hWnd) {
+	if b.isManaChecker && isAnyPlayOutOfMana(b.hWnd) {
 		b.isOutOfMana = true
 		b.logP("someone is out of mana")
 	}

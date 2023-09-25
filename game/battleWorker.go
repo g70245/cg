@@ -47,11 +47,11 @@ func (w BattleWorker) GetHandle() string {
 	return fmt.Sprint(w.hWnd)
 }
 
-func (w BattleWorker) canMove(leadHandle string) bool {
-	return (leadHandle == "" || leadHandle == w.GetHandle()) && w.MovementState.Mode != NONE
+func (w BattleWorker) canMove() bool {
+	return w.MovementState.Mode != NONE
 }
 
-func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
+func (w *BattleWorker) Work(manaChecker *string, stopChan chan bool) {
 	closeAllWindow(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
@@ -66,7 +66,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		w.ActionState.Enabled = true
 		w.ActionState.isOutOfMana = false
 		w.ActionState.isEncounteringBaBy = false
-		w.ActionState.isLeader = (*leadHandle == w.GetHandle())
+		w.ActionState.isManaChecker = (*manaChecker == w.GetHandle())
 		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
@@ -80,7 +80,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.canMove(*leadHandle) && !isTeleported {
+					if w.canMove() && !isTeleported {
 						w.MovementState.Move()
 					}
 				default:

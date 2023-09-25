@@ -103,33 +103,33 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 }
 
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
-	leadHandle := new(string)
+	manaChecker := new(string)
 	workers := CreateBattleWorkers(maps.Values(games), logDir)
 	stopChan = make(chan bool, len(workers))
 
-	var leadSelectorDialog *dialog.CustomDialog
-	var leadSelectorButton *widget.Button
+	var manaCheckerSelectorDialog *dialog.CustomDialog
+	var manaCheckerSelectorButton *widget.Button
 	leadSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
-		*leadHandle = s
-		if *leadHandle != "" {
-			leadSelectorButton.SetText("Lead: " + *leadHandle)
+		*manaChecker = s
+		if *manaChecker != "" {
+			manaCheckerSelectorButton.SetText("Mana Checker: " + *manaChecker)
 		} else {
-			leadSelectorButton.SetText("Select Lead")
+			manaCheckerSelectorButton.SetText("Select Mana Checker")
 		}
-		leadSelectorDialog.Hide()
+		manaCheckerSelectorDialog.Hide()
 	})
-	leadSelectorDialog = dialog.NewCustomWithoutButtons("Select a lead with this group", leadSelector, window)
-	leadSelectorButton = widget.NewButton("Select Lead", func() {
-		leadSelectorDialog.Show()
+	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", leadSelector, window)
+	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
+		manaCheckerSelectorDialog.Show()
 	})
-	leadSelectorButton.Importance = widget.HighImportance
+	manaCheckerSelectorButton.Importance = widget.HighImportance
 
 	var lever *widget.Button
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
 			for i := range workers {
-				workers[i].Work(leadHandle, stopChan)
+				workers[i].Work(manaChecker, stopChan)
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
@@ -178,7 +178,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	inventoryCheck.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(4, leadSelectorButton, inventoryCheck, delete, lever)
+	mainButtons := container.NewGridWithColumns(4, manaCheckerSelectorButton, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widget */
