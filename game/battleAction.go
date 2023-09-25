@@ -54,6 +54,11 @@ const (
 	P_S_HANG     = "Pet Hang"
 )
 
+var actionsNeedToDetectEnemy = []string{
+	H_F_ATTACK, H_C_SKILL, H_C_BOMB,
+	P_F_ATTACK, P_C_SkILL,
+}
+
 const (
 	C_U_START_OVER = "Start Over"
 	C_U_CONTINUE   = "Continue"
@@ -122,7 +127,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
-		b.detectEnemies()
+		if slices.Contains(actionsNeedToDetectEnemy, b.HumanStates[b.nextHumanStateId]) {
+			b.detectEnemies()
+		}
 
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -475,7 +482,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			continue
 		}
 
-		if isOnRide(b.hWnd) {
+		if isOnRide(b.hWnd) && slices.Contains(actionsNeedToDetectEnemy, b.PetStates[b.nextPetStateId]) {
 			b.detectEnemies()
 		}
 
