@@ -10,8 +10,8 @@ import (
 const (
 	CLICK_INTERVAL                   = 60
 	DOUBLE_CLICK_INTERVAL            = 120
-	KEY_INTERVAL                     = 140
-	MOUSE_MOVE_INTERVAL              = 160
+	KEY_INTERVAL                     = 80
+	MOUSE_MOVE_INTERVAL              = 100
 	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
 
@@ -53,7 +53,7 @@ func LeftClick(hWnd HWND, x, y int32) {
 }
 
 func DoubleClick(hWnd HWND, x, y int32) {
-	MoveMouseWithDuration(hWnd, x, y, BAD_COMPUTER_MOUSE_MOVE_INTERVAL)
+	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
