@@ -103,16 +103,16 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 }
 
 func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
-	var leadHandle string
+	leadHandle := new(string)
 	workers := CreateBattleWorkers(maps.Values(games), logDir)
 	stopChan = make(chan bool, len(workers))
 
 	var leadSelectorDialog *dialog.CustomDialog
 	var leadSelectorButton *widget.Button
 	leadSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
-		leadHandle = s
-		if leadHandle != "" {
-			leadSelectorButton.SetText("Lead: " + leadHandle)
+		*leadHandle = s
+		if *leadHandle != "" {
+			leadSelectorButton.SetText("Lead: " + *leadHandle)
 		} else {
 			leadSelectorButton.SetText("Select Lead")
 		}
@@ -129,7 +129,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
 			for i := range workers {
-				workers[i].Work(&leadHandle, stopChan)
+				workers[i].Work(leadHandle, stopChan)
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():

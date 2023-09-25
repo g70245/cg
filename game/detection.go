@@ -344,21 +344,21 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int
 	return 0, 0, false
 }
 
-func isHumanOutOfMana(hWnd HWND, x, y int32) bool {
+func doesMissSkillButton(hWnd HWND, x, y int32) bool {
 	if sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA {
 		return true
 	}
 	return false
 }
 
-func isPetOutOfMana(hWnd HWND) bool {
+func doesPetMissSkillButton(hWnd HWND) bool {
 	if sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE {
 		return true
 	}
 	return false
 }
 
-func isOnRidingOutOfMana(hWnd HWND) bool {
+func doesOnRidingMissSkillButtton(hWnd HWND) bool {
 	if sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE {
 		return true
 	}
@@ -418,6 +418,18 @@ var allTargets = []CheckTarget{
 	PLAYER_L_3_P,
 	PLAYER_L_4_P,
 	PLAYER_L_5_P,
+}
+
+func isAnyPlayOutOfMana(hWnd HWND) bool {
+	for _, h := range allHumans {
+		manaPoint := h.x + 2
+		y := h.y + 3
+		if sys.GetColor(hWnd, manaPoint, y) != COLOR_BATTLE_MANA_UPPER &&
+			sys.GetColor(hWnd, h.x, h.y+3) == COLOR_BATTLE_MANA_UPPER {
+			return true
+		}
+	}
+	return false
 }
 
 func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {

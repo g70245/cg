@@ -66,6 +66,7 @@ func (w *BattleWorker) Work(leadHandle *string, stopChan chan bool) {
 		w.ActionState.Enabled = true
 		w.ActionState.isOutOfMana = false
 		w.ActionState.isEncounteringBaBy = false
+		w.ActionState.isLeader = (*leadHandle == w.GetHandle())
 		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
