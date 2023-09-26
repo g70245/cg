@@ -24,9 +24,10 @@ const (
 	REVERSED_DIAGONAL_MODE        = "Reversed Diagonal"
 	BIASED_REVERSED_DIAGONAL_MODE = "B. Reversed Diagonal"
 	HYBRID_DIAGONAL_MODE          = "Hybrid Diagonal"
+	CATCH_DIAGONAL                = "Catch Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{DIAGONAL_MODE, REVERSED_DIAGONAL_MODE, BIASED_DIAGONAL_MODE, BIASED_REVERSED_DIAGONAL_MODE, HYBRID_DIAGONAL_MODE}
+var BATTLE_MOVEMENT_MODES = []string{DIAGONAL_MODE, REVERSED_DIAGONAL_MODE, BIASED_DIAGONAL_MODE, BIASED_REVERSED_DIAGONAL_MODE, HYBRID_DIAGONAL_MODE, CATCH_DIAGONAL}
 
 type BattleMovementState struct {
 	hWnd             HWND
@@ -44,15 +45,17 @@ func (state *BattleMovementState) Move() {
 	var x, y int
 	switch state.Mode {
 	case DIAGONAL_MODE:
-		x, y = diagonal(state, false, false)
+		x, y = diagonal(RADIUS, state, false, false)
 	case REVERSED_DIAGONAL_MODE:
-		x, y = diagonal(state, true, false)
+		x, y = diagonal(RADIUS, state, true, false)
 	case BIASED_DIAGONAL_MODE:
-		x, y = diagonal(state, false, true)
+		x, y = diagonal(RADIUS, state, false, true)
 	case BIASED_REVERSED_DIAGONAL_MODE:
-		x, y = diagonal(state, true, true)
+		x, y = diagonal(RADIUS, state, true, true)
 	case HYBRID_DIAGONAL_MODE:
-		x, y = diagonal(state, rand.Intn(2) != 0, true)
+		x, y = diagonal(RADIUS, state, rand.Intn(2) != 0, true)
+	case CATCH_DIAGONAL:
+		x, y = diagonal(45, state, false, false)
 	default:
 		x, y = none()
 	}
@@ -62,7 +65,7 @@ func (state *BattleMovementState) Move() {
 	sys.LeftClick(state.hWnd, int32(x), int32(y))
 }
 
-func diagonal(state *BattleMovementState, isReverse bool, isBias bool) (x, y int) {
+func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBias bool) (x, y int) {
 	xOrigin := GAME_WIDTH / 2
 	yOrigin := GAME_HEIGHT / 2
 
@@ -75,11 +78,11 @@ func diagonal(state *BattleMovementState, isReverse bool, isBias bool) (x, y int
 	rotationAngle := ((45.0+randomBiasAngle)/180.0)*math.Pi + direction
 
 	if isReverse {
-		x = xOrigin + int(RADIUS*math.Cos(rotationAngle))
-		y = yOrigin + int(RADIUS*math.Sin(rotationAngle))
+		x = xOrigin + int(radius*math.Cos(rotationAngle))
+		y = yOrigin + int(radius*math.Sin(rotationAngle))
 	} else {
-		x = xOrigin + int(RADIUS*math.Cos(rotationAngle))
-		y = yOrigin + int(RADIUS*math.Sin(rotationAngle))*-1
+		x = xOrigin + int(radius*math.Cos(rotationAngle))
+		y = yOrigin + int(radius*math.Sin(rotationAngle))*-1
 	}
 
 	return

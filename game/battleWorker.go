@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL                    = 800
+	BATTLE_WORKER_INTERVAL                    = 400
 	LOG_CHECKER_INTERVAL                      = 100
 	INVENTORY_CHECKER_INTERVAL_SECOND         = 60
 	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400

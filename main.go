@@ -97,6 +97,7 @@ func main() {
 				*logDir = lu.Path()
 				logDialogButton.SetIcon(theme.FolderOpenIcon())
 			} else {
+				*logDir = ""
 				logDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
