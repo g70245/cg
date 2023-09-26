@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	TARGET_CLASS = "Blue"
 	APP_NAME     = "CG"
 	APP_WIDTH    = 960
 	APP_HEIGHT   = 420
@@ -118,7 +117,7 @@ type Robot struct {
 }
 
 func generateRobotContainer() Robot {
-	idleGames := system.FindWindows(TARGET_CLASS)
+	idleGames := system.FindWindows()
 
 	autoBattleWidget, autoBattleStopChans := battleContainer(idleGames)
 

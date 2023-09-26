@@ -3,8 +3,7 @@ package system
 import (
 	"time"
 
-	"github.com/lxn/win"
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 const (
@@ -31,17 +30,17 @@ func MoveToNowhere(hWnd HWND) {
 }
 
 func MoveMouseWithDuration(hWnd HWND, x, y int32, d time.Duration) {
-	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
 	time.Sleep(d * time.Millisecond)
 }
 
 func MoveMouse(hWnd HWND, x, y int32) {
-	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
 	time.Sleep(MOUSE_MOVE_INTERVAL * time.Millisecond)
 }
 
 func MoveMouseWithInterval(hWnd HWND, x, y int32, interval time.Duration) {
-	MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
 	time.Sleep(interval * time.Millisecond)
 }
 

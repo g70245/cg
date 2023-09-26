@@ -1,13 +1,13 @@
 package game
 
 import (
-	. "cg/system"
-	"log"
+	sys "cg/system"
 
 	"fmt"
+	"log"
 	"time"
 
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 const (
@@ -87,11 +87,11 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 					// do nothing
 				}
 			case <-stopChan:
-				StopBeeper()
+				sys.StopBeeper()
 				teleportCheckerStopChan <- true
 				return
 			case isTeleported = <-isTeleportedChan:
-				PlayBeeper()
+				sys.PlayBeeper()
 				teleportCheckerStopChan <- true
 				log.Println("Has been teleported, need to stop the movement")
 			case <-inventoryCheckerTicker.C:
@@ -101,7 +101,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 				}
 			default:
 				if !isPlayingBeeper && (w.ActionState.isOutOfMana || w.ActionState.isOutOfHealthWhileCatching || isInventoryFull) {
-					isPlayingBeeper = PlayBeeper()
+					isPlayingBeeper = sys.PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
 			}

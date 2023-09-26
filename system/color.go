@@ -1,7 +1,7 @@
 package system
 
 import (
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 func GetColor(hWnd HWND, x, y int32) (color COLORREF) {

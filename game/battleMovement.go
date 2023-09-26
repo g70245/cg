@@ -2,12 +2,12 @@ package game
 
 import (
 	sys "cg/system"
-	"log"
 
+	"log"
 	"math"
 	"math/rand"
 
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 var (

@@ -22,7 +22,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 	"golang.org/x/exp/maps"
 )
 

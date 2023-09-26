@@ -2,12 +2,13 @@ package game
 
 import (
 	sys "cg/system"
+
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 const (

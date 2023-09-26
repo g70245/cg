@@ -5,10 +5,14 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/g70245/win"
 )
 
-func FindWindows(class string) map[string]win.HWND {
+const (
+	TARGET_CLASS = "Blue"
+)
+
+func FindWindows() map[string]win.HWND {
 	handles := make(map[string]win.HWND)
 
 	lpEnumFunc := syscall.NewCallback(func(h syscall.Handle, p uintptr) uintptr {
@@ -18,7 +22,7 @@ func FindWindows(class string) map[string]win.HWND {
 
 		win.GetClassName(win.HWND(h), &result[0], maxCount)
 
-		if syscall.UTF16ToString(result) == class {
+		if syscall.UTF16ToString(result) == TARGET_CLASS {
 			handles[fmt.Sprint(h)] = win.HWND(h)
 		}
 		return 1 // continue

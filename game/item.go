@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 )
 
 type Item struct {

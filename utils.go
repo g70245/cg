@@ -13,7 +13,7 @@ import (
 
 	"time"
 
-	"github.com/lxn/win"
+	"github.com/g70245/win"
 	"golang.org/x/exp/maps"
 )
 
@@ -53,7 +53,7 @@ func PrintColorFromData(hWnd win.HWND, checkTargets []CheckTarget) {
 }
 
 func KeyCombination() {
-	games := FindWindows(TARGET_CLASS)
+	games := FindWindows()
 	i := 0
 	for i < 5 {
 		for _, h := range games {
@@ -97,12 +97,12 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 }
 
 func getHWND() win.HWND {
-	for _, h := range maps.Values(system.FindWindows(TARGET_CLASS)) {
-		if fmt.Sprint(h) == "526062" {
+	for _, h := range maps.Values(system.FindWindows()) {
+		if fmt.Sprint(h) == "460774" {
 			return h
 		}
 	}
-	return maps.Values(system.FindWindows(TARGET_CLASS))[0]
+	return maps.Values(system.FindWindows())[0]
 }
 
 func goid() int {

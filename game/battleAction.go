@@ -2,6 +2,7 @@ package game
 
 import (
 	sys "cg/system"
+
 	"fmt"
 	"log"
 	"math/rand"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/lxn/win"
+	. "github.com/g70245/win"
 	"golang.org/x/exp/slices"
 )
 
@@ -463,7 +464,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			return
 		case C_U_JUMP:
 			b.nextHumanStateId = offset
-		default: // out of mana
+		default:
 			b.nextHumanStateId++
 		}
 	}
@@ -728,7 +729,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			return
 		case C_U_JUMP:
 			b.nextPetStateId = offset
-		default: // out of mana
+		default:
 			b.nextPetStateId++
 		}
 	}
