@@ -65,10 +65,8 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 		defer close(teleportCheckerStopChan)
 		defer close(isTeleportedChan)
 
-		w.ActionState.Enabled = true
-		w.ActionState.isOutOfHealthWhileCatching = false
-		w.ActionState.isOutOfMana = false
-		w.ActionState.isEncounteringBaBy = false
+		w.reset()
+
 		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
@@ -109,6 +107,13 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 			}
 		}
 	}()
+}
+
+func (w *BattleWorker) reset() {
+	w.ActionState.Enabled = true
+	w.ActionState.isOutOfHealthWhileCatching = false
+	w.ActionState.isOutOfMana = false
+	w.ActionState.isEncounteringBaBy = false
 }
 
 func (w *BattleWorker) StopInventoryChecker() {
