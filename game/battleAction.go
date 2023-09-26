@@ -88,12 +88,12 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled            bool `json:"-"`
-	isOutOfHealth      bool `json:"-"`
-	isOutOfMana        bool `json:"-"`
-	isHumanHanging     bool `json:"-"`
-	isPetHanging       bool `json:"-"`
-	isEncounteringBaBy bool `json:"-"`
+	Enabled                    bool `json:"-"`
+	isOutOfHealthWhileCatching bool `json:"-"`
+	isOutOfMana                bool `json:"-"`
+	isHumanHanging             bool `json:"-"`
+	isPetHanging               bool `json:"-"`
+	isEncounteringBaBy         bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
@@ -432,6 +432,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 			if !doesEncounterBaby(*b.LogDir) {
+				closeAllWindows(b.hWnd)
+				clearChat(b.hWnd)
+				if self, ok := getSelfTarget(b.hWnd, true); ok {
+					ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
+					b.isOutOfHealthWhileCatching = isLifeBelow(b.hWnd, float32(ratio), self)
+				}
 				break
 			}
 
@@ -691,6 +697,12 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 			if !doesEncounterBaby(*b.LogDir) {
+				closeAllWindows(b.hWnd)
+				clearChat(b.hWnd)
+				if self, ok := getSelfTarget(b.hWnd, true); ok {
+					ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
+					b.isOutOfHealthWhileCatching = isLifeBelow(b.hWnd, float32(ratio), self)
+				}
 				break
 			}
 

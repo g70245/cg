@@ -360,7 +360,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		paramsDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
 		paramsDialog.SetOnClosed(onClosed)
 
-		hHealingRatioSelectorDialog := SelectorDialog{
+		healingRatioSelectorDialog := SelectorDialog{
 			paramsDialog,
 			selector,
 			HealingOptions,
@@ -493,6 +493,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
+				dialogs := []SelectorDialog{
+					healingRatioSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
+
 				trainButton.Disable()
 			})
 			catchButton.Importance = widget.SuccessImportance
@@ -523,7 +528,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddHumanState(H_C_POTION)
 
 				dialogs := []SelectorDialog{
-					hHealingRatioSelectorDialog,
+					healingRatioSelectorDialog,
 					hCUSuccessSelectorDialog,
 					hCUFailureSelectorDialog,
 				}
@@ -656,7 +661,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
 					levelSelectorDialog,
-					hHealingRatioSelectorDialog,
+					healingRatioSelectorDialog,
 					hCUSuccessSelectorDialog,
 					hCUFailureSelectorDialog,
 				}
@@ -676,7 +681,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
 					levelSelectorDialog,
-					hHealingRatioSelectorDialog,
+					healingRatioSelectorDialog,
 					hCUSuccessSelectorDialog,
 					hCUFailureSelectorDialog,
 				}
@@ -694,7 +699,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
 					levelSelectorDialog,
-					hHealingRatioSelectorDialog,
+					healingRatioSelectorDialog,
 					hCUSuccessSelectorDialog,
 					hCUFailureSelectorDialog,
 				}
@@ -863,6 +868,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddPetState(P_S_CATCH)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+
+				dialogs := []SelectorDialog{
+					pHealingRatioSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
 
 			})
 			petCatchButton.Importance = widget.SuccessImportance

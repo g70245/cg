@@ -66,6 +66,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 		defer close(isTeleportedChan)
 
 		w.ActionState.Enabled = true
+		w.ActionState.isOutOfHealthWhileCatching = false
 		w.ActionState.isOutOfMana = false
 		w.ActionState.isEncounteringBaBy = false
 		isTeleported := false
@@ -81,7 +82,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !isTeleported {
+					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealthWhileCatching && !isTeleported {
 						w.MovementState.Move()
 					}
 				default:
@@ -101,7 +102,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
 				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.isOutOfMana || isInventoryFull) {
+				if !isPlayingBeeper && (w.ActionState.isOutOfMana || w.ActionState.isOutOfHealthWhileCatching || isInventoryFull) {
 					isPlayingBeeper = PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
@@ -117,29 +118,3 @@ func (w *BattleWorker) StopInventoryChecker() {
 func (w *BattleWorker) StartInventoryChecker() {
 	w.inventoryCheckerEnabled = true
 }
-
-// func (w *BattleWorker) activateLogChecker(logCheckerStopChan chan bool, isTeleportedChan chan bool) {
-// 	if *w.logDir != "" {
-// 		logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
-
-// 		go func() {
-// 			log.Println("Log Checker enabled")
-// 			defer logCheckerTicker.Stop()
-
-// 			for {
-// 				select {
-// 				case <-logCheckerStopChan:
-// 					log.Println("Log Checker disabled")
-// 					return
-// 				case <-logCheckerTicker.C:
-// 					if isTeleportedToOtherMap(*w.logDir) {
-// 						isTeleportedChan <- true
-// 						return
-// 					}
-// 				default:
-// 					time.Sleep(LOG_CHECKER_INTERVAL * time.Microsecond / 3)
-// 				}
-// 			}
-// 		}()
-// 	}
-// }
