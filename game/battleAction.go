@@ -436,6 +436,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				if self, ok := getSelfTarget(b.hWnd, true); ok {
 					ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 					b.isOutOfHealthWhileCatching = isLifeBelow(b.hWnd, float32(ratio), self)
+					if b.isOutOfHealthWhileCatching {
+						b.logH("is out of health")
+					}
 				}
 				break
 			}

@@ -465,6 +465,10 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 	}
 
 	for i := range targets {
+		if !doesPlayerTargetExist(hWnd, targets[i]) {
+			continue
+		}
+
 		x := targets[i].x + 8
 		for x <= targets[i].x+30 {
 			y := targets[i].y - 10
@@ -478,6 +482,10 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 		}
 	}
 	return nil, false
+}
+
+func doesPlayerTargetExist(hWnd HWND, target CheckTarget) bool {
+	return sys.GetColor(hWnd, target.x, target.y) == COLOR_BATTLE_BLOOD_UPPER
 }
 
 var allMonsterTargets = []CheckTarget{

@@ -18,16 +18,17 @@ var (
 type BattleMovementMode string
 
 const (
-	NONE                          = "None"
-	DIAGONAL_MODE                 = "Diagonal"
-	BIASED_DIAGONAL_MODE          = "B. Diagonal"
-	REVERSED_DIAGONAL_MODE        = "Reversed Diagonal"
-	BIASED_REVERSED_DIAGONAL_MODE = "B. Reversed Diagonal"
-	HYBRID_DIAGONAL_MODE          = "Hybrid Diagonal"
-	CATCH_DIAGONAL                = "Catch Diagonal"
+	NONE                     = "None"
+	DIAGONAL                 = "Diagonal"
+	BIASED_DIAGONAL          = "B. Diagonal"
+	REVERSED_DIAGONAL        = "Reversed Diagonal"
+	BIASED_REVERSED_DIAGONAL = "B. Reversed Diagonal"
+	HYBRID_DIAGONAL          = "Hybrid Diagonal"
+	CATCH_DIAGONAL           = "Catch Diagonal"
+	CATCH_REVERSED_DIAGONAL  = "Catch Reversed Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{DIAGONAL_MODE, REVERSED_DIAGONAL_MODE, BIASED_DIAGONAL_MODE, BIASED_REVERSED_DIAGONAL_MODE, HYBRID_DIAGONAL_MODE, CATCH_DIAGONAL}
+var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL, CATCH_DIAGONAL, CATCH_REVERSED_DIAGONAL}
 
 type BattleMovementState struct {
 	hWnd             HWND
@@ -44,18 +45,20 @@ func (state *BattleMovementState) Move() {
 
 	var x, y int
 	switch state.Mode {
-	case DIAGONAL_MODE:
+	case DIAGONAL:
 		x, y = diagonal(RADIUS, state, false, false)
-	case REVERSED_DIAGONAL_MODE:
+	case REVERSED_DIAGONAL:
 		x, y = diagonal(RADIUS, state, true, false)
-	case BIASED_DIAGONAL_MODE:
+	case BIASED_DIAGONAL:
 		x, y = diagonal(RADIUS, state, false, true)
-	case BIASED_REVERSED_DIAGONAL_MODE:
+	case BIASED_REVERSED_DIAGONAL:
 		x, y = diagonal(RADIUS, state, true, true)
-	case HYBRID_DIAGONAL_MODE:
+	case HYBRID_DIAGONAL:
 		x, y = diagonal(RADIUS, state, rand.Intn(2) != 0, true)
 	case CATCH_DIAGONAL:
 		x, y = diagonal(45, state, false, false)
+	case CATCH_REVERSED_DIAGONAL:
+		x, y = diagonal(45, state, true, false)
 	default:
 		x, y = none()
 	}
