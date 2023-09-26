@@ -63,8 +63,8 @@ const (
 	COLOR_BATTLE_RECALL_BUTTON = 7694643
 	COLOR_BATTLE_SELF_TITLE    = 37083
 
-	COLOR_WINDOW_SKILL_UNSELECTED        = 4411988
-	COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA = 11575428
+	COLOR_WINDOW_SKILL_UNSELECTED   = 4411988
+	COLOR_WINDOW_SKILL_BOTTOM_SPACE = 11575428
 
 	COLOR_WINDOW_ITEM_EMPTY = 15793151
 	COLOR_NS_ITEM_PIVOT     = 15967
@@ -148,17 +148,6 @@ func getScene(hWnd HWND) CheckTarget {
 	return NOWHERE_SCENE
 }
 
-var popOutMenuCheckList = []CheckTarget{MENU_Q_POPOUT, MENU_W_POPOUT, MENU_E_POPOUT, MENU_R_POPOUT, MENU_T_POPOUT, MENU_Y_POPOUT}
-
-func getPopOutMenus(hWnd HWND) (popOutMenus []CheckTarget) {
-	for _, target := range popOutMenuCheckList {
-		if sys.GetColor(hWnd, target.x, target.y) == target.color {
-			popOutMenus = append(popOutMenus, target)
-		}
-	}
-	return
-}
-
 func isBattleCommandEnable(hWnd HWND, checkTarget CheckTarget) bool {
 	return sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
@@ -171,20 +160,20 @@ func isPetStageStable(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
 }
 
-func isPetSkillWindowOpend(hWnd HWND) bool {
+func isPetSkillWindowOpened(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
-func isPetSkillWindowOpendWhileRiding(hWnd HWND) bool {
-	return isPetSkillWindowOpendWhileRiding(hWnd)
+func isPetSkillWindowOpenedWhileRiding(hWnd HWND) bool {
+	return isPetSkillWindowOpenedWhileRiding(hWnd)
 }
 
-func HumanTargetingChecker(hWnd HWND) bool {
+func isHumanActionSuccessful(hWnd HWND) bool {
 	sys.MoveToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
 
-func PetTargetingChecker(hWnd HWND) bool {
+func isPetActionSuccessful(hWnd HWND) bool {
 	sys.MoveToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
@@ -245,7 +234,7 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 
 	for i = 0; i < 5; i++ {
 		for j = 0; j < 4; j++ {
-			if isSlotEmpty(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
+			if isSlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
 				return true
 			}
 		}
@@ -254,7 +243,7 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 	return false
 }
 
-func isSlotEmpty(hWnd HWND, px, py int32) bool {
+func isSlotFree(hWnd HWND, px, py int32) bool {
 	x := px
 	for x < px+30 {
 		y := py
@@ -296,7 +285,7 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int
 	return 0, 0, false
 }
 
-func getItemPosThreadVer(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
+func getItemPosByThreads(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
 	sys.MoveToNowhere(hWnd)
 
 	x := px
@@ -344,25 +333,16 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int
 	return 0, 0, false
 }
 
-func doesMissSkillButton(hWnd HWND, x, y int32) bool {
-	if sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_HUMAN_OUT_OF_MANA {
-		return true
-	}
-	return false
+func doesHumanMissSkillButton(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_BOTTOM_SPACE
 }
 
 func doesPetMissSkillButton(hWnd HWND) bool {
-	if sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE {
-		return true
-	}
-	return false
+	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func doesOnRidingMissSkillButtton(hWnd HWND) bool {
-	if sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE {
-		return true
-	}
-	return false
+	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func isOnRide(hWnd HWND) bool {
@@ -382,7 +362,7 @@ func isTeleportedToOtherMap(dir string) bool {
 	return false
 }
 
-func DoesEncounterBaby(dir string) bool {
+func doesEncounterBaby(dir string) bool {
 	lines := sys.GetLinesOfLog(dir, 5)
 	now := time.Now()
 	for i := range lines {

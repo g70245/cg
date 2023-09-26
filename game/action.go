@@ -13,13 +13,13 @@ const (
 	INVENTORY_CHECKER_WAITING_INTERVAL      = 400
 )
 
-func closeAllWindow(hWnd HWND) {
+func closeAllWindows(hWnd HWND) {
 	KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func openWindowByShortcut(hWnd HWND, key uintptr) {
-	closeAllWindow(hWnd)
+	closeAllWindows(hWnd)
 	KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(hWnd)
@@ -48,12 +48,13 @@ func clearChat(hWnd HWND) {
 }
 
 func checkInventory(hWnd HWND) bool {
-	defer closeAllWindow(hWnd)
+	defer closeAllWindows(hWnd)
 	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
 
 	time.Sleep(BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC * time.Second)
-	closeAllWindow(hWnd)
+	closeAllWindows(hWnd)
 	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+
 	openWindowByShortcut(hWnd, 0x45)
 
 	if px, py, ok := getNSItemWindowPos(hWnd); ok {
