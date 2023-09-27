@@ -3,33 +3,39 @@ package game
 import (
 	"log"
 	"time"
+
+	. "github.com/g70245/win"
 )
 
-func activateTeleportChecker(logDir *string, teleportCheckerStopChan chan bool, isTeleportedChan chan bool) {
+const (
+	TELEPORT_CHECKER_INTERVAL = 300
+)
 
-	logCheckerTicker := time.NewTicker(LOG_CHECKER_INTERVAL * time.Millisecond)
+func activateTeleportChecker(hWnd HWND, teleportCheckerStopChan chan bool, isTeleportedChan chan bool) {
 
-	go func() {
-		log.Println("Log Checker enabled")
+	logCheckerTicker := time.NewTicker(TELEPORT_CHECKER_INTERVAL * time.Millisecond)
+
+	go func(hWnd HWND) {
 		defer logCheckerTicker.Stop()
 
+		log.Println("Teleport Checker enabled")
+		currentMapName := getMapName(hWnd)
+		log.Printf("Handle %d Current Location: %s\n", hWnd, currentMapName)
+
 		for {
-			if *logDir == "" {
-				continue
-			}
 
 			select {
 			case <-teleportCheckerStopChan:
-				log.Println("Log Checker disabled")
+				log.Println("Teleport Checker disabled")
 				return
 			case <-logCheckerTicker.C:
-				if isTeleportedToOtherMap(*logDir) {
+				if newMapName := getMapName(hWnd); currentMapName != newMapName {
 					isTeleportedChan <- true
 					return
 				}
 			default:
-				time.Sleep(LOG_CHECKER_INTERVAL * time.Microsecond / 3)
+				time.Sleep(TELEPORT_CHECKER_INTERVAL * time.Microsecond / 3)
 			}
 		}
-	}()
+	}(hWnd)
 }

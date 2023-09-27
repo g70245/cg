@@ -3,13 +3,9 @@ package game
 import (
 	sys "cg/system"
 
-	"bytes"
-	"io"
 	"time"
 
 	. "github.com/g70245/win"
-	"golang.org/x/text/encoding/traditionalchinese"
-	"golang.org/x/text/transform"
 )
 
 const (
@@ -69,15 +65,15 @@ func checkInventory(hWnd HWND) bool {
 }
 
 func getMapName(hWnd HWND) string {
-	data := sys.ReadMemory(hWnd, 0x95C870, 32)
-	for i, v := range data {
-		if v == 0x00 {
-			data = data[:i]
-			break
-		}
-	}
-	transformReader := transform.NewReader(bytes.NewReader(data), traditionalchinese.Big5.NewDecoder())
-	decBytes, _ := io.ReadAll(transformReader)
+	return sys.ReadMemoryString(hWnd, 0x95C870, 32)
+}
 
-	return string(decBytes)
+type GamePos struct {
+	x, y float64
+}
+
+func getCurrentGamePos(hWnd HWND) GamePos {
+	fx := sys.ReadMemoryFloat32(hWnd, 0x95C88C, 32)
+	fy := sys.ReadMemoryFloat32(hWnd, 0x95C890, 32)
+	return GamePos{float64(fx / 64), float64(fy / 64)}
 }

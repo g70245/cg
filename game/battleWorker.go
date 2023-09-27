@@ -12,7 +12,6 @@ import (
 
 const (
 	BATTLE_WORKER_INTERVAL                    = 400
-	LOG_CHECKER_INTERVAL                      = 100
 	INVENTORY_CHECKER_INTERVAL_SECOND         = 60
 	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400
 )
@@ -57,7 +56,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 
 	teleportCheckerStopChan := make(chan bool, 1)
 	isTeleportedChan := make(chan bool, 1)
-	activateTeleportChecker(w.logDir, teleportCheckerStopChan, isTeleportedChan)
+	activateTeleportChecker(w.hWnd, teleportCheckerStopChan, isTeleportedChan)
 
 	go func() {
 		defer workerTicker.Stop()
@@ -93,7 +92,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 			case isTeleported = <-isTeleportedChan:
 				sys.PlayBeeper()
 				teleportCheckerStopChan <- true
-				log.Println("Has been teleported, need to stop the movement")
+				log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
 			case <-inventoryCheckerTicker.C:
 				if w.inventoryCheckerEnabled {
 					isInventoryFull = checkInventory(w.hWnd)
@@ -114,6 +113,9 @@ func (w *BattleWorker) reset() {
 	w.ActionState.isOutOfHealthWhileCatching = false
 	w.ActionState.isOutOfMana = false
 	w.ActionState.isEncounteringBaBy = false
+
+	w.MovementState.origin = getCurrentGamePos(w.hWnd)
+	log.Printf("Handle %d Auto Battle started at (%.f, %.f)\n", w.hWnd, w.MovementState.origin.x, w.MovementState.origin.y)
 }
 
 func (w *BattleWorker) StopInventoryChecker() {

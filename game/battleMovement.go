@@ -24,26 +24,19 @@ const (
 	REVERSED_DIAGONAL        = "Reversed Diagonal"
 	BIASED_REVERSED_DIAGONAL = "B. Reversed Diagonal"
 	HYBRID_DIAGONAL          = "Hybrid Diagonal"
-	CATCH_DIAGONAL           = "Catch Diagonal"
-	CATCH_REVERSED_DIAGONAL  = "Catch Reversed Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL, CATCH_DIAGONAL, CATCH_REVERSED_DIAGONAL}
+var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
 
 type BattleMovementState struct {
-	hWnd             HWND
-	Mode             BattleMovementMode
-	currentDirection int
-}
-
-func (state *BattleMovementState) nextDirection() int {
-	state.currentDirection ^= 1
-	return state.currentDirection
+	hWnd   HWND
+	origin GamePos
+	Mode   BattleMovementMode
 }
 
 func (state *BattleMovementState) Move() {
 
-	var x, y int
+	var x, y int32
 	switch state.Mode {
 	case DIAGONAL:
 		x, y = diagonal(RADIUS, state, false, false)
@@ -55,42 +48,78 @@ func (state *BattleMovementState) Move() {
 		x, y = diagonal(RADIUS, state, true, true)
 	case HYBRID_DIAGONAL:
 		x, y = diagonal(RADIUS, state, rand.Intn(2) != 0, true)
-	case CATCH_DIAGONAL:
-		x, y = diagonal(45, state, false, false)
-	case CATCH_REVERSED_DIAGONAL:
-		x, y = diagonal(45, state, true, false)
 	default:
 		x, y = none()
 	}
 
 	log.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
-	sys.LeftClick(state.hWnd, int32(x), int32(y))
+	sys.LeftClick(state.hWnd, x, y)
 }
 
-func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBias bool) (x, y int) {
-	xOrigin := GAME_WIDTH / 2
-	yOrigin := GAME_HEIGHT / 2
+func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBias bool) (x, y int32) {
+	xOrigin := int32(GAME_WIDTH / 2)
+	yOrigin := int32(GAME_HEIGHT / 2)
 
 	var randomBiasAngle float64
 	if isBias {
-		randomBiasAngle = rand.Float64()*BIAS_ANGLE*2 - BIAS_ANGLE
+		randomBiasAngle = rand.Float64() * BIAS_ANGLE * state.nextBiasMultiplier()
 	}
 
-	direction := float64(state.nextDirection()) * math.Pi
-	rotationAngle := ((45.0+randomBiasAngle)/180.0)*math.Pi + direction
+	directionAngle := state.nextDirectionAngleMultilpier(isReverse) * math.Pi
+	rotationAngle := ((45.0+randomBiasAngle)/180.0)*math.Pi + directionAngle
 
 	if isReverse {
-		x = xOrigin + int(radius*math.Cos(rotationAngle))
-		y = yOrigin + int(radius*math.Sin(rotationAngle))
+		x = xOrigin + int32(radius*math.Cos(rotationAngle))
+		y = yOrigin + int32(radius*math.Sin(rotationAngle))
 	} else {
-		x = xOrigin + int(radius*math.Cos(rotationAngle))
-		y = yOrigin + int(radius*math.Sin(rotationAngle))*-1
+		x = xOrigin + int32(radius*math.Cos(rotationAngle))
+		y = yOrigin + int32(radius*math.Sin(rotationAngle))*-1
 	}
 
 	return
 }
 
-func none() (int, int) {
+func none() (int32, int32) {
 	return GAME_WIDTH / 2, GAME_HEIGHT / 2
+}
+
+func (state *BattleMovementState) nextDirectionAngleMultilpier(isReverse bool) float64 {
+	current := getCurrentGamePos(state.hWnd)
+
+	check := diagonalCondition
+	if isReverse {
+		check = reversedDiagonalCondition
+	}
+
+	if check(state.origin, current) {
+		return 0
+	} else {
+		return 1
+	}
+}
+
+func (state *BattleMovementState) nextBiasMultiplier() float64 {
+	current := getCurrentGamePos(state.hWnd)
+
+	switch {
+	case current.x > state.origin.x && current.y <= state.origin.y:
+		return 1
+	case current.x > state.origin.x && current.y > state.origin.y:
+		return -1
+	case current.x <= state.origin.x && current.y <= state.origin.y:
+		return -1
+	case current.x <= state.origin.x && current.y > state.origin.y:
+		return 1
+	default:
+		return 1
+	}
+}
+
+func diagonalCondition(origin GamePos, current GamePos) bool {
+	return current.x <= origin.x
+}
+
+func reversedDiagonalCondition(origin GamePos, current GamePos) bool {
+	return current.y <= origin.y
 }
