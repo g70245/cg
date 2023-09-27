@@ -56,7 +56,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 
 	teleportCheckerStopChan := make(chan bool, 1)
 	isTeleportedChan := make(chan bool, 1)
-	activateChecker(w.hWnd, teleportCheckerStopChan, isTeleportedChan, w.logDir)
+	activateCheckers(w.hWnd, teleportCheckerStopChan, isTeleportedChan, w.logDir)
 
 	go func() {
 		defer workerTicker.Stop()

@@ -11,7 +11,7 @@ const (
 	TELEPORT_CHECKER_INTERVAL = 300
 )
 
-func activateChecker(hWnd HWND, checkerStopChan chan bool, isTeleportedChan chan bool, logDir *string) {
+func activateCheckers(hWnd HWND, checkerStopChan chan bool, isTeleportedChan chan bool, logDir *string) {
 
 	teleportCheckerTicker := time.NewTicker(TELEPORT_CHECKER_INTERVAL * time.Millisecond)
 	logCheckerTicker := time.NewTicker(TELEPORT_CHECKER_INTERVAL * time.Millisecond)
