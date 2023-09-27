@@ -13,10 +13,10 @@ const (
 
 func activateTeleportChecker(hWnd HWND, teleportCheckerStopChan chan bool, isTeleportedChan chan bool) {
 
-	logCheckerTicker := time.NewTicker(TELEPORT_CHECKER_INTERVAL * time.Millisecond)
+	teleportCheckerTicker := time.NewTicker(TELEPORT_CHECKER_INTERVAL * time.Millisecond)
 
 	go func(hWnd HWND) {
-		defer logCheckerTicker.Stop()
+		defer teleportCheckerTicker.Stop()
 
 		log.Println("Teleport Checker enabled")
 		currentMapName := getMapName(hWnd)
@@ -28,7 +28,7 @@ func activateTeleportChecker(hWnd HWND, teleportCheckerStopChan chan bool, isTel
 			case <-teleportCheckerStopChan:
 				log.Println("Teleport Checker disabled")
 				return
-			case <-logCheckerTicker.C:
+			case <-teleportCheckerTicker.C:
 				if newMapName := getMapName(hWnd); currentMapName != newMapName {
 					isTeleportedChan <- true
 					return
