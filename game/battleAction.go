@@ -420,6 +420,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if doesHumanMissSkillButton(b.hWnd, x, y) {
 					b.logH("missed the skill button or is out of mana")
+				} else if isHumanActionSuccessful(b.hWnd) {
+					b.logH("is training")
+					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 				} else if b.aim(&PLAYER_L_3_P, isHumanActionSuccessful) {
 					b.logH("is training")
 					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -483,6 +486,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
 			b.isOutOfMana = true
+			sys.PlayBeeper()
 			b.logH("someone is out of mana")
 		}
 	}
@@ -748,6 +752,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		clearChat(b.hWnd)
 		if isAnyPlayerOutOfMana(b.hWnd) {
 			b.isOutOfMana = true
+			sys.PlayBeeper()
 			b.logP("someone is out of mana")
 		}
 	}
