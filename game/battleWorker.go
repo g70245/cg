@@ -99,7 +99,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
 				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.isOutOfMana || w.ActionState.isOutOfHealthWhileCatching || isInventoryFull) {
+				if !isPlayingBeeper && (w.ActionState.isOutOfHealthWhileCatching || isInventoryFull) {
 					isPlayingBeeper = sys.PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
