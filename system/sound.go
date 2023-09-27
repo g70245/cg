@@ -75,3 +75,7 @@ func CloseBeeper() {
 		alertDoneChan = nil
 	}
 }
+
+func IsBeeperReady() bool {
+	return alertPausedChan != nil
+}

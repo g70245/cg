@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"fmt"
 
@@ -122,6 +123,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
 	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
 		manaCheckerSelectorDialog.Show()
+
+		if !IsBeeperReady() {
+			go func() {
+				time.Sleep(200 * time.Millisecond)
+				dialog.NewInformation("About Mana Checker", "Remember to choose a music!!!", window).Show()
+			}()
+		}
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
@@ -499,6 +507,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				activateDialogs(dialogs, enableChan)
 
 				trainButton.Disable()
+
+				if *logDir == "" {
+					go func() {
+						time.Sleep(200 * time.Millisecond)
+						dialog.NewInformation("About Catch", "Remember to setup the log directory!!!", window).Show()
+					}()
+				}
 			})
 			catchButton.Importance = widget.SuccessImportance
 
@@ -868,6 +883,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddPetState(P_S_CATCH)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
+
+				if *logDir == "" {
+					dialog.NewInformation("About Catch", "Remember to setup the log directory", window)
+				}
 
 				dialogs := []SelectorDialog{
 					pHealingRatioSelectorDialog,
