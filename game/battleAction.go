@@ -182,6 +182,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if doesHumanMissSkillButton(b.hWnd, x, y) {
 					b.logH("missed the skill button or is out of mana")
+				} else if isHumanActionSuccessful(b.hWnd) {
+					b.logH("used a skill")
+					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 				} else if b.attack(isHumanActionSuccessful) {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
