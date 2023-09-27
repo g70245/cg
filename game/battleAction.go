@@ -50,7 +50,7 @@ const (
 	P_C_O_HEAL   = "*Pet Heal One"
 	P_C_RIDE     = "*Pet Ride"
 	P_C_OFF_RIDE = "*Pet Off Ride"
-	P_S_CATCH    = "*Pet Catch"
+	P_S_CATCH    = "Pet Catch"
 	P_S_HANG     = "Pet Hang"
 )
 

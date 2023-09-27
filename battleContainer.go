@@ -235,6 +235,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		enableChan := make(chan bool)
 
 		onClosed := func() {
+			statesViewer.Objects = generateTags(*worker)
+			statesViewer.Refresh()
 			enableChan <- true
 		}
 
@@ -465,8 +467,9 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				trainButton.Disable()
+				catchButton.Disable()
 				stealButton.Disable()
+				trainButton.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
 
@@ -489,9 +492,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disable()
-				stealButton.Disable()
-				rideButton.Disable()
 				recallButton.Disable()
+				rideButton.Disable()
+				catchButton.Disable()
+				stealButton.Disable()
 				trainButton.Disable()
 			})
 			escapeButton.Importance = widget.WarningImportance
@@ -527,15 +531,15 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				catchButton.Disable()
 				escapeButton.Disable()
 				recallButton.Disable()
-				hangButton.Disable()
-				stealButton.Disable()
-				healOneButton.Disable()
-				trainButton.Disable()
-				healMultiButton.Disable()
+				rideButton.Disable()
 				healSelfButton.Disable()
+				healOneButton.Disable()
+				healMultiButton.Disable()
+				catchButton.Disable()
+				stealButton.Disable()
+				trainButton.Disable()
 			})
 			bombButton.Importance = widget.HighImportance
 
@@ -579,15 +583,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				statesViewer.Refresh()
 
 				catchButton.Disable()
-				bombButton.Disable()
 				stealButton.Disable()
-				rideButton.Disable()
-				recallButton.Disable()
-				potionButton.Disable()
-				healOneButton.Disable()
-				hangButton.Disable()
-				healMultiButton.Disable()
-				healSelfButton.Disable()
 				trainButton.Disable()
 			})
 			hangButton.Importance = widget.SuccessImportance
@@ -603,7 +599,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				bombButton.Disabled()
 				catchButton.Disable()
 				stealButton.Disable()
 				trainButton.Disable()
@@ -622,11 +617,11 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				activateDialogs(dialogs, enableChan)
 
 				bombButton.Disable()
+				healSelfButton.Disable()
 				healOneButton.Disable()
 				healMultiButton.Disable()
-				healSelfButton.Disable()
-				trainButton.Disable()
 				catchButton.Disable()
+				trainButton.Disable()
 			})
 			stealButton.Importance = widget.SuccessImportance
 
@@ -641,16 +636,17 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
+				defendButton.Disable()
+				moveButton.Disable()
+				skillButton.Disable()
 				bombButton.Disable()
-				stealButton.Disable()
 				rideButton.Disable()
+				potionButton.Disable()
+				healSelfButton.Disable()
 				healOneButton.Disable()
 				healMultiButton.Disable()
-				healSelfButton.Disable()
 				catchButton.Disable()
-				hangButton.Disable()
-				recallButton.Disable()
-
+				stealButton.Disable()
 			})
 			trainButton.Importance = widget.SuccessImportance
 
@@ -665,8 +661,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				bombButton.Disable()
 				stealButton.Disable()
+				trainButton.Disable()
 			})
 			rideButton.Importance = widget.HighImportance
 
@@ -682,11 +678,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				trainButton.Disable()
 				bombButton.Disable()
-				stealButton.Disable()
 				healOneButton.Disable()
 				healMultiButton.Disable()
+				stealButton.Disable()
 			})
 			healSelfButton.Importance = widget.HighImportance
 
@@ -702,8 +697,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				healSelfButton.Disable()
 				bombButton.Disable()
+				healSelfButton.Disable()
 				stealButton.Disable()
 			})
 			healOneButton.Importance = widget.HighImportance
@@ -720,10 +715,10 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				}
 				activateDialogs(dialogs, enableChan)
 
-				trainButton.Disable()
-				healSelfButton.Disable()
 				bombButton.Disable()
+				healSelfButton.Disable()
 				stealButton.Disable()
+				trainButton.Disable()
 			})
 			healMultiButton.Importance = widget.HighImportance
 
@@ -781,13 +776,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				worker.ActionState.AddPetState(P_S_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
-
-				petAttackButton.Disable()
-				petHangButton.Disable()
-				petSkillButton.Disable()
-				petRideButton.Disable()
-				petDefendButton.Disable()
-				petHealSelfButton.Disable()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
@@ -850,8 +838,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 					pCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				petRideButton.Disable()
 			})
 			petRideButton.Importance = widget.HighImportance
 
@@ -864,8 +850,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 					pCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				petOffRideButton.Disable()
 			})
 			petOffRideButton.Importance = widget.HighImportance
 
@@ -892,7 +876,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 					pHealingRatioSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
 			})
 			petCatchButton.Importance = widget.SuccessImportance
 
