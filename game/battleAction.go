@@ -238,7 +238,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						bomb = Bombs[i]
 					}
 				}
-				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 3); ok {
+				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
