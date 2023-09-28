@@ -130,6 +130,11 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		}
 
 		if slices.Contains(actionsNeedToDetectEnemy, b.HumanStates[b.nextHumanStateId]) {
+			if isItemWindowOpened(b.hWnd) {
+				b.openSkillWindowWithMouse()
+				closeAllWindows(b.hWnd)
+			}
+
 			b.detectEnemies()
 		}
 
@@ -504,6 +509,11 @@ func (b *BattleActionState) executePetStateMachiine() {
 		}
 
 		if isOnRide(b.hWnd) && slices.Contains(actionsNeedToDetectEnemy, b.PetStates[b.nextPetStateId]) {
+			if isItemWindowOpened(b.hWnd) {
+				b.openSkillWindowWithMouse()
+				closeAllWindows(b.hWnd)
+			}
+
 			b.detectEnemies()
 		}
 
@@ -818,6 +828,11 @@ func (b *BattleActionState) openPetSkillWindow() {
 	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(b.hWnd)
+}
+
+func (b *BattleActionState) openSkillWindowWithMouse() {
+	sys.LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
+	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) logH(message string) {

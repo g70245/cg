@@ -112,6 +112,7 @@ var (
 	BATTLE_COMMAND_ATTACK  = CheckTarget{386, 28, COLOR_ANY}
 	BATTLE_COMMAND_DEFENCE = CheckTarget{386, 54, COLOR_ANY}
 	BATTLE_COMMAND_SKILL   = CheckTarget{450, 28, COLOR_ANY}
+	BATTLE_COMMAND_ITEM    = CheckTarget{450, 54, COLOR_ANY}
 	BATTLE_COMMAND_PET     = CheckTarget{524, 28, COLOR_ANY}
 	BATTLE_COMMAND_MOVE    = CheckTarget{524, 54, COLOR_ANY}
 	BATTLE_COMMAND_ESCAPE  = CheckTarget{594, 54, COLOR_ANY}
@@ -257,6 +258,10 @@ func isSlotFree(hWnd HWND, px, py int32) bool {
 		x += 5
 	}
 	return true
+}
+
+func isItemWindowStillOpened(hWnd HWND) bool {
+	return sys.GetColor(hWnd, BATTLE_COMMAND_ITEM.x, BATTLE_COMMAND_ITEM.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func isBSItemWindowStillOpened(hWnd HWND, x, y int32) bool {
