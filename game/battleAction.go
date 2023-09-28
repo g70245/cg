@@ -230,14 +230,20 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				break
 			}
 
+			var bomb Item
+			for i := range Bombs {
+				if Bombs[i].name == b.HumanParams[b.nextHumanStateId] {
+					bomb = Bombs[i]
+				}
+			}
+
+			if bomb == I_B_9A && len(b.enemies) < 5 {
+				b.logH("performs next action due to too few enemies")
+				break
+			}
+
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
-				var bomb Item
-				for i := range Bombs {
-					if Bombs[i].name == b.HumanParams[b.nextHumanStateId] {
-						bomb = Bombs[i]
-					}
-				}
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
 					sys.DoubleClick(HWND(b.hWnd), x, y)
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
