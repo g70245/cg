@@ -260,7 +260,7 @@ func isSlotFree(hWnd HWND, px, py int32) bool {
 	return true
 }
 
-func isItemWindowStillOpened(hWnd HWND) bool {
+func isItemWindowOpened(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_COMMAND_ITEM.x, BATTLE_COMMAND_ITEM.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
