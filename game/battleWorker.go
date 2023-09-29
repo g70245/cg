@@ -91,12 +91,12 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 				sys.StopBeeper()
 				return
 			case <-inventoryCheckerTicker.C:
-				if w.inventoryCheckerEnabled {
+				if w.inventoryCheckerEnabled && !isInventoryFull {
 					isInventoryFull = checkInventory(w.hWnd)
 					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
 				}
 			case <-teleporCheckertTicker.C:
-				if w.teleportCheckerEnabled {
+				if w.teleportCheckerEnabled && !isTeleported {
 					if newMapName := getMapName(w.hWnd); w.currentMapName != newMapName {
 						isTeleported = true
 						log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
