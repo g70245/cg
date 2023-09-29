@@ -124,12 +124,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
 		manaCheckerSelectorDialog.Show()
 
-		if !IsBeeperReady() {
-			go func() {
-				time.Sleep(200 * time.Millisecond)
-				dialog.NewInformation("About Mana Checker", "Remember to choose a music!!!", window).Show()
-			}()
-		}
+		beeperInform("About Mana Checker")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
@@ -170,6 +165,25 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	delete.Importance = widget.DangerImportance
 
+	var teleportCheck *widget.Button
+	teleportCheck = widget.NewButtonWithIcon("Check Teleport", theme.CheckButtonIcon(), func() {
+		switch teleportCheck.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range workers {
+				workers[i].StopTeleportChecker()
+			}
+			turn(theme.CheckButtonIcon(), teleportCheck)
+		case theme.CheckButtonIcon():
+			for i := range workers {
+				workers[i].StartTeleportChecker()
+			}
+			turn(theme.CheckButtonCheckedIcon(), teleportCheck)
+
+			beeperInform("About Teleport Checker")
+		}
+	})
+	teleportCheck.Importance = widget.HighImportance
+
 	var inventoryCheck *widget.Button
 	inventoryCheck = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
 		switch inventoryCheck.Icon {
@@ -183,11 +197,13 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				workers[i].StartInventoryChecker()
 			}
 			turn(theme.CheckButtonCheckedIcon(), inventoryCheck)
+
+			beeperInform("About Teleport Checker")
 		}
 	})
 	inventoryCheck.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(4, manaCheckerSelectorButton, inventoryCheck, delete, lever)
+	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, teleportCheck, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widget */
@@ -1138,5 +1154,14 @@ func stop(stopChan chan bool) {
 	for i < cap(stopChan) {
 		stopChan <- true
 		i++
+	}
+}
+
+func beeperInform(title string) {
+	if !IsBeeperReady() {
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			dialog.NewInformation(title, "Remember to choose a music!!!", window).Show()
+		}()
 	}
 }

@@ -11,23 +11,27 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL                    = 400
-	INVENTORY_CHECKER_INTERVAL_SECOND         = 60
-	INVENTORY_CHECKER_WAITING_OTHERS_INTERVAL = 400
+	BATTLE_WORKER_INTERVAL             = 400
+	CHECKER_INTERVAL                   = 300
+	CHECKER_INVENTORY_INTERVAL_SECOND  = 60
+	CHECKER_INVENTORY_WAITING_INTERVAL = 400
 )
 
 type BattleWorker struct {
-	hWnd                    HWND
-	MovementState           BattleMovementState
-	ActionState             BattleActionState
-	logDir                  *string
-	manaChecker             *string
+	hWnd           HWND
+	MovementState  BattleMovementState
+	ActionState    BattleActionState
+	logDir         *string
+	manaChecker    *string
+	currentMapName string
+
+	teleportCheckerEnabled  bool
 	inventoryCheckerEnabled bool
 }
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND, logDir *string, manaChecker *string) BattleWorkers {
+func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range hWnds {
 		workers = append(workers, BattleWorker{
@@ -52,23 +56,21 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 	closeAllWindows(w.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	inventoryCheckerTicker := time.NewTicker(INVENTORY_CHECKER_INTERVAL_SECOND * time.Second)
-
-	teleportCheckerStopChan := make(chan bool, 1)
-	isTeleportedChan := make(chan bool, 1)
-	activateCheckers(w.hWnd, teleportCheckerStopChan, isTeleportedChan, w.logDir)
+	inventoryCheckerTicker := time.NewTicker(CHECKER_INVENTORY_INTERVAL_SECOND * time.Second)
+	teleporCheckertTicker := time.NewTicker(CHECKER_INTERVAL * time.Millisecond)
 
 	go func() {
 		defer workerTicker.Stop()
 		defer inventoryCheckerTicker.Stop()
-		defer close(teleportCheckerStopChan)
-		defer close(isTeleportedChan)
+		defer teleporCheckertTicker.Stop()
 
 		w.reset()
+		log.Printf("Handle %d Auto Battle started at (%.f, %.f)\n", w.hWnd, w.MovementState.origin.x, w.MovementState.origin.y)
+		log.Printf("Handle %d Current Location: %s\n", w.hWnd, w.currentMapName)
 
-		isTeleported := false
 		isPlayingBeeper := false
 		isInventoryFull := false
+		isTeleported := false
 
 		for {
 			select {
@@ -87,19 +89,21 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 				}
 			case <-stopChan:
 				sys.StopBeeper()
-				teleportCheckerStopChan <- true
 				return
-			case isTeleported = <-isTeleportedChan:
-				sys.PlayBeeper()
-				teleportCheckerStopChan <- true
-				log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
 			case <-inventoryCheckerTicker.C:
 				if w.inventoryCheckerEnabled {
 					isInventoryFull = checkInventory(w.hWnd)
 					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
 				}
+			case <-teleporCheckertTicker.C:
+				if w.teleportCheckerEnabled {
+					if newMapName := getMapName(w.hWnd); w.currentMapName != newMapName {
+						isTeleported = true
+						log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
+					}
+				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.isOutOfHealthWhileCatching || isInventoryFull) {
+				if !isPlayingBeeper && (w.ActionState.isOutOfHealthWhileCatching || isInventoryFull || isTeleported) {
 					isPlayingBeeper = sys.PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
@@ -109,13 +113,14 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 }
 
 func (w *BattleWorker) reset() {
+	w.currentMapName = getMapName(w.hWnd)
+
 	w.ActionState.Enabled = true
 	w.ActionState.isOutOfHealthWhileCatching = false
 	w.ActionState.isOutOfMana = false
 	w.ActionState.isEncounteringBaBy = false
 
 	w.MovementState.origin = getCurrentGamePos(w.hWnd)
-	log.Printf("Handle %d Auto Battle started at (%.f, %.f)\n", w.hWnd, w.MovementState.origin.x, w.MovementState.origin.y)
 }
 
 func (w *BattleWorker) StopInventoryChecker() {
@@ -124,4 +129,13 @@ func (w *BattleWorker) StopInventoryChecker() {
 
 func (w *BattleWorker) StartInventoryChecker() {
 	w.inventoryCheckerEnabled = true
+}
+
+func (w *BattleWorker) StopTeleportChecker() {
+	w.teleportCheckerEnabled = false
+}
+
+func (w *BattleWorker) StartTeleportChecker() {
+	w.teleportCheckerEnabled = true
+	w.currentMapName = getMapName(w.hWnd)
 }
