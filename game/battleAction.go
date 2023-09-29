@@ -56,7 +56,7 @@ const (
 )
 
 var actionsNeedToDetectEnemy = []string{
-	H_F_ATTACK, H_C_SKILL, H_C_BOMB,
+	H_F_ATTACK, H_C_SKILL, H_C_T_SKILL, H_C_BOMB,
 	P_F_ATTACK, P_C_SkILL,
 }
 
