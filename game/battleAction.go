@@ -1000,7 +1000,7 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 func (b *BattleActionState) detectEnemies() {
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter <= 6 {
+	if b.enemyDetectorCounter < 4 {
 		newEnemies := getEnemyTargets(b.hWnd, b.enemies)
 		if reflect.DeepEqual(b.enemies, newEnemies) {
 			b.enemyDetectorCounter++
