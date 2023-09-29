@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	TURN_INTERVAL          = 300
 	WAITING_LOOP_INTERVAL  = 200
 	ATTACK_INTERVAL        = 100
 	BATTLE_ACTION_INTERVAL = 160
@@ -112,7 +111,6 @@ func (b *BattleActionState) Act() {
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
-		time.Sleep(TURN_INTERVAL * time.Millisecond)
 	}
 
 	b.nextHumanStateId = 0
