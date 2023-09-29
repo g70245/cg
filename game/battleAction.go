@@ -32,6 +32,7 @@ const (
 	H_C_PET_RECALL = "*Recall Pet"
 	H_C_POTION     = "*Potion"
 	H_C_SKILL      = "*Skill"
+	H_C_T_SKILL    = "*T. Skill"
 	H_C_SE_HEAL    = "*Heal Self"
 	H_C_O_HEAL     = "*Heal One"
 	H_C_M_HEAL     = "*Heal Multi"
@@ -177,6 +178,38 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 		case H_C_SKILL:
 			if b.isEncounteringBaBy {
+				break
+			}
+
+			openWindowByShortcut(b.hWnd, 0x57)
+			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
+				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
+				useHumanSkill(b.hWnd, x, y, id, level)
+				if doesHumanMissSkillButton(b.hWnd, x, y) {
+					b.logH("missed the skill button or is out of mana")
+				} else if isHumanActionSuccessful(b.hWnd) {
+					b.logH("used a skill")
+					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
+				} else if b.attack(isHumanActionSuccessful) {
+					b.logH("used a skill")
+					cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
+				} else {
+					b.logH("missed a hit")
+					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+				}
+			} else {
+				b.logH("cannot find the position of window")
+				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+			}
+
+		case H_C_T_SKILL:
+			if b.isEncounteringBaBy {
+				break
+			}
+
+			if len(b.enemies) < 5 {
+				b.logH("performs next action due to too few enemies")
 				break
 			}
 

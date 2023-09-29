@@ -451,6 +451,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var moveButton *widget.Button
 			var hangButton *widget.Button
 			var skillButton *widget.Button
+			var thresholdSkillButton *widget.Button
 			var stealButton *widget.Button
 			var trainButton *widget.Button
 			var rideButton *widget.Button
@@ -605,6 +606,23 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			skillButton.Importance = widget.HighImportance
 
+			thresholdSkillButton = widget.NewButton(H_C_T_SKILL, func() {
+				worker.ActionState.AddHumanState(H_C_T_SKILL)
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
+
+				catchButton.Disable()
+				stealButton.Disable()
+				trainButton.Disable()
+			})
+			thresholdSkillButton.Importance = widget.HighImportance
+
 			stealButton = widget.NewButton(H_S_STEAL, func() {
 				worker.ActionState.AddHumanState(H_S_STEAL)
 
@@ -728,6 +746,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				escapeButton,
 				moveButton,
 				skillButton,
+				thresholdSkillButton,
 				bombButton,
 				recallButton,
 				rideButton,
