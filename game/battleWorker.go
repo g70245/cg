@@ -81,7 +81,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealthWhileCatching && !isTeleported {
+					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealthWhileCatching && !isTeleported && !isInventoryFull {
 						w.MovementState.Move()
 					}
 				default:
