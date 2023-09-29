@@ -71,6 +71,7 @@ var ControlUnitOptions = []string{C_U_START_OVER, C_U_CONTINUE, C_U_REPEAT, C_U_
 var HealingOptions = []string{"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"}
 var IdOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
 var LevelOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+var ThresholdOptions = []string{"2 foes", "3 foes", "4 foes", "5 foes", "6 foes", "7 foes", "8 foes", "9 foes", "10 foes"}
 
 type BattleActionState struct {
 	hWnd                     HWND `json:"-"`
@@ -208,7 +209,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				break
 			}
 
-			if len(b.enemies) < 5 {
+			threshold, _ := strconv.Atoi(strings.Split(b.HumanParams[b.nextHumanStateId], " ")[0])
+			if len(b.enemies) < threshold {
 				b.logH("performs next action due to too few enemies")
 				break
 			}

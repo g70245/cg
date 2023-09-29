@@ -404,6 +404,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			Bombs.GetOptions(),
 			humanParamsOnChanged,
 		}
+		hThresholdSelectorDialog := SelectorDialog{
+			paramsDialog,
+			selector,
+			ThresholdOptions,
+			humanParamsOnChanged,
+		}
 
 		/* Id Dialog */
 		var idDialog *dialog.CustomDialog
@@ -628,6 +634,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				dialogs := []SelectorDialog{
 					hIdSelectorDialog,
 					levelSelectorDialog,
+					hThresholdSelectorDialog,
 					hCUSuccessSelectorDialog,
 					hCUFailureSelectorDialog,
 				}
