@@ -112,7 +112,7 @@ func (state *BattleMovementState) nextBiasMultiplier() float64 {
 	case current.x <= state.origin.x && current.y > state.origin.y:
 		return 1
 	default:
-		return 1
+		return []float64{1, -1}[rand.Intn(2)]
 	}
 }
 
