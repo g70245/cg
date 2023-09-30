@@ -179,7 +179,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			turn(theme.CheckButtonCheckedIcon(), teleportCheck)
 
-			beeperInform("About Teleport Checker")
+			beeperAndLogInform("About Teleport Checker")
 		}
 	})
 	teleportCheck.Importance = widget.HighImportance
@@ -1169,6 +1169,15 @@ func beeperInform(title string) {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to choose a music!!!", window).Show()
+		}()
+	}
+}
+
+func beeperAndLogInform(title string) {
+	if !IsBeeperReady() {
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			dialog.NewInformation(title, "Remember to setup the music and log directory!!!", window).Show()
 		}()
 	}
 }

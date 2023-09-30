@@ -362,9 +362,11 @@ func isOnRide(hWnd HWND) bool {
 var teleportedWords = []string{"被不可思", "你感覺到一股"}
 
 func isTeleportedToOtherMap(dir string) bool {
-	for _, stopWord := range teleportedWords {
-		if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
-			return true
+	if dir != "" {
+		for _, stopWord := range teleportedWords {
+			if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
+				return true
+			}
 		}
 	}
 	return false
