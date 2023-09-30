@@ -479,6 +479,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			var rideButton *widget.Button
 			var healSelfButton *widget.Button
 			var healOneButton *widget.Button
+			var healTShapeButton *widget.Button
 			var healMultiButton *widget.Button
 
 			attackButton = widget.NewButton(H_F_ATTACK, func() {
@@ -744,6 +745,25 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			})
 			healOneButton.Importance = widget.HighImportance
 
+			healTShapeButton = widget.NewButton(H_C_T_HEAL, func() {
+				worker.ActionState.AddHumanState(H_C_T_HEAL)
+
+				dialogs := []SelectorDialog{
+					hIdSelectorDialog,
+					levelSelectorDialog,
+					healingRatioSelectorDialog,
+					hCUSuccessSelectorDialog,
+					hCUFailureSelectorDialog,
+				}
+				activateDialogs(dialogs, enableChan)
+
+				bombButton.Disable()
+				healSelfButton.Disable()
+				stealButton.Disable()
+				trainButton.Disable()
+			})
+			healTShapeButton.Importance = widget.HighImportance
+
 			healMultiButton = widget.NewButton(H_C_M_HEAL, func() {
 				worker.ActionState.AddHumanState(H_C_M_HEAL)
 
@@ -776,6 +796,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 				potionButton,
 				healSelfButton,
 				healOneButton,
+				healTShapeButton,
 				healMultiButton,
 				hangButton,
 				catchButton,

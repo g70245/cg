@@ -450,6 +450,37 @@ func countLifeBelow(hWnd HWND, ratio float32) (count int) {
 	return
 }
 
+func searchTShapeLifeBelow(hWnd HWND, ratio float32, matchingCount int) (*CheckTarget, bool) {
+	detectedTargets := make([][]int, 2)
+	for i := range detectedTargets {
+		detectedTargets[i] = make([]int, 5)
+	}
+	for i := range allTargets {
+		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
+			detectedTargets[i/5][i%5] += 1
+			detectedTargets[(i/5)^1][i%5] += 1
+			if i%5 > 0 {
+				detectedTargets[i/5][i%5-1] += 1
+			}
+			if i%5 < 4 {
+				detectedTargets[i/5][i%5+1] += 1
+			}
+		}
+	}
+	max := 0
+	maxId := 0
+	for i := range allTargets {
+		if max < detectedTargets[i/5][i%5] {
+			max = detectedTargets[i/5][i%5]
+			maxId = i
+		}
+	}
+	if max >= matchingCount && doesPlayerTargetExist(hWnd, allTargets[maxId]) {
+		return &allTargets[maxId], true
+	}
+	return nil, false
+}
+
 var allHumans = []CheckTarget{
 	PLAYER_L_1_H,
 	PLAYER_L_2_H,

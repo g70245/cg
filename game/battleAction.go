@@ -34,6 +34,7 @@ const (
 	H_C_T_SKILL    = "*T. Skill"
 	H_C_SE_HEAL    = "*Heal Self"
 	H_C_O_HEAL     = "*Heal One"
+	H_C_T_HEAL     = "*Heal T-Shape"
 	H_C_M_HEAL     = "*Heal Multi"
 	H_C_RIDE       = "*Ride"
 
@@ -414,6 +415,33 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found no one needed to be taken care of")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
+		case H_C_T_HEAL:
+			closeAllWindows(b.hWnd)
+			clearChat(b.hWnd)
+			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
+			if target, ok := searchTShapeLifeBelow(b.hWnd, float32(ratio), 2); ok {
+				openWindowByShortcut(b.hWnd, 0x57)
+				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
+					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
+					useHumanSkill(b.hWnd, x, y, id, level)
+					if doesHumanMissSkillButton(b.hWnd, x, y) {
+						b.logH("missed the skill button or is out of mana")
+					} else if b.aim(target, isHumanActionSuccessful) {
+						b.logH("healed allies")
+						cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
+					} else {
+						b.logH("cannot target")
+						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+					}
+				} else {
+					b.logH("cannot find the position of window")
+					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
+				}
+			} else {
+				b.logH("found all good")
+				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
+			}
 		case H_C_M_HEAL:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
@@ -547,7 +575,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			continue
 		}
 
-		if isOnRide(b.hWnd) && slices.Contains(actionsNeedToDetectEnemy, b.PetStates[b.nextPetStateId]) {
+		if slices.Contains(actionsNeedToDetectEnemy, b.PetStates[b.nextPetStateId]) && isOnRide(b.hWnd) {
 			if isItemWindowOpened(b.hWnd) {
 				b.openSkillWindowWithMouse()
 				closeAllWindows(b.hWnd)
