@@ -97,7 +97,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 				}
 			case <-teleporCheckertTicker.C:
 				if w.teleportCheckerEnabled && !isTeleported {
-					if newMapName := getMapName(w.hWnd); w.currentMapName != newMapName {
+					if newMapName := getMapName(w.hWnd); w.currentMapName != newMapName || isTeleportedToOtherMap(*w.logDir) {
 						isTeleported = true
 						log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
 					}
