@@ -398,16 +398,16 @@ func canRecall(hWnd HWND) bool {
 }
 
 var allTargets = []CheckTarget{
-	PLAYER_L_3_H,
-	PLAYER_L_2_H,
-	PLAYER_L_4_H,
-	PLAYER_L_1_H,
-	PLAYER_L_5_H,
 	PLAYER_L_1_P,
 	PLAYER_L_2_P,
 	PLAYER_L_3_P,
 	PLAYER_L_4_P,
 	PLAYER_L_5_P,
+	PLAYER_L_1_H,
+	PLAYER_L_2_H,
+	PLAYER_L_3_H,
+	PLAYER_L_4_H,
+	PLAYER_L_5_H,
 }
 
 func isAnyPlayerOutOfMana(hWnd HWND) bool {
@@ -450,20 +450,21 @@ func countLifeBelow(hWnd HWND, ratio float32) (count int) {
 	return
 }
 
-func searchTShapeLifeBelow(hWnd HWND, ratio float32, matchingCount int) (*CheckTarget, bool) {
+func searchTShapeLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 	detectedTargets := make([][]int, 2)
 	for i := range detectedTargets {
 		detectedTargets[i] = make([]int, 5)
 	}
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
-			detectedTargets[i/5][i%5] += 1
-			detectedTargets[(i/5)^1][i%5] += 1
+			weight := 1 + i/5
+			detectedTargets[i/5][i%5] += weight
+			detectedTargets[(i/5)^1][i%5] += weight
 			if i%5 > 0 {
-				detectedTargets[i/5][i%5-1] += 1
+				detectedTargets[i/5][i%5-1] += weight
 			}
 			if i%5 < 4 {
-				detectedTargets[i/5][i%5+1] += 1
+				detectedTargets[i/5][i%5+1] += weight
 			}
 		}
 	}
@@ -475,7 +476,7 @@ func searchTShapeLifeBelow(hWnd HWND, ratio float32, matchingCount int) (*CheckT
 			maxId = i
 		}
 	}
-	if max >= matchingCount && doesPlayerTargetExist(hWnd, allTargets[maxId]) {
+	if max >= 2+maxId/5 && doesPlayerTargetExist(hWnd, allTargets[maxId]) {
 		return &allTargets[maxId], true
 	}
 	return nil, false

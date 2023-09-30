@@ -31,7 +31,7 @@ const (
 	H_C_PET_RECALL = "*Recall Pet"
 	H_C_POTION     = "*Potion"
 	H_C_SKILL      = "*Skill"
-	H_C_T_SKILL    = "*T. Skill"
+	H_C_T_SKILL    = "*Threshold Skill"
 	H_C_SE_HEAL    = "*Heal Self"
 	H_C_O_HEAL     = "*Heal One"
 	H_C_T_HEAL     = "*Heal T-Shape"
@@ -327,7 +327,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 				}
 			} else {
-				b.logH("found no one needed to be taken care of")
+				b.logH("found all good")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_RIDE:
@@ -412,14 +412,14 @@ func (b *BattleActionState) executeHumanStateMachine() {
 					cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 				}
 			} else {
-				b.logH("found no one needed to be taken care of")
+				b.logH("found all good")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_T_HEAL:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-			if target, ok := searchTShapeLifeBelow(b.hWnd, float32(ratio), 2); ok {
+			if target, ok := searchTShapeLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x57)
 				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
@@ -761,7 +761,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				}
 
 			} else {
-				b.logP("found no one needed to be taken care of")
+				b.logH("found all good")
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
 			}
 		case P_F_ESCAPE:
