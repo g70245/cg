@@ -1017,7 +1017,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		workerMenuContainer.Add(loadSettingButton)
 		workerMenuContainer.Add(saveSettingButton)
 
-		statesViewer = container.NewAdaptiveGrid(7, generateTags(*worker)...)
+		statesViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
 
 		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
 		configContainer.Add(workerContainer)
