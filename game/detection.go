@@ -384,7 +384,7 @@ func doesEncounterBaby(dir string) bool {
 		}
 
 		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
-		if !logTime.Before(now.Add(-8*time.Minute)) && strings.Contains(lines[i], "發現野生一級") {
+		if !logTime.Before(now.Add(-1*time.Minute)) && strings.Contains(lines[i], "發現野生一級") {
 			return true
 		}
 	}
