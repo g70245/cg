@@ -1195,7 +1195,7 @@ func beeperInform(title string) {
 }
 
 func beeperAndLogInform(title string) {
-	if !IsBeeperReady() {
+	if !IsBeeperReady() || *logDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()
