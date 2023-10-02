@@ -361,12 +361,21 @@ func isOnRide(hWnd HWND) bool {
 
 var teleportedWords = []string{"被不可思", "你感覺到一股"}
 
-func isTeleportedToOtherMap(dir string) bool {
+func isTeleported(dir string) bool {
 	if dir != "" {
 		for _, stopWord := range teleportedWords {
 			if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func isOutOfResource(dir string) bool {
+	if dir != "" {
+		if strings.Contains(sys.GetLastLineOfLog(dir), "道具已經用完了") {
+			return true
 		}
 	}
 	return false

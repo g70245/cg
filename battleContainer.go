@@ -165,24 +165,24 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	delete.Importance = widget.DangerImportance
 
-	var teleportCheck *widget.Button
-	teleportCheck = widget.NewButtonWithIcon("Check Teleport", theme.CheckButtonIcon(), func() {
-		switch teleportCheck.Icon {
+	var teleportAndResourceCheck *widget.Button
+	teleportAndResourceCheck = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+		switch teleportAndResourceCheck.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
-				workers[i].StopTeleportChecker()
+				workers[i].StopTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonIcon(), teleportCheck)
+			turn(theme.CheckButtonIcon(), teleportAndResourceCheck)
 		case theme.CheckButtonIcon():
 			for i := range workers {
-				workers[i].StartTeleportChecker()
+				workers[i].StartTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonCheckedIcon(), teleportCheck)
+			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheck)
 
-			beeperAndLogInform("About Teleport Checker")
+			beeperAndLogInform("About Teleport & Resource Checker")
 		}
 	})
-	teleportCheck.Importance = widget.HighImportance
+	teleportAndResourceCheck.Importance = widget.HighImportance
 
 	var inventoryCheck *widget.Button
 	inventoryCheck = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
@@ -203,7 +203,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	inventoryCheck.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, teleportCheck, inventoryCheck, delete, lever)
+	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, teleportAndResourceCheck, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widget */
@@ -1189,7 +1189,7 @@ func beeperInform(title string) {
 	if !IsBeeperReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to choose a music!!!", window).Show()
+			dialog.NewInformation(title, "Remember to choose a alert music!!!", window).Show()
 		}()
 	}
 }
@@ -1198,7 +1198,7 @@ func beeperAndLogInform(title string) {
 	if !IsBeeperReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to setup the music and log directory!!!", window).Show()
+			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()
 		}()
 	}
 }
