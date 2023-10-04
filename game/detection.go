@@ -488,7 +488,10 @@ func searchTShapeLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 				maxId = i
 			}
 		}
-		return &allTargets[maxId], true
+
+		if max >= 2+maxId/5 {
+			return &allTargets[maxId], true
+		}
 	}
 	return nil, false
 }
