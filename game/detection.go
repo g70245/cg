@@ -359,11 +359,11 @@ func isOnRide(hWnd HWND) bool {
 			sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
 }
 
-var teleportedWords = []string{"被不可思", "你感覺到一股"}
+var teleportWords = []string{"被不可思", "你感覺到一股"}
 
 func isTeleported(dir string) bool {
 	if dir != "" {
-		for _, stopWord := range teleportedWords {
+		for _, stopWord := range teleportWords {
 			if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
 				return true
 			}
@@ -464,8 +464,10 @@ func searchTShapeLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 	for i := range detectedTargets {
 		detectedTargets[i] = make([]int, 5)
 	}
+	counter := 0
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
+			counter++
 			weight := 1 + i/5
 			detectedTargets[i/5][i%5] += weight
 			detectedTargets[(i/5)^1][i%5] += weight
@@ -477,15 +479,15 @@ func searchTShapeLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 			}
 		}
 	}
-	max := 0
-	maxId := 0
-	for i := range allTargets {
-		if max < detectedTargets[i/5][i%5] {
-			max = detectedTargets[i/5][i%5]
-			maxId = i
+	if counter >= 2 {
+		max := 0
+		maxId := 0
+		for i := range allTargets {
+			if max <= detectedTargets[i/5][i%5] && doesPlayerTargetExist(hWnd, allTargets[i]) {
+				max = detectedTargets[i/5][i%5]
+				maxId = i
+			}
 		}
-	}
-	if max >= 2+maxId/5 && doesPlayerTargetExist(hWnd, allTargets[maxId]) {
 		return &allTargets[maxId], true
 	}
 	return nil, false
