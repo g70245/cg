@@ -95,19 +95,18 @@ type BattleActionState struct {
 	isOutOfMana                bool `json:"-"`
 	isHumanHanging             bool `json:"-"`
 	isPetHanging               bool `json:"-"`
-	isEncounteringBaBy         bool `json:"-"`
+	isEncounteringAnyBaby      bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
 
 	enemies              []CheckTarget `json:"-"`
 	enemyDetectorCounter int           `json:"-"`
+	isAlreadyDetected    bool          `json:"-"`
 }
 
 func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
-
-	b.enemies = allMonsterTargets
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
@@ -116,6 +115,8 @@ func (b *BattleActionState) Act() {
 
 	b.nextHumanStateId = 0
 	b.nextPetStateId = 0
+	b.enemyDetectorCounter = 0
+	b.isAlreadyDetected = false
 	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
 }
 
@@ -130,14 +131,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
-		if slices.Contains(actionsNeedToDetectEnemy, b.HumanStates[b.nextHumanStateId]) {
-			if isItemWindowOpened(b.hWnd) {
-				b.openSkillWindowWithMouse()
-				closeAllWindows(b.hWnd)
-			}
-
-			b.detectEnemies()
-		}
+		b.detectEnemies()
 
 		if b.isPetHanging {
 			b.isPetHanging = false
@@ -164,7 +158,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 		switch b.HumanStates[b.nextHumanStateId] {
 		case H_F_ATTACK:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -177,7 +171,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_C_SKILL:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -204,7 +198,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 		case H_C_T_SKILL:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -244,7 +238,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.logH("moved")
 			cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 		case H_F_ESCAPE:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -252,7 +246,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.logH("escaped")
 			cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 		case H_S_HANG:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -260,7 +254,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.isHumanHanging = true
 			return
 		case H_C_BOMB:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -331,7 +325,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_RIDE:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -471,7 +465,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_PET_RECALL:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -523,7 +517,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 			b.logH("encounters a baby")
-			b.isEncounteringBaBy = true
+			b.isEncounteringAnyBaby = true
 			sys.PlayBeeper()
 		}
 
@@ -575,14 +569,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			continue
 		}
 
-		if slices.Contains(actionsNeedToDetectEnemy, b.PetStates[b.nextPetStateId]) && isOnRide(b.hWnd) {
-			if isItemWindowOpened(b.hWnd) {
-				b.openSkillWindowWithMouse()
-				closeAllWindows(b.hWnd)
-			}
-
-			b.detectEnemies()
-		}
+		b.detectEnemies()
 
 		if b.isHumanHanging {
 			b.isHumanHanging = false
@@ -608,7 +595,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		switch b.PetStates[b.nextPetStateId] {
 		case P_F_ATTACK:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -628,7 +615,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 		case P_C_SkILL:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -650,7 +637,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 		case P_S_HANG:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -719,7 +706,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 		case P_C_OFF_RIDE:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringBaBy {
+			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -765,7 +752,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
 			}
 		case P_F_ESCAPE:
-			if b.isEncounteringBaBy {
+			if b.isEncounteringAnyBaby {
 				break
 			}
 
@@ -794,7 +781,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 			b.logH("encounters a baby")
-			b.isEncounteringBaBy = true
+			b.isEncounteringAnyBaby = true
 			sys.PlayBeeper()
 		}
 
@@ -1059,20 +1046,28 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 }
 
 func (b *BattleActionState) detectEnemies() {
+	if b.isAlreadyDetected {
+		b.isAlreadyDetected = false
+		return
+	}
+
+	if isItemWindowStuck(b.hWnd) {
+		b.openSkillWindowWithMouse()
+	}
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter < 4 {
-		newEnemies := getEnemyTargets(b.hWnd, b.enemies)
-		if reflect.DeepEqual(b.enemies, newEnemies) {
-			b.enemyDetectorCounter++
-		} else {
-			b.enemyDetectorCounter = 0
-		}
-		b.enemies = newEnemies
-	} else {
-		b.enemies = getEnemyTargets(b.hWnd, allMonsterTargets)
-		b.enemyDetectorCounter = 0
+	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= 4 {
+		b.enemies = allMonsterTargets
 	}
+
+	newEnemies := getEnemyTargets(b.hWnd, b.enemies)
+	if reflect.DeepEqual(b.enemies, newEnemies) {
+		b.enemyDetectorCounter++
+	} else {
+		b.enemyDetectorCounter = 1
+	}
+	b.enemies = newEnemies
+	b.isAlreadyDetected = true
 }
 
 func TestAction(hWnd HWND) (x int32, y int32, successful bool) {

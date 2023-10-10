@@ -122,7 +122,7 @@ func (w *BattleWorker) reset() {
 	w.ActionState.Enabled = true
 	w.ActionState.isOutOfHealthWhileCatching = false
 	w.ActionState.isOutOfMana = false
-	w.ActionState.isEncounteringBaBy = false
+	w.ActionState.isEncounteringAnyBaby = false
 
 	w.MovementState.origin = getCurrentGamePos(w.hWnd)
 }
