@@ -131,6 +131,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			continue
 		}
 
+		b.detectEnemies()
+
 		if b.isPetHanging {
 			b.isPetHanging = false
 			cu := b.PetSuccessControlUnits[b.nextPetStateId]
@@ -567,6 +569,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 			continue
 		}
 
+		b.detectEnemies()
+
 		if b.isHumanHanging {
 			b.isHumanHanging = false
 			cu := b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -835,8 +839,6 @@ func (b *BattleActionState) useItem(x, y int32) {
 }
 
 func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
-	b.detectEnemies()
-
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(b.enemies), func(i, j int) { b.enemies[i], b.enemies[j] = b.enemies[j], b.enemies[i] })
 	for _, target := range b.enemies {
