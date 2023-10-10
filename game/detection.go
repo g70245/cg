@@ -381,7 +381,7 @@ func isOutOfResource(dir string) bool {
 	return false
 }
 
-func doesEncounterBaby(dir string) bool {
+func doesEncounterAnyBaby(dir string) bool {
 	lines := sys.GetLinesOfLog(dir, 5)
 	now := time.Now()
 	for i := range lines {

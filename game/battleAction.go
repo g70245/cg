@@ -509,7 +509,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				break
 			}
 
-			if !doesEncounterBaby(*b.LogDir) {
+			if !doesEncounterAnyBaby(*b.LogDir) {
 				closeAllWindows(b.hWnd)
 				clearChat(b.hWnd)
 				if self, ok := getSelfTarget(b.hWnd, true); ok {
@@ -783,7 +783,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				break
 			}
 
-			if !doesEncounterBaby(*b.LogDir) {
+			if !doesEncounterAnyBaby(*b.LogDir) {
 				closeAllWindows(b.hWnd)
 				clearChat(b.hWnd)
 				if self, ok := getSelfTarget(b.hWnd, true); ok {
