@@ -37,37 +37,31 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	groupTabs.Hide()
 
 	newGroupButton := widget.NewButtonWithIcon("New Group", theme.ContentAddIcon(), func() {
-		// if len(autoGroups) == 3 {
-		// 	return
-		// }
-
 		var newGroup map[string]HWND
-		gamesSelectingCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
+		gamesCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
 			newGroup = make(map[string]HWND)
 			for _, game := range games {
 				newGroup[game] = idleGames.Peek(game)
 			}
 		})
-		gamesSelectingCheckGroup.Horizontal = true
+		gamesCheckGroup.Horizontal = true
+
 		groupNameEntry := widget.NewEntry()
 		groupNameEntry.SetPlaceHolder("Enter group name")
-		gamesSelectingDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesSelectingCheckGroup), window)
-		gamesSelectingDialog.Resize(fyne.NewSize(240, 166))
+		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
+		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
-		gamesSelectingDialog.SetOnClosed(func() {
+		gamesSelectorDialog.SetOnClosed(func() {
 			if len(newGroup) == 0 {
 				return
 			}
 
-			// idleGames.Remove(maps.Keys(newGroup))
 			var newTabItem *container.TabItem
 
 			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup, func(id int) func() {
 				return func() {
 					delete(autoGroups, id)
 					delete(stopChans, id)
-
-					// idleGames.Add(newGroup)
 
 					groupTabs.Remove(newTabItem)
 					if len(autoGroups) == 0 {
@@ -80,13 +74,14 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			autoGroups[id] = newGroup
 			stopChans[id] = stopChan
 
-			var groupName string
+			var newGroupName string
 			if groupNameEntry.Text != "" {
-				groupName = groupNameEntry.Text
+				newGroupName = groupNameEntry.Text
 			} else {
-				groupName = "Group " + fmt.Sprint(id)
+				newGroupName = "Group " + fmt.Sprint(id)
 			}
-			newTabItem = container.NewTabItem(groupName, newGroupContainer)
+
+			newTabItem = container.NewTabItem(newGroupName, newGroupContainer)
 			groupTabs.Append(newTabItem)
 			groupTabs.Show()
 
@@ -94,7 +89,7 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 			window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 			id++
 		})
-		gamesSelectingDialog.Show()
+		gamesSelectorDialog.Show()
 	})
 
 	menu := container.NewVBox(newGroupButton)
@@ -124,7 +119,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
 		manaCheckerSelectorDialog.Show()
 
-		beeperInform("About Mana Checker")
+		informBeeperConfig("About Mana Checker")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
@@ -179,7 +174,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheck)
 
-			beeperAndLogInform("About Teleport & Resource Checker")
+			informBeeperAndLogConfig("About Teleport & Resource Checker")
 		}
 	})
 	teleportAndResourceCheck.Importance = widget.HighImportance
@@ -198,7 +193,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			}
 			turn(theme.CheckButtonCheckedIcon(), inventoryCheck)
 
-			beeperInform("About Teleport Checker")
+			informBeeperConfig("About Teleport Checker")
 		}
 	})
 	inventoryCheck.Importance = widget.HighImportance
@@ -206,7 +201,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, teleportAndResourceCheck, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
-	/* Configuration Widget */
+	/* Configuration Widgets */
 	configContainer := container.NewVBox()
 	for i := range workers {
 		workerMenuContainer := container.NewGridWithColumns(6)
@@ -366,7 +361,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			pCUFailureOnChanged,
 		}
 
-		/* Param Dialog */
+		/* Param Dialogs */
 		var paramsDialog *dialog.CustomDialog
 		humanParamsOnChanged := func(s string) {
 			if s != "" {
@@ -411,7 +406,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 			humanParamsOnChanged,
 		}
 
-		/* Id Dialog */
+		/* Id Dialogs */
 		var idDialog *dialog.CustomDialog
 		hIdOnChanged := func(s string) {
 			if s != "" {
@@ -1027,15 +1022,6 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	return autoBattleWidget, stopChan
 }
 
-func activateSelector(options []string, selector *widget.RadioGroup, dialog *dialog.CustomDialog, onChanged func(s string), dialogChan chan bool) {
-	go func() {
-		<-dialogChan
-		selector.Options = options
-		selector.OnChanged = onChanged
-		dialog.Show()
-	}()
-}
-
 type SelectorDialog struct {
 	dialog    *dialog.CustomDialog
 	selector  *widget.RadioGroup
@@ -1067,8 +1053,8 @@ func activateDialogs(selectorDialogs []SelectorDialog, enableChan chan bool) {
 }
 
 func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
-	tagContaines = createTagContainer(worker.ActionState, true)
-	tagContaines = append(tagContaines, createTagContainer(worker.ActionState, false)...)
+	tagContaines = createTagContainers(worker.ActionState, true)
+	tagContaines = append(tagContaines, createTagContainers(worker.ActionState, false)...)
 	return
 }
 
@@ -1081,7 +1067,7 @@ var (
 	petSpecialTagColor       = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
 )
 
-func createTagContainer(actionState BattleActionState, isHuman bool) (tagContainers []fyne.CanvasObject) {
+func createTagContainers(actionState BattleActionState, isHuman bool) (tagContainers []fyne.CanvasObject) {
 	var tags []string
 	if isHuman {
 		tags = actionState.GetHumanStates()
@@ -1185,16 +1171,16 @@ func stop(stopChan chan bool) {
 	}
 }
 
-func beeperInform(title string) {
+func informBeeperConfig(title string) {
 	if !IsBeeperReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to choose a alert music!!!", window).Show()
+			dialog.NewInformation(title, "Remember to setup the alert music!!!", window).Show()
 		}()
 	}
 }
 
-func beeperAndLogInform(title string) {
+func informBeeperAndLogConfig(title string) {
 	if !IsBeeperReady() || *logDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)

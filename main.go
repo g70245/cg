@@ -2,7 +2,6 @@ package main
 
 import (
 	"cg/system"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -26,17 +25,7 @@ var (
 	logDir = new(string)
 )
 
-func test() {
-	// hWnd := getHWND()
-	// CheckColor()
-	// PrintColor()
-	// system.MoveMouse(hWnd, x, y)
-	os.Exit(0)
-}
-
 func main() {
-	// test()
-
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
@@ -51,7 +40,6 @@ func main() {
 				robot.close()
 
 				robot = generateRobotContainer()
-
 				content.Add(robot.main)
 				window.SetContent(window.Content())
 				window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))

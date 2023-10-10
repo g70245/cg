@@ -1,12 +1,11 @@
 package main
 
 import (
-	"cg/game"
 	. "cg/game"
-	"cg/system"
 	. "cg/system"
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -20,19 +19,6 @@ import (
 const (
 	Offset = 26
 )
-
-var someTestData = []game.CheckTarget{
-	game.PLAYER_L_1_H,
-	game.PLAYER_L_2_H,
-	game.PLAYER_L_3_H,
-	game.PLAYER_L_4_H,
-	game.PLAYER_L_5_H,
-	game.PLAYER_L_1_P,
-	game.PLAYER_L_2_P,
-	game.PLAYER_L_3_P,
-	game.PLAYER_L_4_P,
-	game.PLAYER_L_5_P,
-}
 
 func PrintCursorPosColor(hWnd win.HWND) {
 	for {
@@ -97,15 +83,15 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 }
 
 func getHWND() win.HWND {
-	for _, h := range maps.Values(system.FindWindows()) {
+	for _, h := range maps.Values(FindWindows()) {
 		if fmt.Sprint(h) == "460774" {
 			return h
 		}
 	}
-	return maps.Values(system.FindWindows())[0]
+	return maps.Values(FindWindows())[0]
 }
 
-func goid() int {
+func getGoId() int {
 	var buf [64]byte
 	n := runtime.Stack(buf[:], false)
 	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
@@ -114,4 +100,12 @@ func goid() int {
 		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
 	}
 	return id
+}
+
+func Test() {
+	// hWnd := getHWND()
+	// CheckColor()
+	// PrintColor()
+	// MoveMouse(hWnd, x, y)
+	os.Exit(0)
 }
