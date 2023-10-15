@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -89,6 +90,12 @@ func main() {
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 	window.SetContent(content)
 	window.ShowAndRun()
+
+	/* shortcuts */
+	muteShortcut := &desktop.CustomShortcut{KeyName: fyne.Key0, Modifier: fyne.KeyModifierControl}
+	window.Canvas().AddShortcut(muteShortcut, func(shortcut fyne.Shortcut) {
+		system.StopBeeper()
+	})
 }
 
 type Robot struct {
