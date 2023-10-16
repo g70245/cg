@@ -81,7 +81,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 						w.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealthWhileCatching && !isTeleportedOrOutOfResource && !isInventoryFull {
+					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealth && !isTeleportedOrOutOfResource && !isInventoryFull {
 						w.MovementState.Move()
 					}
 				default:
@@ -107,7 +107,7 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 					}
 				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.isOutOfHealthWhileCatching || isInventoryFull || isTeleportedOrOutOfResource) {
+				if !isPlayingBeeper && (w.ActionState.isOutOfHealth || isInventoryFull || isTeleportedOrOutOfResource) {
 					isPlayingBeeper = sys.PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
@@ -120,7 +120,7 @@ func (w *BattleWorker) reset() {
 	w.currentMapName = getMapName(w.hWnd)
 
 	w.ActionState.Enabled = true
-	w.ActionState.isOutOfHealthWhileCatching = false
+	w.ActionState.isOutOfHealth = false
 	w.ActionState.isOutOfMana = false
 	w.ActionState.isEncounteringAnyBaby = false
 

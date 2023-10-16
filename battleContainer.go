@@ -108,6 +108,8 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	manaCheckerSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
 		*manaChecker = s
 
+		fmt.Println(*manaChecker)
+
 		if *manaChecker != "" {
 			manaCheckerSelectorButton.SetText("Mana Checker: " + *manaChecker)
 		} else {

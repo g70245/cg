@@ -90,12 +90,12 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled                    bool `json:"-"`
-	isOutOfHealthWhileCatching bool `json:"-"`
-	isOutOfMana                bool `json:"-"`
-	isHumanHanging             bool `json:"-"`
-	isPetHanging               bool `json:"-"`
-	isEncounteringAnyBaby      bool `json:"-"`
+	Enabled               bool `json:"-"`
+	isOutOfHealth         bool `json:"-"`
+	isOutOfMana           bool `json:"-"`
+	isHumanHanging        bool `json:"-"`
+	isPetHanging          bool `json:"-"`
+	isEncounteringAnyBaby bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
@@ -122,37 +122,11 @@ func (b *BattleActionState) Act() {
 
 func (b *BattleActionState) executeHumanStateMachine() {
 
-	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && !isPetStageStable(b.hWnd) {
-		if !isHumanStageStable(b.hWnd) {
-			if !b.Enabled {
-				return
-			}
-			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
-			continue
-		}
+	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) {
 
 		b.detectEnemies()
-
-		if b.isPetHanging {
-			b.isPetHanging = false
-			cu := b.PetSuccessControlUnits[b.nextPetStateId]
-
-			var offset int
-			if strings.Contains(cu, C_U_JUMP) {
-				i, _ := strconv.Atoi(cu[4:])
-				offset = i
-				cu = cu[:4]
-			}
-
-			switch cu {
-			case C_U_START_OVER:
-				b.nextPetStateId = 0
-			case C_U_CONTINUE:
-				b.nextPetStateId++
-			case C_U_JUMP:
-				b.nextPetStateId = offset
-			}
-		}
+		b.endPetHanging()
+		b.checkHumanMana()
 
 		var cu string
 
@@ -252,7 +226,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 			b.logH("is hanging")
 			b.isHumanHanging = true
-			return
+			cu = C_U_REPEAT
 		case H_C_BOMB:
 			if b.isEncounteringAnyBaby {
 				break
@@ -473,7 +447,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if canRecall(b.hWnd) {
 				b.recall()
 				b.logH("recalled")
-				return
+				cu = C_U_REPEAT
 			} else {
 				b.logH("already recalled")
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
@@ -508,8 +482,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				clearChat(b.hWnd)
 				if self, ok := getSelfTarget(b.hWnd, true); ok {
 					ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-					b.isOutOfHealthWhileCatching = isLifeBelow(b.hWnd, float32(ratio), self)
-					if b.isOutOfHealthWhileCatching {
+					b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
+					if b.isOutOfHealth {
 						b.logH("is out of health")
 					}
 				}
@@ -546,50 +520,14 @@ func (b *BattleActionState) executeHumanStateMachine() {
 	} else {
 		b.nextHumanStateId = 0
 	}
-
-	if b.isManaChecker() {
-		closeAllWindows(b.hWnd)
-		clearChat(b.hWnd)
-		if isAnyPlayerOutOfMana(b.hWnd) {
-			b.isOutOfMana = true
-			sys.PlayBeeper()
-			b.logH("someone is out of mana")
-		}
-	}
 }
 
 func (b *BattleActionState) executePetStateMachiine() {
 
-	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && !isHumanStageStable(b.hWnd) {
-		if !isPetStageStable(b.hWnd) && getScene(b.hWnd) == BATTLE_SCENE {
-			if !b.Enabled {
-				return
-			}
-			time.Sleep(WAITING_LOOP_INTERVAL * time.Millisecond)
-			continue
-		}
+	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) {
 
 		b.detectEnemies()
-
-		if b.isHumanHanging {
-			b.isHumanHanging = false
-			cu := b.HumanSuccessControlUnits[b.nextHumanStateId]
-
-			var offset int
-			if strings.Contains(cu, C_U_JUMP) {
-				i, _ := strconv.Atoi(cu[4:])
-				offset = i
-				cu = cu[:4]
-			}
-			switch cu {
-			case C_U_START_OVER:
-				b.nextHumanStateId = 0
-			case C_U_CONTINUE:
-				b.nextHumanStateId++
-			case C_U_JUMP:
-				b.nextHumanStateId = offset
-			}
-		}
+		b.endHumanHanging()
 
 		var cu string
 
@@ -643,7 +581,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 			b.logP("is hanging")
 			b.isPetHanging = true
-			return
+			cu = C_U_REPEAT
 		case P_C_DEFEND:
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
@@ -700,7 +638,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
-				return
+				cu = C_U_REPEAT
 			} else {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
@@ -721,7 +659,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
-				return
+				cu = C_U_REPEAT
 			} else {
 				b.logP("cannot find the position of window")
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
@@ -775,7 +713,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				clearChat(b.hWnd)
 				if self, ok := getSelfTarget(b.hWnd, true); ok {
 					ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
-					b.isOutOfHealthWhileCatching = isLifeBelow(b.hWnd, float32(ratio), self)
+					b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
 				}
 				break
 			}
@@ -809,16 +747,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 		b.nextPetStateId %= len(b.PetStates)
 	} else {
 		b.nextPetStateId = 0
-	}
-
-	if b.isManaChecker() {
-		closeAllWindows(b.hWnd)
-		clearChat(b.hWnd)
-		if isAnyPlayerOutOfMana(b.hWnd) {
-			b.isOutOfMana = true
-			sys.PlayBeeper()
-			b.logP("someone is out of mana")
-		}
 	}
 }
 
@@ -1068,6 +996,63 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	b.enemies = newEnemies
 	b.isAlreadyDetected = true
+}
+
+func (b *BattleActionState) endHumanHanging() {
+	if b.isHumanHanging {
+		b.isHumanHanging = false
+		cu := b.HumanSuccessControlUnits[b.nextHumanStateId]
+
+		var offset int
+		if strings.Contains(cu, C_U_JUMP) {
+			i, _ := strconv.Atoi(cu[4:])
+			offset = i
+			cu = cu[:4]
+		}
+
+		switch cu {
+		case C_U_START_OVER:
+			b.nextHumanStateId = 0
+		case C_U_CONTINUE:
+			b.nextHumanStateId++
+		case C_U_JUMP:
+			b.nextHumanStateId = offset
+		}
+	}
+}
+func (b *BattleActionState) endPetHanging() {
+	if b.isPetHanging {
+		b.isPetHanging = false
+		cu := b.PetSuccessControlUnits[b.nextPetStateId]
+
+		var offset int
+		if strings.Contains(cu, C_U_JUMP) {
+			i, _ := strconv.Atoi(cu[4:])
+			offset = i
+			cu = cu[:4]
+		}
+
+		switch cu {
+		case C_U_START_OVER:
+			b.nextPetStateId = 0
+		case C_U_CONTINUE:
+			b.nextPetStateId++
+		case C_U_JUMP:
+			b.nextPetStateId = offset
+		}
+	}
+}
+
+func (b *BattleActionState) checkHumanMana() {
+	if b.isManaChecker() {
+		closeAllWindows(b.hWnd)
+		clearChat(b.hWnd)
+		if isAnyPlayerOutOfMana(b.hWnd) {
+			b.isOutOfMana = true
+			sys.PlayBeeper()
+			b.logH("someone is out of mana")
+		}
+	}
 }
 
 func TestAction(hWnd HWND) (x int32, y int32, successful bool) {

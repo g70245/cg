@@ -421,10 +421,10 @@ var allTargets = []CheckTarget{
 
 func isAnyPlayerOutOfMana(hWnd HWND) bool {
 	for _, h := range allHumans {
+		oy := h.y + 3
 		manaPoint := h.x + 2
-		y := h.y + 3
-		if sys.GetColor(hWnd, manaPoint, y) != COLOR_BATTLE_MANA_UPPER &&
-			sys.GetColor(hWnd, h.x, h.y+3) == COLOR_BATTLE_MANA_UPPER {
+		if sys.GetColor(hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER &&
+			sys.GetColor(hWnd, h.x, h.y) == COLOR_BATTLE_BLOOD_UPPER {
 			return true
 		}
 	}
