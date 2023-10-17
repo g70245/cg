@@ -217,7 +217,7 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
 		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
-		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+44 {
+		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+34 {
 			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_CLUMN.color {
 				return x, y + 20, true
 			}
@@ -247,15 +247,15 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 
 func isSlotFree(hWnd HWND, px, py int32) bool {
 	x := px
-	for x < px+32 {
+	for x < px+30 {
 		y := py
-		for y < py+32 {
+		for y < py+30 {
 			if sys.GetColor(hWnd, x, y) != COLOR_WINDOW_ITEM_EMPTY {
 				return false
 			}
-			y += 4
+			y += 5
 		}
-		x += 4
+		x += 5
 	}
 	return true
 }
