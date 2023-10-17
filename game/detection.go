@@ -247,15 +247,15 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 
 func isSlotFree(hWnd HWND, px, py int32) bool {
 	x := px
-	for x < px+30 {
+	for x < px+32 {
 		y := py
-		for y < py+30 {
+		for y < py+32 {
 			if sys.GetColor(hWnd, x, y) != COLOR_WINDOW_ITEM_EMPTY {
 				return false
 			}
-			y += 5
+			y += 4
 		}
-		x += 5
+		x += 4
 	}
 	return true
 }

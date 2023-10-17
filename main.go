@@ -88,14 +88,15 @@ func main() {
 
 	menu := container.NewHBox(refreshButton, alertDialogButton, logDialogButton)
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
-	window.SetContent(content)
-	window.ShowAndRun()
 
 	/* shortcuts */
 	muteShortcut := &desktop.CustomShortcut{KeyName: fyne.Key0, Modifier: fyne.KeyModifierControl}
 	window.Canvas().AddShortcut(muteShortcut, func(shortcut fyne.Shortcut) {
 		system.StopBeeper()
 	})
+
+	window.SetContent(content)
+	window.ShowAndRun()
 }
 
 type Robot struct {
