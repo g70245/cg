@@ -528,6 +528,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		b.detectEnemies()
 		b.endHumanHanging()
+		b.checkHumanMana()
 
 		var cu string
 
