@@ -90,13 +90,13 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled                  bool `json:"-"`
-	isActivityCheckerEnabled bool `json:"-"`
-	isOutOfHealth            bool `json:"-"`
-	isOutOfMana              bool `json:"-"`
-	isHumanHanging           bool `json:"-"`
-	isPetHanging             bool `json:"-"`
-	isEncounteringAnyBaby    bool `json:"-"`
+	Enabled                bool `json:"-"`
+	ActivityCheckerEnabled bool `json:"-"`
+	isOutOfHealth          bool `json:"-"`
+	isOutOfMana            bool `json:"-"`
+	isHumanHanging         bool `json:"-"`
+	isPetHanging           bool `json:"-"`
+	isEncounteringAnyBaby  bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
@@ -124,7 +124,7 @@ func (b *BattleActionState) Act() {
 }
 
 func (b *BattleActionState) detectActivity() {
-	if !b.isActivityCheckerEnabled {
+	if !b.ActivityCheckerEnabled {
 		return
 	}
 
