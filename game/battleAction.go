@@ -111,6 +111,7 @@ func (b *BattleActionState) Act() {
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
+		time.Sleep(WAITING_LOOP_INTERVAL)
 	}
 
 	b.nextHumanStateId = 0
