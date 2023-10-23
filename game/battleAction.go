@@ -110,7 +110,7 @@ func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-		b.detectActivity()
+		b.executeActivity()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(WAITING_LOOP_INTERVAL)
@@ -123,7 +123,7 @@ func (b *BattleActionState) Act() {
 	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
 }
 
-func (b *BattleActionState) detectActivity() {
+func (b *BattleActionState) executeActivity() {
 	if !b.ActivityCheckerEnabled {
 		return
 	}
