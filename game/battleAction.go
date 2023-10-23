@@ -129,6 +129,9 @@ func (b *BattleActionState) detectActivity() {
 	}
 
 	doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir)
+	if doesEncounterActivityMonsters {
+		b.logH("encounters the activity monsters")
+	}
 
 	for doesEncounterActivityMonsters && getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		time.Sleep(WAITING_LOOP_INTERVAL)
