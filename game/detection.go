@@ -359,12 +359,16 @@ func isOnRide(hWnd HWND) bool {
 			sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
 }
 
-var teleportWords = []string{"被不可思", "你感覺到一股"}
+var (
+	TELEPORTING_WORDS     = []string{"被不可思", "你感覺到一股"}
+	OUT_OF_RESOURCE       = "道具已經用完了"
+	ENCOUNTERING_ANY_BABY = "發現野生一級"
+)
 
 func isTeleported(dir string) bool {
 	if dir != "" {
-		for _, stopWord := range teleportWords {
-			if strings.Contains(sys.GetLastLineOfLog(dir), stopWord) {
+		for _, stopWord := range TELEPORTING_WORDS {
+			if checkWord(dir, 5, 30, stopWord) {
 				return true
 			}
 		}
@@ -373,16 +377,19 @@ func isTeleported(dir string) bool {
 }
 
 func isOutOfResource(dir string) bool {
-	if dir != "" {
-		if strings.Contains(sys.GetLastLineOfLog(dir), "道具已經用完了") {
-			return true
-		}
-	}
-	return false
+	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
 }
 
 func doesEncounterAnyBaby(dir string) bool {
-	lines := sys.GetLinesOfLog(dir, 5)
+	return checkWord(dir, 5, 30, ENCOUNTERING_ANY_BABY)
+}
+
+func checkWord(dir string, lineCount int, beforeSecs int, word string) bool {
+	if dir == "" {
+		return false
+	}
+
+	lines := sys.GetLinesOfLog(dir, lineCount)
 	now := time.Now()
 	for i := range lines {
 		h, hErr := strconv.Atoi(lines[i][1:3])
@@ -393,7 +400,7 @@ func doesEncounterAnyBaby(dir string) bool {
 		}
 
 		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
-		if !logTime.Before(now.Add(-1*time.Minute)) && strings.Contains(lines[i], "發現野生一級") {
+		if !logTime.Before(now.Add(time.Duration(-1*1e9*beforeSecs))) && strings.Contains(lines[i], word) {
 			return true
 		}
 	}
