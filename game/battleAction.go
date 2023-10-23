@@ -90,12 +90,13 @@ type BattleActionState struct {
 	PetSuccessControlUnits []string
 	PetFailureControlUnits []string
 
-	Enabled               bool `json:"-"`
-	isOutOfHealth         bool `json:"-"`
-	isOutOfMana           bool `json:"-"`
-	isHumanHanging        bool `json:"-"`
-	isPetHanging          bool `json:"-"`
-	isEncounteringAnyBaby bool `json:"-"`
+	Enabled                  bool `json:"-"`
+	isActivityCheckerEnabled bool `json:"-"`
+	isOutOfHealth            bool `json:"-"`
+	isOutOfMana              bool `json:"-"`
+	isHumanHanging           bool `json:"-"`
+	isPetHanging             bool `json:"-"`
+	isEncounteringAnyBaby    bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
@@ -109,6 +110,7 @@ func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+		b.detectActivity()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(WAITING_LOOP_INTERVAL)
@@ -119,6 +121,18 @@ func (b *BattleActionState) Act() {
 	b.enemyDetectorCounter = 0
 	b.isAlreadyDetected = false
 	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
+}
+
+func (b *BattleActionState) detectActivity() {
+	if !b.isActivityCheckerEnabled {
+		return
+	}
+
+	doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir)
+
+	for doesEncounterActivityMonsters && getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+		time.Sleep(WAITING_LOOP_INTERVAL)
+	}
 }
 
 func (b *BattleActionState) executeHumanStateMachine() {
