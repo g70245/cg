@@ -123,7 +123,7 @@ func (b *BattleActionState) Act() {
 
 func (b *BattleActionState) executeHumanStateMachine() {
 
-	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) {
+	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) && b.Enabled {
 
 		b.detectEnemies()
 		b.endPetHanging()
@@ -525,7 +525,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 func (b *BattleActionState) executePetStateMachiine() {
 
-	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) {
+	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) && b.Enabled {
 
 		b.detectEnemies()
 		b.endHumanHanging()
