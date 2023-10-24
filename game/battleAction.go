@@ -993,6 +993,10 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 }
 
 func (b *BattleActionState) detectEnemies() {
+	if b.isEncounteringAnyBaby {
+		return
+	}
+
 	if b.isAlreadyDetected {
 		b.isAlreadyDetected = false
 		return
