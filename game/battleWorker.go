@@ -26,8 +26,9 @@ type BattleWorker struct {
 	currentMapName string
 
 	teleportAndResourceCheckerEnabled bool
-	activityCheckerEnabled            bool
 	inventoryCheckerEnabled           bool
+
+	ActivityCheckerEnabled bool
 }
 
 type BattleWorkers []BattleWorker
@@ -123,7 +124,7 @@ func (w *BattleWorker) reset() {
 	w.ActionState.Enabled = true
 	w.ActionState.isOutOfHealth = false
 	w.ActionState.isOutOfMana = false
-	w.ActionState.ActivityCheckerEnabled = w.activityCheckerEnabled
+	w.ActionState.ActivityCheckerEnabled = w.ActivityCheckerEnabled
 
 	w.MovementState.origin = getCurrentGamePos(w.hWnd)
 }
