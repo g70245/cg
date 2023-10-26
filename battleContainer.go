@@ -184,12 +184,12 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 		switch activitiesChecker.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
-				workers[i].ActionState.ActivityCheckerEnabled = false
+				workers[i].ActivityCheckerEnabled = false
 			}
 			turn(theme.CheckButtonIcon(), activitiesChecker)
 		case theme.CheckButtonIcon():
 			for i := range workers {
-				workers[i].ActionState.ActivityCheckerEnabled = true
+				workers[i].ActivityCheckerEnabled = true
 			}
 			turn(theme.CheckButtonCheckedIcon(), activitiesChecker)
 
