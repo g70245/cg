@@ -363,7 +363,7 @@ var (
 	TELEPORTING_WORDS     = []string{"被不可思", "你感覺到一股"}
 	OUT_OF_RESOURCE       = "道具已經用完了"
 	ENCOUNTERING_ANY_BABY = "發現野生一級"
-	ACTIVITY_WORDS        = []string{}
+	ACTIVITY_WORDS        = []string{ENCOUNTERING_ANY_BABY}
 )
 
 func doesEncounterActivityMonsters(dir string) bool {
@@ -371,42 +371,31 @@ func doesEncounterActivityMonsters(dir string) bool {
 		return false
 	}
 
-	for _, activity := range ACTIVITY_WORDS {
-		if checkWord(dir, 1, 30, activity) {
-			return true
-		}
-	}
-	return false
+	return checkWord(dir, 5, 30, ACTIVITY_WORDS)
 }
 
 func isTeleported(dir string) bool {
 	if dir == "" {
 		return false
 	}
-
-	for _, stopWord := range TELEPORTING_WORDS {
-		if checkWord(dir, 5, 30, stopWord) {
-			return true
-		}
-	}
-	return false
+	return checkWord(dir, 5, 30, TELEPORTING_WORDS)
 }
 
 func isOutOfResource(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
+	return checkWord(dir, 5, 30, []string{OUT_OF_RESOURCE})
 }
 
 func doesEncounterAnyBaby(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, ENCOUNTERING_ANY_BABY)
+	return checkWord(dir, 5, 30, []string{OUT_OF_RESOURCE})
 }
 
-func checkWord(dir string, lineCount int, beforeSecs int, word string) bool {
+func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
 	lines := sys.GetLinesOfLog(dir, lineCount)
 	now := time.Now()
 	for i := range lines {
@@ -418,8 +407,10 @@ func checkWord(dir string, lineCount int, beforeSecs int, word string) bool {
 		}
 
 		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
-		if !logTime.Before(now.Add(time.Duration(-1*1e9*beforeSecs))) && strings.Contains(lines[i], word) {
-			return true
+		for j := range words {
+			if !logTime.Before(now.Add(time.Duration(-1*1e9*beforeSecs))) && strings.Contains(lines[i], words[j]) {
+				return true
+			}
 		}
 	}
 	return false

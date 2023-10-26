@@ -12,7 +12,6 @@ import (
 	"time"
 
 	. "github.com/g70245/win"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -96,7 +95,6 @@ type BattleActionState struct {
 	isOutOfMana            bool `json:"-"`
 	isHumanHanging         bool `json:"-"`
 	isPetHanging           bool `json:"-"`
-	isEncounteringAnyBaby  bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	LogDir      *string `json:"-"`
@@ -130,7 +128,8 @@ func (b *BattleActionState) executeActivity() {
 
 	doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir)
 	if doesEncounterActivityMonsters {
-		b.logH("encounters the activity monsters")
+		sys.PlayBeeper()
+		b.logH("encounters the activity monster")
 	}
 
 	for doesEncounterActivityMonsters && getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
@@ -150,10 +149,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 		switch b.HumanStates[b.nextHumanStateId] {
 		case H_F_ATTACK:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.enableBattleCommandAttack()
 			if b.attack(isHumanActionSuccessful) {
 				b.logH("attacked")
@@ -163,10 +158,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_C_SKILL:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
@@ -190,10 +181,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 		case H_C_T_SKILL:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			threshold, _ := strconv.Atoi(strings.Split(b.HumanParams[b.nextHumanStateId], " ")[0])
 			if len(b.enemies) < threshold {
 				b.logH("performs next action due to too few enemies")
@@ -230,26 +217,14 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			b.logH("moved")
 			cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 		case H_F_ESCAPE:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.escape()
 			b.logH("escaped")
 			cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 		case H_S_HANG:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.logH("is hanging")
 			b.isHumanHanging = true
 			cu = C_U_REPEAT
 		case H_C_BOMB:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			var bomb Item
 			for i := range Bombs {
 				if Bombs[i].name == b.HumanParams[b.nextHumanStateId] {
@@ -317,10 +292,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_RIDE:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			openWindowByShortcut(b.hWnd, 0x57)
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
@@ -457,10 +428,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanSuccessControlUnits[b.nextHumanStateId]
 			}
 		case H_C_PET_RECALL:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
-				break
-			}
-
 			openWindowByShortcut(b.hWnd, 0x52)
 			if canRecall(b.hWnd) {
 				b.recall()
@@ -490,27 +457,15 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.nextHumanStateId]
 			}
 		case H_S_CATCH:
-			if *b.LogDir == "" {
-				b.logH("please set up the log directory")
-				break
-			}
-
-			if !doesEncounterAnyBaby(*b.LogDir) {
-				closeAllWindows(b.hWnd)
-				clearChat(b.hWnd)
-				if self, ok := getSelfTarget(b.hWnd, true); ok {
-					ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-					b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
-					if b.isOutOfHealth {
-						b.logH("is out of health")
-					}
+			closeAllWindows(b.hWnd)
+			clearChat(b.hWnd)
+			if self, ok := getSelfTarget(b.hWnd, true); ok {
+				ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
+				b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
+				if b.isOutOfHealth {
+					b.logH("is out of health")
 				}
-				break
 			}
-
-			b.logH("encounters a baby")
-			b.isEncounteringAnyBaby = true
-			sys.PlayBeeper()
 		}
 
 		var offset int
@@ -552,10 +507,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		switch b.PetStates[b.nextPetStateId] {
 		case P_F_ATTACK:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				usePetSkill(b.hWnd, x, y, 1)
@@ -572,10 +523,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 		case P_C_SkILL:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.openPetSkillWindow()
 			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
@@ -594,10 +541,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 		case P_S_HANG:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
-				break
-			}
-
 			b.logP("is hanging")
 			b.isPetHanging = true
 			cu = C_U_REPEAT
@@ -663,10 +606,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.nextPetStateId]
 			}
 		case P_C_OFF_RIDE:
-			if slices.Contains(b.HumanStates, H_S_CATCH) && !b.isEncounteringAnyBaby {
-				break
-			}
-
 			if !isOnRide(b.hWnd) {
 				b.logP("is off ride")
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
@@ -709,10 +648,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetSuccessControlUnits[b.nextPetStateId]
 			}
 		case P_F_ESCAPE:
-			if b.isEncounteringAnyBaby {
-				break
-			}
-
 			if !isOnRide(b.hWnd) {
 				b.logP("cannot escape while off ride")
 				break
@@ -722,24 +657,15 @@ func (b *BattleActionState) executePetStateMachiine() {
 			b.logP("escaped")
 			cu = b.PetFailureControlUnits[b.nextPetStateId]
 		case P_S_CATCH:
-			if *b.LogDir == "" {
-				b.logH("please set up the log directory")
-				break
-			}
-
-			if !doesEncounterAnyBaby(*b.LogDir) {
-				closeAllWindows(b.hWnd)
-				clearChat(b.hWnd)
-				if self, ok := getSelfTarget(b.hWnd, true); ok {
-					ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
-					b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
+			closeAllWindows(b.hWnd)
+			clearChat(b.hWnd)
+			if self, ok := getSelfTarget(b.hWnd, true); ok {
+				ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
+				b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
+				if b.isOutOfHealth {
+					b.logP("is out of health")
 				}
-				break
 			}
-
-			b.logH("encounters a baby")
-			b.isEncounteringAnyBaby = true
-			sys.PlayBeeper()
 		}
 
 		var offset int
@@ -993,10 +919,6 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 }
 
 func (b *BattleActionState) detectEnemies() {
-	if b.isEncounteringAnyBaby {
-		return
-	}
-
 	if b.isAlreadyDetected {
 		b.isAlreadyDetected = false
 		return

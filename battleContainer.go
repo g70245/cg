@@ -160,24 +160,47 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	delete.Importance = widget.DangerImportance
 
-	var teleportAndResourceCheck *widget.Button
-	teleportAndResourceCheck = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
-		switch teleportAndResourceCheck.Icon {
+	var logCheckers *widget.Button
+	var teleportAndResourceChecker *widget.Button
+	teleportAndResourceChecker = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+		switch teleportAndResourceChecker.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
 				workers[i].StopTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonIcon(), teleportAndResourceCheck)
+			turn(theme.CheckButtonIcon(), teleportAndResourceChecker)
 		case theme.CheckButtonIcon():
 			for i := range workers {
 				workers[i].StartTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheck)
+			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceChecker)
 
 			informBeeperAndLogConfig("About Teleport & Resource Checker")
 		}
 	})
-	teleportAndResourceCheck.Importance = widget.HighImportance
+	teleportAndResourceChecker.Importance = widget.HighImportance
+	var activitiesChecker *widget.Button
+	activitiesChecker = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
+		switch activitiesChecker.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range workers {
+				workers[i].ActionState.ActivityCheckerEnabled = false
+			}
+			turn(theme.CheckButtonIcon(), activitiesChecker)
+		case theme.CheckButtonIcon():
+			for i := range workers {
+				workers[i].ActionState.ActivityCheckerEnabled = true
+			}
+			turn(theme.CheckButtonCheckedIcon(), activitiesChecker)
+
+			informBeeperAndLogConfig("About Activities Checker")
+		}
+	})
+	activitiesChecker.Importance = widget.HighImportance
+	logCheckers = widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
+		dialog.NewCustom("Log Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceChecker, activitiesChecker), window).Show()
+	})
+	logCheckers.Importance = widget.HighImportance
 
 	var inventoryCheck *widget.Button
 	inventoryCheck = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
@@ -198,7 +221,7 @@ func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattle
 	})
 	inventoryCheck.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, teleportAndResourceCheck, inventoryCheck, delete, lever)
+	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckers, inventoryCheck, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widgets */
