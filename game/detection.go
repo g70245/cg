@@ -360,10 +360,10 @@ func isOnRide(hWnd HWND) bool {
 }
 
 var (
-	TELEPORTING_WORDS     = []string{"被不可思", "你感覺到一股"}
-	OUT_OF_RESOURCE       = "道具已經用完了"
-	ENCOUNTERING_ANY_BABY = "發現野生一級"
-	ACTIVITY_WORDS        = []string{ENCOUNTERING_ANY_BABY}
+	TELEPORTING     = []string{"被不可思", "你感覺到一股"}
+	OUT_OF_RESOURCE = []string{"道具已經用完了"}
+	ACTIVITY        = []string{"發現野生一級"}
+	PRODUCTION      = []string{"受傷了"}
 )
 
 func doesEncounterActivityMonsters(dir string) bool {
@@ -371,28 +371,21 @@ func doesEncounterActivityMonsters(dir string) bool {
 		return false
 	}
 
-	return checkWord(dir, 5, 30, ACTIVITY_WORDS)
+	return checkWord(dir, 5, 30, ACTIVITY)
 }
 
 func isTeleported(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, TELEPORTING_WORDS)
+	return checkWord(dir, 5, 30, TELEPORTING)
 }
 
 func isOutOfResource(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, []string{OUT_OF_RESOURCE})
-}
-
-func doesEncounterAnyBaby(dir string) bool {
-	if dir == "" {
-		return false
-	}
-	return checkWord(dir, 5, 30, []string{OUT_OF_RESOURCE})
+	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
 }
 
 func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
