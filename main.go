@@ -105,9 +105,9 @@ type Robot struct {
 }
 
 func generateRobotContainer() Robot {
-	idleGames := system.FindWindows()
+	games := system.FindWindows()
 
-	autoBattleWidget, autoBattleStopChans := battleContainer(idleGames)
+	autoBattleWidget, autoBattleStopChans := battleContainer(games)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Auto Battle", autoBattleWidget),

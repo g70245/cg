@@ -23,13 +23,11 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	. "github.com/g70245/win"
 	"golang.org/x/exp/maps"
 )
 
-func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
+func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 	id := 0
-	autoGroups := make(map[int]map[string]HWND)
 	stopChans := make(map[int]chan bool)
 
 	groupTabs := container.NewAppTabs()
@@ -37,41 +35,33 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	groupTabs.Hide()
 
 	newGroupButton := widget.NewButtonWithIcon("New Group", theme.ContentAddIcon(), func() {
-		var newGroup map[string]HWND
-		gamesCheckGroup := widget.NewCheckGroup(maps.Keys(idleGames), func(games []string) {
-			newGroup = make(map[string]HWND)
-			for _, game := range games {
-				newGroup[game] = idleGames.Peek(game)
-			}
-		})
-		gamesCheckGroup.Horizontal = true
-
 		groupNameEntry := widget.NewEntry()
 		groupNameEntry.SetPlaceHolder("Enter group name")
+
+		gamesCheckGroup := widget.NewCheckGroup(maps.Keys(games), nil)
+		gamesCheckGroup.Horizontal = true
+
 		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
 		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
 		gamesSelectorDialog.SetOnClosed(func() {
-			if len(newGroup) == 0 {
+			if len(gamesCheckGroup.Selected) == 0 {
 				return
 			}
 
 			var newTabItem *container.TabItem
-
-			newGroupContainer, stopChan := newBatttleGroupContainer(newGroup, func(id int) func() {
+			newGroupContainer, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), func(id int) func() {
 				return func() {
-					delete(autoGroups, id)
 					delete(stopChans, id)
 
 					groupTabs.Remove(newTabItem)
-					if len(autoGroups) == 0 {
+					if len(stopChans) == 0 {
 						groupTabs.Hide()
 					}
 					window.SetContent(window.Content())
 					window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 				}
 			}(id))
-			autoGroups[id] = newGroup
 			stopChans[id] = stopChan
 
 			var newGroupName string
@@ -98,14 +88,14 @@ func battleContainer(idleGames Games) (*fyne.Container, map[int]chan bool) {
 	return main, stopChans
 }
 
-func newBatttleGroupContainer(games map[string]HWND, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
+func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var manaChecker = new(string)
-	workers := CreateBattleWorkers(maps.Values(games), logDir, manaChecker)
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker)
 	stopChan = make(chan bool, len(workers))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
-	manaCheckerSelector := widget.NewRadioGroup(maps.Keys(games), func(s string) {
+	manaCheckerSelector := widget.NewRadioGroup(games.Get(), func(s string) {
 		*manaChecker = s
 
 		if *manaChecker != "" {
