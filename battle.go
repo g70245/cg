@@ -23,7 +23,6 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/exp/maps"
 )
 
 func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
@@ -38,7 +37,7 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 		groupNameEntry := widget.NewEntry()
 		groupNameEntry.SetPlaceHolder("Enter group name")
 
-		gamesCheckGroup := widget.NewCheckGroup(maps.Keys(games), nil)
+		gamesCheckGroup := widget.NewCheckGroup(games.Get(), nil)
 		gamesCheckGroup.Horizontal = true
 
 		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
