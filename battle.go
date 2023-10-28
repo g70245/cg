@@ -37,7 +37,7 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 		groupNameEntry := widget.NewEntry()
 		groupNameEntry.SetPlaceHolder("Enter group name")
 
-		gamesCheckGroup := widget.NewCheckGroup(games.Get(), nil)
+		gamesCheckGroup := widget.NewCheckGroup(games.GetAll(), nil)
 		gamesCheckGroup.Horizontal = true
 
 		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
@@ -94,7 +94,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
-	manaCheckerSelector := widget.NewRadioGroup(games.Get(), func(s string) {
+	manaCheckerSelector := widget.NewRadioGroup(games.GetAll(), func(s string) {
 		*manaChecker = s
 
 		if *manaChecker != "" {

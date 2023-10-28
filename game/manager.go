@@ -38,7 +38,7 @@ func (gs Games) Add(games map[string]HWND) {
 	}
 }
 
-func (gs Games) Get() []string {
+func (gs Games) GetAll() []string {
 	return maps.Keys(gs)
 }
 

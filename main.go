@@ -107,10 +107,12 @@ type Robot struct {
 func generateRobotContainer() Robot {
 	games := system.FindWindows()
 
-	autoBattleWidget, autoBattleStopChans := battleContainer(games)
+	autoBattleContainer, autoBattleStopChans := battleContainer(games)
+	productionContainer, productionStopChans := productionContainer(games)
 
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Auto Battle", autoBattleWidget),
+		container.NewTabItem("Auto Battle", autoBattleContainer),
+		container.NewTabItem("Production", productionContainer),
 	)
 
 	tabs.SetTabLocation(container.TabLocationTop)
@@ -118,6 +120,7 @@ func generateRobotContainer() Robot {
 	robot := Robot{main, func() {
 		main.RemoveAll()
 		stopWorkers(maps.Values(autoBattleStopChans))
+		stopWorkers(maps.Values(productionStopChans))
 	}}
 	return robot
 }
