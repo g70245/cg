@@ -244,7 +244,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
-					sys.DoubleClick(HWND(b.hWnd), x, y)
+					sys.DoubleClickRepeatedly(HWND(b.hWnd), x, y)
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
@@ -272,7 +272,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				openWindowByShortcut(b.hWnd, 0x45)
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
-						sys.DoubleClick(HWND(b.hWnd), x, y)
+						sys.DoubleClickRepeatedly(HWND(b.hWnd), x, y)
 						if isBSItemWindowStillOpened(b.hWnd, px, py) {
 							b.logH("failed at double clicking")
 							cu = b.HumanFailureControlUnits[b.nextHumanStateId]
@@ -711,7 +711,7 @@ func (b *BattleActionState) enableBattleCommandAttack() {
 }
 
 func (b *BattleActionState) useItem(x, y int32) {
-	sys.DoubleClick(b.hWnd, x, y)
+	sys.DoubleClickRepeatedly(b.hWnd, x, y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 

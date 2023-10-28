@@ -26,6 +26,12 @@ func openWindowByShortcut(hWnd HWND, key uintptr) {
 	resetAllWindowsPosition(hWnd)
 }
 
+func leverWindowByShortcutWithoutClosingOtherWindows(hWnd HWND, key uintptr) {
+	sys.KeyCombinationMsg(hWnd, VK_CONTROL, key)
+	time.Sleep(ACTION_INTERVAL * time.Millisecond)
+	resetAllWindowsPosition(hWnd)
+}
+
 func resetAllWindowsPosition(hWnd HWND) {
 	sys.KeyCombinationMsg(hWnd, VK_CONTROL, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)

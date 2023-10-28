@@ -53,10 +53,16 @@ func LeftClick(hWnd HWND, x, y int32) {
 	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
-func DoubleClick(hWnd HWND, x, y int32) {
+func DoubleClickRepeatedly(hWnd HWND, x, y int32) {
 	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
+	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
+	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
+}
+
+func DoubleClick(hWnd HWND, x, y int32) {
+	MoveMouse(hWnd, x, y)
 	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
 }

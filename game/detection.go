@@ -67,9 +67,15 @@ const (
 	COLOR_WINDOW_SKILL_UNSELECTED   = 4411988
 	COLOR_WINDOW_SKILL_BOTTOM_SPACE = 11575428
 
-	COLOR_WINDOW_ITEM_EMPTY = 15793151
-	COLOR_NS_ITEM_PIVOT     = 15967
-	COLOR_BS_ITEM_PIVOT     = 15967
+	COLOR_NS_ITEM_EMPTY = 15793151
+	COLOR_PR_ITEM_EMPTY = 15202301
+
+	COLOR_NS_ITEM_PIVOT = 15967
+	COLOR_BS_ITEM_PIVOT = 15967
+	COLOR_PR_ITEM_PIVOT = 11113016
+
+	COLOR_PR_PRODUCE_BUTTON   = 7683891
+	COLOR_PR_IS_NOT_PRODUCING = 11390937
 
 	COLOR_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_ITEM_BOMB_7B         = 10936306
@@ -127,7 +133,9 @@ var (
 	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
-	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 144, COLOR_NS_ITEM_PIVOT}
+	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{348, 134, COLOR_NS_ITEM_PIVOT}
+
+	PRODUCTION_WINDOW_ITEM_PIVOT = CheckTarget{560, 100, COLOR_PR_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 396, COLOR_ANY}
@@ -217,13 +225,29 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
 		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
-		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+34 {
+		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+54 {
 			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_CLUMN.color {
 				return x, y + 20, true
 			}
 			y += 2
 		}
 		x += 2
+	}
+	return 0, 0, false
+}
+
+func getPRItemWindowPos(hWnd HWND) (int32, int32, bool) {
+	sys.MoveToNowhere(hWnd)
+	x := PRODUCTION_WINDOW_ITEM_PIVOT.x
+	for x <= PRODUCTION_WINDOW_ITEM_PIVOT.x+54 {
+		y := PRODUCTION_WINDOW_ITEM_PIVOT.y
+		for y <= PRODUCTION_WINDOW_ITEM_PIVOT.y+34 {
+			if sys.GetColor(hWnd, x, y) == PRODUCTION_WINDOW_ITEM_PIVOT.color {
+				return x - 4*50 - 30, y + 28, true
+			}
+			y += 1
+		}
+		x += 1
 	}
 	return 0, 0, false
 }
@@ -250,7 +274,22 @@ func isSlotFree(hWnd HWND, px, py int32) bool {
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if sys.GetColor(hWnd, x, y) != COLOR_WINDOW_ITEM_EMPTY {
+			if sys.GetColor(hWnd, x, y) != COLOR_NS_ITEM_EMPTY {
+				return false
+			}
+			y += 5
+		}
+		x += 5
+	}
+	return true
+}
+
+func isPRSlotFree(hWnd HWND, px, py int32) bool {
+	x := px
+	for x < px+30 {
+		y := py
+		for y < py+30 {
+			if sys.GetColor(hWnd, x, y) != COLOR_PR_ITEM_EMPTY {
 				return false
 			}
 			y += 5
@@ -360,10 +399,10 @@ func isOnRide(hWnd HWND) bool {
 }
 
 var (
-	TELEPORTING     = []string{"被不可思", "你感覺到一股"}
-	OUT_OF_RESOURCE = []string{"道具已經用完了"}
-	ACTIVITY        = []string{"發現野生一級"}
-	PRODUCTION      = []string{"受傷了"}
+	TELEPORTING        = []string{"被不可思", "你感覺到一股"}
+	OUT_OF_RESOURCE    = []string{"道具已經用完了"}
+	ACTIVITY           = []string{"發現野生一級"}
+	PRODUCTION_FAILURE = []string{"物品欄"}
 )
 
 func doesEncounterActivityMonsters(dir string) bool {
@@ -388,11 +427,11 @@ func isOutOfResource(dir string) bool {
 	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
 }
 
-func checkProductionStatus(dir string) bool {
+func checkProductionStatus(name, dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 10, PRODUCTION_CHECKER_INTERVAL_SECOND, PRODUCTION)
+	return checkWord(dir, 10, PRODUCTION_CHECKER_INTERVAL_SECOND, append(PRODUCTION_FAILURE, name))
 }
 
 func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
@@ -583,4 +622,16 @@ func getEnemyTargets(hWnd HWND, checkTargets []CheckTarget) []CheckTarget {
 		}
 	}
 	return targets
+}
+
+func canProduce(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x-270, y+180) == COLOR_PR_PRODUCE_BUTTON
+}
+
+func isProducing(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x-110, y+10) != COLOR_PR_IS_NOT_PRODUCING
+}
+
+func isProducingSuccessful(hWnd HWND, x, y int32) bool {
+	return sys.GetColor(hWnd, x-166, y+180) == COLOR_PR_PRODUCE_BUTTON
 }

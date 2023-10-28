@@ -77,14 +77,14 @@ func PrintColor(hWnd win.HWND, oX, oY, dX, dY int32) {
 			y += 1
 		}
 		x += 1
-		MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+		// MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
 		time.Sleep(200 * time.Millisecond)
 	}
 }
 
 func getHWND() win.HWND {
 	for _, h := range maps.Values(FindWindows()) {
-		if fmt.Sprint(h) == "460774" {
+		if fmt.Sprint(h) == "7933658" {
 			return h
 		}
 	}
@@ -104,8 +104,9 @@ func getGoId() int {
 
 func Test() {
 	// hWnd := getHWND()
-	// CheckColor()
-	// PrintColor()
+	// PrintCursorPosColor(hWnd)
+	// CheckColor(hWnd, 584, 126, 588, 130, 11113016)
+	// PrintColor(hWnd, 584, 126, 588, 130)
 	// MoveMouse(hWnd, x, y)
 	os.Exit(0)
 }

@@ -67,7 +67,10 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 		nicknameDialog.SetOnClosed(func() {
 			nickname := ""
 			if nicknameEntry.Text != "" {
+				worker.Name = nicknameEntry.Text
 				nickname = fmt.Sprintf("(%s)", nicknameEntry.Text)
+			} else {
+				worker.Name = NAME_NONE
 			}
 			nicknameButton.SetText(fmt.Sprintf("%s%s", handle, nickname))
 		})
