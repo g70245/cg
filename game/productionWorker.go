@@ -12,7 +12,8 @@ const (
 	PRODUCTION_WORKER_INTERVAL         = 400
 	PRODUCTION_CHECKER_INTERVAL_SECOND = 6
 	PRODUCTION_PRODUCING_INTERVAL      = 800
-	PRODUCTION_GENERAL_INTERVAL        = 300
+	PRODUCTION_UNPACK_INTERVAL         = 600
+	PRODUCTION_TIDY_UP_INTERVAL        = 300
 	NAME_NONE                          = "none"
 )
 
@@ -97,7 +98,7 @@ func (p *ProductionWorker) prepareMaterials() bool {
 			}
 
 			sys.DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
-			time.Sleep(PRODUCTION_GENERAL_INTERVAL * time.Millisecond)
+			time.Sleep(PRODUCTION_UNPACK_INTERVAL * time.Millisecond)
 
 			if isSlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
 				log.Printf("Production %d cannot unpack material\n", p.hWnd)
@@ -163,7 +164,7 @@ func (p *ProductionWorker) tidyInventory() bool {
 			}
 			sys.LeftClick(p.hWnd, px+i*50, py+j*50)
 			sys.LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
-			time.Sleep(PRODUCTION_GENERAL_INTERVAL * time.Millisecond)
+			time.Sleep(PRODUCTION_TIDY_UP_INTERVAL * time.Millisecond)
 		}
 	}
 	return true
