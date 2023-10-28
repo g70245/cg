@@ -388,6 +388,13 @@ func isOutOfResource(dir string) bool {
 	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
 }
 
+func checkProductionStatus(dir string) bool {
+	if dir == "" {
+		return false
+	}
+	return checkWord(dir, 10, PRODUCTION_CHECKER_INTERVAL_SECOND, PRODUCTION)
+}
+
 func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
 	lines := sys.GetLinesOfLog(dir, lineCount)
 	now := time.Now()

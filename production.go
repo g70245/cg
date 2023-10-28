@@ -47,6 +47,8 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 			window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 		})
 		gamesSelectorDialog.Show()
+
+		informBeeperAndLogConfig("About Production")
 	})
 
 	main := container.NewVBox(newProductionButton, productionsContainer)
@@ -73,6 +75,18 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 	})
 	nicknameButton.Alignment = widget.ButtonAlignLeading
 
+	var isGathering *widget.Button
+	isGathering = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
+		switch isGathering.Icon {
+		case theme.CheckButtonCheckedIcon():
+			worker.IsGathering = false
+			turn(theme.CheckButtonIcon(), isGathering)
+		case theme.CheckButtonIcon():
+			worker.IsGathering = true
+			turn(theme.CheckButtonCheckedIcon(), isGathering)
+		}
+	})
+
 	var lever *widget.Button
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch lever.Icon {
@@ -86,6 +100,6 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 		}
 	})
 
-	productionWidget = container.NewGridWithColumns(6, nicknameButton, lever)
+	productionWidget = container.NewGridWithColumns(6, nicknameButton, isGathering, lever)
 	return
 }

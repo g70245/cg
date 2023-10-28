@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL             = 400
-	CHECKER_INTERVAL                   = 300
-	CHECKER_INVENTORY_INTERVAL_SECOND  = 60
-	CHECKER_INVENTORY_WAITING_INTERVAL = 400
+	BATTLE_WORKER_INTERVAL                    = 400
+	BATTLE_CHECKER_INTERVAL                   = 300
+	BATTLE_CHECKER_INVENTORY_INTERVAL_SECOND  = 60
+	BATTLE_CHECKER_INVENTORY_WAITING_INTERVAL = 400
 )
 
 type BattleWorker struct {
@@ -54,21 +54,21 @@ func (w BattleWorker) GetHandle() string {
 	return fmt.Sprint(w.hWnd)
 }
 
-func (w *BattleWorker) Work(stopChan chan bool) {
-	closeAllWindows(w.hWnd)
+func (b *BattleWorker) Work(stopChan chan bool) {
+	closeAllWindows(b.hWnd)
 
 	workerTicker := time.NewTicker(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	inventoryCheckerTicker := time.NewTicker(CHECKER_INVENTORY_INTERVAL_SECOND * time.Second)
-	teleportAndResourceCheckerTicker := time.NewTicker(CHECKER_INTERVAL * time.Millisecond)
+	inventoryCheckerTicker := time.NewTicker(BATTLE_CHECKER_INVENTORY_INTERVAL_SECOND * time.Second)
+	teleportAndResourceCheckerTicker := time.NewTicker(BATTLE_CHECKER_INTERVAL * time.Millisecond)
 
 	go func() {
 		defer workerTicker.Stop()
 		defer inventoryCheckerTicker.Stop()
 		defer teleportAndResourceCheckerTicker.Stop()
 
-		w.reset()
-		log.Printf("Handle %d Auto Battle started at (%.f, %.f)\n", w.hWnd, w.MovementState.origin.x, w.MovementState.origin.y)
-		log.Printf("Handle %d Current Location: %s\n", w.hWnd, w.currentMapName)
+		b.reset()
+		log.Printf("Handle %d Auto Battle started at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
+		log.Printf("Handle %d Current Location: %s\n", b.hWnd, b.currentMapName)
 
 		isPlayingBeeper := false
 		isInventoryFull := false
@@ -77,14 +77,14 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 		for {
 			select {
 			case <-workerTicker.C:
-				switch getScene(w.hWnd) {
+				switch getScene(b.hWnd) {
 				case BATTLE_SCENE:
-					if w.ActionState.Enabled {
-						w.ActionState.Act()
+					if b.ActionState.Enabled {
+						b.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if w.MovementState.Mode != NONE && !w.ActionState.isOutOfMana && !w.ActionState.isOutOfHealth && !isTeleportedOrOutOfResource && !isInventoryFull {
-						w.MovementState.Move()
+					if b.MovementState.Mode != NONE && !b.ActionState.isOutOfMana && !b.ActionState.isOutOfHealth && !isTeleportedOrOutOfResource && !isInventoryFull {
+						b.MovementState.Move()
 					}
 				default:
 					// do nothing
@@ -93,23 +93,23 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 				sys.StopBeeper()
 				return
 			case <-inventoryCheckerTicker.C:
-				if w.inventoryCheckerEnabled && !isInventoryFull {
-					isInventoryFull = checkInventory(w.hWnd)
-					log.Printf("Handle %d is inventory full: %t\n", w.hWnd, isInventoryFull)
+				if b.inventoryCheckerEnabled && !isInventoryFull {
+					isInventoryFull = checkInventory(b.hWnd)
+					log.Printf("Handle %d is inventory full: %t\n", b.hWnd, isInventoryFull)
 				}
 			case <-teleportAndResourceCheckerTicker.C:
-				if w.teleportAndResourceCheckerEnabled && !isTeleportedOrOutOfResource {
-					if newMapName := getMapName(w.hWnd); w.currentMapName != newMapName || isTeleported(*w.logDir) {
+				if b.teleportAndResourceCheckerEnabled && !isTeleportedOrOutOfResource {
+					if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.logDir) {
 						isTeleportedOrOutOfResource = true
-						log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, getMapName(w.hWnd))
+						log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
 					}
-					if isOutOfResource(*w.logDir) {
+					if isOutOfResource(*b.logDir) {
 						isTeleportedOrOutOfResource = true
-						log.Printf("Handle %d is out of resource\n", w.hWnd)
+						log.Printf("Handle %d is out of resource\n", b.hWnd)
 					}
 				}
 			default:
-				if !isPlayingBeeper && (w.ActionState.isOutOfHealth || isInventoryFull || isTeleportedOrOutOfResource) {
+				if !isPlayingBeeper && (b.ActionState.isOutOfHealth || isInventoryFull || isTeleportedOrOutOfResource) {
 					isPlayingBeeper = sys.PlayBeeper()
 				}
 				time.Sleep(BATTLE_WORKER_INTERVAL * time.Microsecond / 3)
@@ -118,30 +118,30 @@ func (w *BattleWorker) Work(stopChan chan bool) {
 	}()
 }
 
-func (w *BattleWorker) reset() {
-	w.currentMapName = getMapName(w.hWnd)
+func (b *BattleWorker) reset() {
+	b.currentMapName = getMapName(b.hWnd)
 
-	w.ActionState.Enabled = true
-	w.ActionState.isOutOfHealth = false
-	w.ActionState.isOutOfMana = false
-	w.ActionState.ActivityCheckerEnabled = w.ActivityCheckerEnabled
+	b.ActionState.Enabled = true
+	b.ActionState.isOutOfHealth = false
+	b.ActionState.isOutOfMana = false
+	b.ActionState.ActivityCheckerEnabled = b.ActivityCheckerEnabled
 
-	w.MovementState.origin = getCurrentGamePos(w.hWnd)
+	b.MovementState.origin = getCurrentGamePos(b.hWnd)
 }
 
-func (w *BattleWorker) StopInventoryChecker() {
-	w.inventoryCheckerEnabled = false
+func (b *BattleWorker) StopInventoryChecker() {
+	b.inventoryCheckerEnabled = false
 }
 
-func (w *BattleWorker) StartInventoryChecker() {
-	w.inventoryCheckerEnabled = true
+func (b *BattleWorker) StartInventoryChecker() {
+	b.inventoryCheckerEnabled = true
 }
 
-func (w *BattleWorker) StopTeleportAndResourceChecker() {
-	w.teleportAndResourceCheckerEnabled = false
+func (b *BattleWorker) StopTeleportAndResourceChecker() {
+	b.teleportAndResourceCheckerEnabled = false
 }
 
-func (w *BattleWorker) StartTeleportAndResourceChecker() {
-	w.teleportAndResourceCheckerEnabled = true
-	w.currentMapName = getMapName(w.hWnd)
+func (b *BattleWorker) StartTeleportAndResourceChecker() {
+	b.teleportAndResourceCheckerEnabled = true
+	b.currentMapName = getMapName(b.hWnd)
 }
