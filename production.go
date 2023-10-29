@@ -56,7 +56,7 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 }
 
 func newProductionContainer(handle string, games Games, destroy func()) (productionWidget *fyne.Container, stopChan chan bool) {
-	stopChan = make(chan bool, 1)
+	stopChan = make(chan bool)
 	worker := CreateProductionWorker(games.Peek(handle), logDir)
 
 	var nicknameButton *widget.Button

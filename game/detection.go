@@ -402,7 +402,7 @@ var (
 	TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	OUT_OF_RESOURCE    = []string{"道具已經用完了"}
 	ACTIVITY           = []string{"發現野生一級"}
-	PRODUCTION_FAILURE = []string{"物品欄"}
+	PRODUCTION_FAILURE = []string{}
 )
 
 func doesEncounterActivityMonsters(dir string) bool {

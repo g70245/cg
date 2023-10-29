@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	PRODUCTION_WORKER_INTERVAL         = 400
-	PRODUCTION_CHECKER_INTERVAL_SECOND = 6
-	PRODUCTION_PRODUCING_INTERVAL      = 800
-	PRODUCTION_UNPACK_INTERVAL         = 600
-	PRODUCTION_TIDY_UP_INTERVAL        = 300
-	NAME_NONE                          = "none"
+	PRODUCTION_WORKER_INTERVAL                   = 400
+	PRODUCTION_CHECKER_INTERVAL_SECOND           = 6
+	PRODUCTION_PRODUCING_INTERVAL                = 800
+	PRODUCTION_UNPACK_INTERVAL                   = 600
+	PRODUCTION_TIDY_UP_INTERVAL                  = 300
+	NAME_NONE                                    = "none"
+	PRODUCTION_CHECKER_INVENTORY_INTERVAL_SECOND = 16
 )
 
 type ProductionWorker struct {
@@ -36,6 +37,7 @@ func CreateProductionWorker(hWnd HWND, logDir *string) ProductionWorker {
 func (p *ProductionWorker) Work(stopChan chan bool) {
 	workerTicker := time.NewTicker(PRODUCTION_WORKER_INTERVAL * time.Millisecond)
 	logCheckerTicker := time.NewTicker(PRODUCTION_CHECKER_INTERVAL_SECOND * time.Second)
+	inventoryCheckerTicker := time.NewTicker(PRODUCTION_CHECKER_INVENTORY_INTERVAL_SECOND * time.Second)
 
 	log.Printf("Handle %d Production started\n", p.hWnd)
 
@@ -45,6 +47,7 @@ func (p *ProductionWorker) Work(stopChan chan bool) {
 	go func() {
 		defer workerTicker.Stop()
 		defer logCheckerTicker.Stop()
+		defer inventoryCheckerTicker.Stop()
 
 		for {
 			select {
@@ -66,6 +69,11 @@ func (p *ProductionWorker) Work(stopChan chan bool) {
 				if checkProductionStatus(p.Name, *p.logDir) {
 					isSomethingWrong = true
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
+				}
+			case <-inventoryCheckerTicker.C:
+				if checkInventoryWithoutClosingAllWindows(p.hWnd) {
+					isSomethingWrong = true
+					log.Printf("Production %d inventory is full\n", p.hWnd)
 				}
 			case <-stopChan:
 				return

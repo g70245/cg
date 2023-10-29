@@ -70,6 +70,16 @@ func checkInventory(hWnd HWND) bool {
 	return false
 }
 
+func checkInventoryWithoutClosingAllWindows(hWnd HWND) bool {
+	defer leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)
+	leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)
+
+	if px, py, ok := getNSItemWindowPos(hWnd); ok {
+		return !isAnyItemSlotFree(hWnd, px, py)
+	}
+	return false
+}
+
 func getMapName(hWnd HWND) string {
 	return sys.ReadMemoryString(hWnd, 0x95C870, 32)
 }
