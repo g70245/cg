@@ -126,7 +126,7 @@ func (b *BattleActionState) executeActivity() {
 		return
 	}
 
-	for !isHumanStageStable(b.hWnd) && isPetStageStable(b.hWnd) {
+	for !isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd) {
 		time.Sleep(WAITING_LOOP_INTERVAL)
 	}
 
