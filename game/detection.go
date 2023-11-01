@@ -401,7 +401,7 @@ func isOnRide(hWnd HWND) bool {
 var (
 	TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	OUT_OF_RESOURCE    = []string{"道具已經用完了"}
-	ACTIVITY           = []string{"發現野生一級"}
+	ACTIVITY           = []string{"發現野生一級", "南瓜之王"}
 	PRODUCTION_FAILURE = []string{}
 )
 
