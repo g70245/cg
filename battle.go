@@ -89,7 +89,8 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 
 func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var manaChecker = new(string)
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker)
+	var isInventoryFull = new(bool)
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, isInventoryFull)
 	stopChan = make(chan bool, len(workers))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
