@@ -70,6 +70,22 @@ func checkInventory(hWnd HWND) bool {
 	return false
 }
 
+func checkActivityInventory(hWnd HWND) bool {
+	defer closeAllWindows(hWnd)
+	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
+
+	time.Sleep(BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC * time.Second)
+	closeAllWindows(hWnd)
+	sys.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+
+	openWindowByShortcut(hWnd, 0x45)
+
+	if px, py, ok := getNSItemWindowPos(hWnd); ok {
+		return !isMoreThanTwoItemSlotsFree(hWnd, px, py)
+	}
+	return false
+}
+
 func checkInventoryWithoutClosingAllWindows(hWnd HWND) bool {
 	defer leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)
 	leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)

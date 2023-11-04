@@ -269,6 +269,28 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 	return false
 }
 
+func isMoreThanTwoItemSlotsFree(hWnd HWND, px, py int32) bool {
+	sys.MoveToNowhere(hWnd)
+	x := px
+	y := py
+
+	counter := 0
+	var i, j int32
+
+	for i = 0; i < 5; i++ {
+		for j = 0; j < 4; j++ {
+			if isSlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
+				counter++
+			}
+		}
+	}
+
+	if counter > 2 {
+		return true
+	}
+	return false
+}
+
 func isSlotFree(hWnd HWND, px, py int32) bool {
 	x := px
 	for x < px+30 {

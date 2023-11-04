@@ -191,26 +191,26 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 	})
 	logCheckers.Importance = widget.HighImportance
 
-	var inventoryCheck *widget.Button
-	inventoryCheck = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
-		switch inventoryCheck.Icon {
+	var inventoryChecker *widget.Button
+	inventoryChecker = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
+		switch inventoryChecker.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
 				workers[i].StopInventoryChecker()
 			}
-			turn(theme.CheckButtonIcon(), inventoryCheck)
+			turn(theme.CheckButtonIcon(), inventoryChecker)
 		case theme.CheckButtonIcon():
 			for i := range workers {
 				workers[i].StartInventoryChecker()
 			}
-			turn(theme.CheckButtonCheckedIcon(), inventoryCheck)
+			turn(theme.CheckButtonCheckedIcon(), inventoryChecker)
 
-			informBeeperConfig("About Teleport Checker")
+			informBeeperConfig("About Inventory Checker")
 		}
 	})
-	inventoryCheck.Importance = widget.HighImportance
+	inventoryChecker.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckers, inventoryCheck, delete, lever)
+	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckers, inventoryChecker, delete, lever)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widgets */
