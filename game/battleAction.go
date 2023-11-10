@@ -101,7 +101,6 @@ type BattleActionState struct {
 
 	enemies              []CheckTarget `json:"-"`
 	enemyDetectorCounter int           `json:"-"`
-	isAlreadyDetected    bool          `json:"-"`
 }
 
 func (b *BattleActionState) Act() {
@@ -109,6 +108,7 @@ func (b *BattleActionState) Act() {
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeActivity()
+		b.detectEnemies()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(WAITING_LOOP_INTERVAL)
@@ -117,7 +117,6 @@ func (b *BattleActionState) Act() {
 	b.nextHumanStateId = 0
 	b.nextPetStateId = 0
 	b.enemyDetectorCounter = 0
-	b.isAlreadyDetected = false
 	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
 }
 
@@ -145,7 +144,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) && b.Enabled {
 
-		b.detectEnemies()
 		b.endPetHanging()
 		b.checkHumanMana()
 
@@ -503,7 +501,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) && b.Enabled {
 
-		b.detectEnemies()
 		b.endHumanHanging()
 		b.checkHumanMana()
 
@@ -923,9 +920,9 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 }
 
 func (b *BattleActionState) detectEnemies() {
-	if b.isAlreadyDetected {
-		b.isAlreadyDetected = false
-		return
+
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
+		time.Sleep(WAITING_LOOP_INTERVAL)
 	}
 
 	if isItemWindowStuck(b.hWnd) {
@@ -944,7 +941,6 @@ func (b *BattleActionState) detectEnemies() {
 		b.enemyDetectorCounter = 1
 	}
 	b.enemies = newEnemies
-	b.isAlreadyDetected = true
 }
 
 func (b *BattleActionState) endHumanHanging() {
