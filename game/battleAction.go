@@ -109,6 +109,7 @@ func (b *BattleActionState) Act() {
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 		b.executeActivity()
 		b.detectEnemies()
+		b.checkHumanMana()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
 		time.Sleep(WAITING_LOOP_INTERVAL)
@@ -145,7 +146,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 	for b.nextHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) && b.Enabled {
 
 		b.endPetHanging()
-		b.checkHumanMana()
 
 		var cu string
 
@@ -502,7 +502,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 	for b.nextPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) && b.Enabled {
 
 		b.endHumanHanging()
-		b.checkHumanMana()
 
 		var cu string
 
