@@ -20,6 +20,7 @@ func closeAllWindows(hWnd HWND) {
 }
 
 func openWindowByShortcut(hWnd HWND, key uintptr) {
+	sys.RightClick(hWnd, GAME_WIDTH/2, 28)
 	closeAllWindows(hWnd)
 	sys.KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
