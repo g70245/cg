@@ -924,6 +924,10 @@ func (b *BattleActionState) detectEnemies() {
 		time.Sleep(WAITING_LOOP_INTERVAL)
 	}
 
+	if getScene(b.hWnd) == NORMAL_SCENE || !b.Enabled {
+		return
+	}
+
 	if isItemWindowStuck(b.hWnd) {
 		b.openSkillWindowWithMouse()
 	}
