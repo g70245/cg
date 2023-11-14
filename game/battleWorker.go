@@ -96,12 +96,14 @@ func (b *BattleWorker) Work(stopChan chan bool) {
 				sys.StopBeeper()
 				return
 			case <-inventoryCheckerTicker.C:
-				if b.ActivityCheckerEnabled && checkActivityInventory(b.hWnd) {
-					b.setInventoryStatus(true)
-					log.Printf("Handle %d inventory is full\n", b.hWnd)
-				} else if b.inventoryCheckerEnabled && checkInventory(b.hWnd) {
-					b.setInventoryStatus(true)
-					log.Printf("Handle %d inventory is full\n", b.hWnd)
+				if b.inventoryCheckerEnabled {
+					if b.ActivityCheckerEnabled && checkActivityInventory(b.hWnd) {
+						b.setInventoryStatus(true)
+						log.Printf("Handle %d inventory is full\n", b.hWnd)
+					} else if checkInventory(b.hWnd) {
+						b.setInventoryStatus(true)
+						log.Printf("Handle %d inventory is full\n", b.hWnd)
+					}
 				}
 			case <-teleportAndResourceCheckerTicker.C:
 				if b.teleportAndResourceCheckerEnabled && !b.isTeleportedOrOutOfResource {
