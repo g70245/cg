@@ -30,8 +30,8 @@ type BattleWorker struct {
 
 	isTeleportedOrOutOfResource bool
 
-	teleportAndResourceCheckerEnabled bool
-	inventoryCheckerEnabled           bool
+	TeleportAndResourceCheckerEnabled bool
+	InventoryCheckerEnabled           bool
 	ActivityCheckerEnabled            bool
 }
 
@@ -96,7 +96,7 @@ func (b *BattleWorker) Work(stopChan chan bool) {
 				sys.StopBeeper()
 				return
 			case <-inventoryCheckerTicker.C:
-				if b.inventoryCheckerEnabled {
+				if b.InventoryCheckerEnabled {
 					if b.ActivityCheckerEnabled && checkActivityInventory(b.hWnd) {
 						b.setInventoryStatus(true)
 						log.Printf("Handle %d inventory is full\n", b.hWnd)
@@ -106,7 +106,7 @@ func (b *BattleWorker) Work(stopChan chan bool) {
 					}
 				}
 			case <-teleportAndResourceCheckerTicker.C:
-				if b.teleportAndResourceCheckerEnabled && !b.isTeleportedOrOutOfResource {
+				if b.TeleportAndResourceCheckerEnabled && !b.isTeleportedOrOutOfResource {
 					if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.logDir) {
 						b.isTeleportedOrOutOfResource = true
 						log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
@@ -140,19 +140,19 @@ func (b *BattleWorker) reset() {
 }
 
 func (b *BattleWorker) StopInventoryChecker() {
-	b.inventoryCheckerEnabled = false
+	b.InventoryCheckerEnabled = false
 }
 
 func (b *BattleWorker) StartInventoryChecker() {
-	b.inventoryCheckerEnabled = true
+	b.InventoryCheckerEnabled = true
 }
 
 func (b *BattleWorker) StopTeleportAndResourceChecker() {
-	b.teleportAndResourceCheckerEnabled = false
+	b.TeleportAndResourceCheckerEnabled = false
 }
 
 func (b *BattleWorker) StartTeleportAndResourceChecker() {
-	b.teleportAndResourceCheckerEnabled = true
+	b.TeleportAndResourceCheckerEnabled = true
 	b.currentMapName = getMapName(b.hWnd)
 }
 
