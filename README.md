@@ -2,7 +2,7 @@
 ### 1. Programmable Combat Actions 
 Enjoy the flexibility of programmable combat actions, allowing you to customize and optimize your in-game strategies. 
 ### 2. Randomized Movement within a Specified Range 
-My bot incorporates a smart movement algorithm, randomly navigating within predefined ranges. This feature is designed to mimic human-like behavior, making it less susceptible to detection as a bot.
+The bot incorporates a smart movement algorithm, randomly navigating within predefined ranges. This feature is designed to mimic human-like behavior, making it less susceptible to detection as a bot.
 ### 3. Audible Cues for Seamless Control 
 Improve your control over the game with audible cues. Receive prompt audio notifications to signal when it's time to return to the game and take manual control.
 ### 4. Semi-Automatic Item Production and Stacking 
