@@ -97,9 +97,11 @@ func (b *BattleWorker) Work(stopChan chan bool) {
 				return
 			case <-inventoryCheckerTicker.C:
 				if b.InventoryCheckerEnabled {
-					if b.ActivityCheckerEnabled && checkActivityInventory(b.hWnd) {
-						b.setInventoryStatus(true)
-						log.Printf("Handle %d inventory is full\n", b.hWnd)
+					if b.ActivityCheckerEnabled {
+						if checkActivityInventory(b.hWnd) {
+							b.setInventoryStatus(true)
+							log.Printf("Handle %d inventory is full\n", b.hWnd)
+						}
 					} else if checkInventory(b.hWnd) {
 						b.setInventoryStatus(true)
 						log.Printf("Handle %d inventory is full\n", b.hWnd)
