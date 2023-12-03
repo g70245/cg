@@ -68,7 +68,9 @@ func (b *beeper) Play() {
 }
 
 func (b *beeper) Stop() {
-	b.pausedChan <- true
+	if b.isReady {
+		b.pausedChan <- true
+	}
 }
 
 func (b *beeper) Close() {

@@ -137,6 +137,7 @@ func (b *BattleWorker) Work() {
 					}
 				}
 			case <-b.stopChan:
+				log.Printf("Handle %d Auto Battle ended at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
 				return
 			}
 		}
@@ -144,9 +145,9 @@ func (b *BattleWorker) Work() {
 }
 
 func (b *BattleWorker) StopTickers() {
-	defer b.workerTicker.Stop()
-	defer b.inventoryCheckerTicker.Stop()
-	defer b.teleportAndResourceCheckerTicker.Stop()
+	b.workerTicker.Stop()
+	b.inventoryCheckerTicker.Stop()
+	b.teleportAndResourceCheckerTicker.Stop()
 }
 
 func (b *BattleWorker) Stop() {

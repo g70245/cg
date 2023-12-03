@@ -92,6 +92,7 @@ func (p *ProductionWorker) Work() {
 					Beeper.Play()
 				}
 			case <-p.stopChan:
+				log.Printf("Handle %d Production ended\n", p.hWnd)
 				return
 			}
 		}
