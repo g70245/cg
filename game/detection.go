@@ -453,7 +453,7 @@ func checkProductionStatus(name, dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 10, PRODUCTION_CHECKER_INTERVAL_SECOND, append(PRODUCTION_FAILURE, name))
+	return checkWord(dir, 10, PRODUCTION_CHECKER_LOG_INTERVAL_SEC, append(PRODUCTION_FAILURE, name))
 }
 
 func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {

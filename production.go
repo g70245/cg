@@ -2,7 +2,6 @@ package main
 
 import (
 	. "cg/game"
-	. "cg/system"
 
 	"fmt"
 
@@ -57,7 +56,7 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 
 func newProductionContainer(handle string, games Games, destroy func()) (productionWidget *fyne.Container, stopChan chan bool) {
 	stopChan = make(chan bool)
-	worker := CreateProductionWorker(games.Peek(handle), logDir)
+	worker := CreateProductionWorker(games.Peek(handle), logDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
@@ -82,10 +81,10 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 	isGathering = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
 		switch isGathering.Icon {
 		case theme.CheckButtonCheckedIcon():
-			worker.IsGathering = false
+			worker.GatheringMode = false
 			turn(theme.CheckButtonIcon(), isGathering)
 		case theme.CheckButtonIcon():
-			worker.IsGathering = true
+			worker.GatheringMode = true
 			turn(theme.CheckButtonCheckedIcon(), isGathering)
 		}
 	})
@@ -94,11 +93,10 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
-			worker.Work(stopChan)
+			worker.Work()
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
-			stopChan <- true
-			StopBeeper()
+			worker.Stop()
 			turn(theme.MediaPlayIcon(), lever)
 		}
 	})

@@ -10,72 +10,74 @@ import (
 	"github.com/faiface/beep/speaker"
 )
 
-var alertPausedChan, alertDoneChan chan bool
+type beeper struct {
+	isReady              bool
+	pausedChan, doneChan chan bool
+}
 
-func CreateBeeper(path string) {
+var Beeper beeper
+
+func init() {
+	if Beeper == (beeper{}) {
+		Beeper = beeper{pausedChan: make(chan bool), doneChan: make(chan bool)}
+	}
+}
+
+func (b *beeper) Init(path string) {
+
+	b.Close()
+
+	f, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
+	speaker.Play(ctrl)
+
+	b.isReady = true
+
 	go func() {
-		alertPausedChan = make(chan bool)
-		alertDoneChan = make(chan bool)
-
-		f, err := os.Open(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		streamer, format, err := mp3.Decode(f)
-		if err != nil {
-			log.Fatal(err)
-		}
 		defer streamer.Close()
-
-		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-		ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
-		speaker.Play(ctrl)
+		defer speaker.Clear()
 
 		for {
 			select {
-			case paused := <-alertPausedChan:
+			case paused := <-b.pausedChan:
 				speaker.Lock()
 				ctrl.Paused = paused
 				speaker.Unlock()
-			case <-alertDoneChan:
+			case <-b.doneChan:
 				speaker.Lock()
 				ctrl.Paused = true
 				speaker.Unlock()
-
-				defer speaker.Clear()
-				defer speaker.Close()
 				return
 			}
 		}
 	}()
 }
 
-func PlayBeeper() bool {
-	if alertPausedChan != nil {
-		alertPausedChan <- false
-		return true
-	}
-	return false
+func (b *beeper) Play() {
+	b.pausedChan <- false
 }
 
-func StopBeeper() {
-	if alertPausedChan != nil {
-		alertPausedChan <- true
-	}
+func (b *beeper) Stop() {
+	b.pausedChan <- true
 }
 
-func CloseBeeper() {
-	if alertDoneChan != nil {
-		alertDoneChan <- true
-		close(alertPausedChan)
-		close(alertDoneChan)
-
-		alertPausedChan = nil
-		alertDoneChan = nil
+func (b *beeper) Close() {
+	if b.isReady {
+		b.doneChan <- true
+		b.isReady = false
 	}
 }
 
-func IsBeeperReady() bool {
-	return alertPausedChan != nil
+func (b beeper) IsReady() bool {
+	return b.isReady
 }

@@ -1,7 +1,7 @@
 package game
 
 import (
-	sys "cg/system"
+	. "cg/system"
 
 	"fmt"
 	"log"
@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	WAITING_LOOP_INTERVAL  = 200
-	ATTACK_INTERVAL        = 100
-	BATTLE_ACTION_INTERVAL = 160
+	BATTLE_ACTION_WAITING_LOOP_INTERVAL = 200
+	BATTLE_ACTION_ATTACK_INTERVAL       = 100
+	BATTLE_ACTION_INTERVAL              = 160
 )
 
 const (
@@ -53,11 +53,6 @@ const (
 	P_S_CATCH    = "Pet Catch"
 	P_S_HANG     = "Pet Hang"
 )
-
-var actionsNeedToDetectEnemy = []string{
-	H_F_ATTACK, H_C_SKILL, H_C_T_SKILL, H_C_BOMB,
-	P_F_ATTACK, P_C_SkILL,
-}
 
 const (
 	C_U_START_OVER = "Start Over"
@@ -112,7 +107,7 @@ func (b *BattleActionState) Act() {
 		b.checkHumanMana()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
-		time.Sleep(WAITING_LOOP_INTERVAL)
+		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
 	b.nextHumanStateId = 0
@@ -127,17 +122,16 @@ func (b *BattleActionState) executeActivity() {
 	}
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
-		time.Sleep(WAITING_LOOP_INTERVAL)
+		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
-	doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir)
-	if doesEncounterActivityMonsters {
-		sys.PlayBeeper()
+	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir); doesEncounterActivityMonsters {
 		b.logH("encounters the activity monster")
-	}
+		Beeper.Play()
 
-	for doesEncounterActivityMonsters && getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-		time.Sleep(WAITING_LOOP_INTERVAL)
+		for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+			time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
+		}
 	}
 }
 
@@ -242,7 +236,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
-					sys.DoubleClickRepeatedly(HWND(b.hWnd), x, y)
+					DoubleClickRepeatedly(HWND(b.hWnd), x, y)
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.nextHumanStateId]
@@ -270,7 +264,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				openWindowByShortcut(b.hWnd, 0x45)
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
-						sys.DoubleClickRepeatedly(HWND(b.hWnd), x, y)
+						DoubleClickRepeatedly(HWND(b.hWnd), x, y)
 						if isBSItemWindowStillOpened(b.hWnd, px, py) {
 							b.logH("failed at double clicking")
 							cu = b.HumanFailureControlUnits[b.nextHumanStateId]
@@ -463,9 +457,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			clearChat(b.hWnd)
 			if self, ok := getSelfTarget(b.hWnd, true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
-				b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
-				if b.isOutOfHealth {
+				if b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self); b.isOutOfHealth {
 					b.logH("is out of health")
+					Beeper.Play()
 				}
 			}
 		}
@@ -701,13 +695,13 @@ func (b BattleActionState) isManaChecker() bool {
 
 func (b *BattleActionState) enableBattleCommandAttack() {
 	if !isBattleCommandEnable(b.hWnd, BATTLE_COMMAND_ATTACK) {
-		sys.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
+		LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
 		time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 	}
 }
 
 func (b *BattleActionState) useItem(x, y int32) {
-	sys.DoubleClickRepeatedly(b.hWnd, x, y)
+	DoubleClickRepeatedly(b.hWnd, x, y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
@@ -715,8 +709,8 @@ func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(b.enemies), func(i, j int) { b.enemies[i], b.enemies[j] = b.enemies[j], b.enemies[i] })
 	for _, target := range b.enemies {
-		sys.LeftClick(b.hWnd, target.x, target.y)
-		time.Sleep(ATTACK_INTERVAL * time.Millisecond)
+		LeftClick(b.hWnd, target.x, target.y)
+		time.Sleep(BATTLE_ACTION_ATTACK_INTERVAL * time.Millisecond)
 		if stateChecker(b.hWnd) {
 			return true
 		}
@@ -725,40 +719,40 @@ func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
 }
 
 func (b *BattleActionState) aim(target *CheckTarget, stateChecker func(hwnd HWND) bool) bool {
-	sys.LeftClick(b.hWnd, target.x+15, target.y-22)
-	time.Sleep(ATTACK_INTERVAL * time.Millisecond)
+	LeftClick(b.hWnd, target.x+15, target.y-22)
+	time.Sleep(BATTLE_ACTION_ATTACK_INTERVAL * time.Millisecond)
 	return stateChecker(b.hWnd)
 }
 
 func (b *BattleActionState) defend() {
-	sys.LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
+	LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) escape() {
-	sys.LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
+	LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) move() {
-	sys.LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
+	LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) recall() {
-	sys.LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
+	LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
 func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindows(b.hWnd)
-	sys.RightClick(b.hWnd, GAME_WIDTH/2, 28)
+	RightClick(b.hWnd, GAME_WIDTH/2, 28)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 	resetAllWindowsPosition(b.hWnd)
 }
 
 func (b *BattleActionState) openSkillWindowWithMouse() {
-	sys.LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
+	LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
 }
 
@@ -921,10 +915,10 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 func (b *BattleActionState) detectEnemies() {
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
-		time.Sleep(WAITING_LOOP_INTERVAL)
+		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
-	if getScene(b.hWnd) == NORMAL_SCENE || !b.Enabled {
+	if getScene(b.hWnd) == NORMAL_SCENE || !b.Enabled || (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
 		return
 	}
 
@@ -995,10 +989,9 @@ func (b *BattleActionState) checkHumanMana() {
 	if b.isManaChecker() {
 		closeAllWindows(b.hWnd)
 		clearChat(b.hWnd)
-		if isAnyPlayerOutOfMana(b.hWnd) {
-			b.isOutOfMana = true
-			sys.PlayBeeper()
+		if b.isOutOfMana = isAnyPlayerOutOfMana(b.hWnd); b.isOutOfMana {
 			b.logH("someone is out of mana")
+			Beeper.Play()
 		}
 	}
 }

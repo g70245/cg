@@ -1,7 +1,7 @@
 package game
 
 import (
-	sys "cg/system"
+	. "cg/system"
 	"log"
 	"time"
 
@@ -9,92 +9,120 @@ import (
 )
 
 const (
-	PRODUCTION_WORKER_INTERVAL                   = 400
-	PRODUCTION_CHECKER_INTERVAL_SECOND           = 6
-	PRODUCTION_PRODUCING_INTERVAL                = 800
-	PRODUCTION_UNPACK_INTERVAL                   = 600
-	PRODUCTION_TIDY_UP_INTERVAL                  = 300
-	NAME_NONE                                    = "none"
-	PRODUCTION_CHECKER_INVENTORY_INTERVAL_SECOND = 16
+	PRODUCTION_WORKER_INTERVAL    = 400
+	PRODUCTION_PRODUCING_INTERVAL = 800
+	PRODUCTION_UNPACK_INTERVAL    = 600
+	PRODUCTION_TIDY_UP_INTERVAL   = 300
+
+	NAME_NONE = "none"
+
+	PRODUCTION_CHECKER_LOG_INTERVAL_SEC       = 6
+	PRODUCTION_CHECKER_INVENTORY_INTERVAL_SEC = 16
 )
 
 type ProductionWorker struct {
-	hWnd   HWND
-	logDir *string
+	hWnd     HWND
+	logDir   *string
+	stopChan chan bool
 
-	Name        string
-	IsGathering bool
+	Name          string
+	GatheringMode bool
+	ManualMode    bool
+
+	workerTicker           *time.Ticker
+	logCheckerTicker       *time.Ticker
+	inventoryCheckerTicker *time.Ticker
 }
 
-func CreateProductionWorker(hWnd HWND, logDir *string) ProductionWorker {
+func CreateProductionWorker(hWnd HWND, logDir *string, stopChan chan bool) ProductionWorker {
+	newWorkerTicker := time.NewTicker(time.Hour)
+	newLogCheckerTicker := time.NewTicker(time.Hour)
+	newInventoryCheckerTicker := time.NewTicker(time.Hour)
+
+	newWorkerTicker.Stop()
+	newLogCheckerTicker.Stop()
+	newInventoryCheckerTicker.Stop()
+
 	return ProductionWorker{
-		hWnd:   hWnd,
-		logDir: logDir,
-		Name:   NAME_NONE,
+		hWnd:                   hWnd,
+		logDir:                 logDir,
+		Name:                   NAME_NONE,
+		stopChan:               stopChan,
+		workerTicker:           newWorkerTicker,
+		logCheckerTicker:       newLogCheckerTicker,
+		inventoryCheckerTicker: newInventoryCheckerTicker,
 	}
 }
 
-func (p *ProductionWorker) Work(stopChan chan bool) {
-	workerTicker := time.NewTicker(PRODUCTION_WORKER_INTERVAL * time.Millisecond)
-	logCheckerTicker := time.NewTicker(PRODUCTION_CHECKER_INTERVAL_SECOND * time.Second)
-	inventoryCheckerTicker := time.NewTicker(PRODUCTION_CHECKER_INVENTORY_INTERVAL_SECOND * time.Second)
+func (p *ProductionWorker) Work() {
+
+	p.ManualMode = false
+	p.workerTicker.Reset(PRODUCTION_WORKER_INTERVAL * time.Millisecond)
+	p.logCheckerTicker.Reset(PRODUCTION_CHECKER_LOG_INTERVAL_SEC * time.Second)
+	p.inventoryCheckerTicker.Reset(PRODUCTION_CHECKER_INVENTORY_INTERVAL_SEC * time.Second)
 
 	log.Printf("Handle %d Production started\n", p.hWnd)
 
-	isPlayingBeeper := false
-	isSomethingWrong := false
-
 	go func() {
-		defer workerTicker.Stop()
-		defer logCheckerTicker.Stop()
-		defer inventoryCheckerTicker.Stop()
+		defer p.StopTickers()
 
 		for {
 			select {
-			case <-workerTicker.C:
-				if !p.IsGathering && !isSomethingWrong {
-					if !p.prepareMaterials() {
-						isSomethingWrong = true
-						break
-					}
+			case <-p.workerTicker.C:
+				if !p.GatheringMode {
+					p.prepareMaterials()
+					p.produce()
+					p.tidyInventory()
 
-					if !p.produce() {
-						isSomethingWrong = true
-						break
+					if p.ManualMode {
+						p.StopTickers()
+						Beeper.Play()
 					}
-
-					isSomethingWrong = !p.tidyInventory()
 				}
-			case <-logCheckerTicker.C:
+			case <-p.logCheckerTicker.C:
 				if checkProductionStatus(p.Name, *p.logDir) {
-					isSomethingWrong = true
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
+					p.StopTickers()
+					Beeper.Play()
 				}
-			case <-inventoryCheckerTicker.C:
+			case <-p.inventoryCheckerTicker.C:
 				if checkInventoryWithoutClosingAllWindows(p.hWnd) {
-					isSomethingWrong = true
 					log.Printf("Production %d inventory is full\n", p.hWnd)
+					p.StopTickers()
+					Beeper.Play()
 				}
-			case <-stopChan:
+			case <-p.stopChan:
 				return
-			default:
-				if !isPlayingBeeper && (isSomethingWrong) {
-					isPlayingBeeper = sys.PlayBeeper()
-				}
-				time.Sleep(PRODUCTION_WORKER_INTERVAL * time.Microsecond / 3)
 			}
 		}
 	}()
 }
 
-func (p *ProductionWorker) prepareMaterials() bool {
+func (p *ProductionWorker) StopTickers() {
+	p.workerTicker.Stop()
+	p.logCheckerTicker.Stop()
+	p.inventoryCheckerTicker.Stop()
+}
+
+func (p *ProductionWorker) Stop() {
+	p.stopChan <- true
+	Beeper.Stop()
+}
+
+func (p *ProductionWorker) prepareMaterials() {
+
+	if p.ManualMode {
+		return
+	}
+
 	defer leverWindowByShortcutWithoutClosingOtherWindows(p.hWnd, 0x45)
 	leverWindowByShortcutWithoutClosingOtherWindows(p.hWnd, 0x45)
 
 	nx, ny, ok := getNSItemWindowPos(p.hWnd)
 	if !ok {
 		log.Printf("Production %d cannot find the position of item window\n", p.hWnd)
-		return false
+		p.ManualMode = true
+		return
 	}
 
 	var i int32
@@ -102,34 +130,40 @@ func (p *ProductionWorker) prepareMaterials() bool {
 		if isSlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
 			if isSlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN) {
 				log.Printf("Production %d have no materials\n", p.hWnd)
-				return false
+				p.ManualMode = true
+				return
 			}
 
-			sys.DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
+			DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
 			time.Sleep(PRODUCTION_UNPACK_INTERVAL * time.Millisecond)
 
 			if isSlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
 				log.Printf("Production %d cannot unpack material\n", p.hWnd)
-				return false
+				p.ManualMode = true
+				return
 			}
 		}
 	}
-
-	return true
 }
 
-func (p *ProductionWorker) produce() bool {
+func (p *ProductionWorker) produce() {
+
+	if p.ManualMode {
+		return
+	}
+
 	px, py, ok := getPRItemWindowPos(p.hWnd)
 	if !ok {
 		log.Printf("Production %d cannot find the position of production window\n", p.hWnd)
-		return false
+		p.ManualMode = true
+		return
 	}
 
-	sys.LeftClick(p.hWnd, px-270, py+180)
+	LeftClick(p.hWnd, px-270, py+180)
 
 	var i int32
 	for i = 0; i < 5; i++ {
-		sys.DoubleClickRepeatedly(p.hWnd, px+i*ITEM_COL_LEN+10, py+10)
+		DoubleClickRepeatedly(p.hWnd, px+i*ITEM_COL_LEN+10, py+10)
 		if canProduce(p.hWnd, px, py) {
 			break
 		}
@@ -137,43 +171,47 @@ func (p *ProductionWorker) produce() bool {
 
 	if !canProduce(p.hWnd, px, py) {
 		log.Printf("Production %d out of mana or insufficient materials\n", p.hWnd)
-		return false
+		p.ManualMode = true
+		return
 	}
 
-	sys.LeftClick(p.hWnd, px-270, py+180)
-
+	LeftClick(p.hWnd, px-270, py+180)
 	if !isProducing(p.hWnd, px, py) {
 		log.Printf("Production %d missed the producing button\n", p.hWnd)
-		return false
+		p.ManualMode = true
+		return
 	}
 
 	for !isProducingSuccessful(p.hWnd, px, py) {
 		time.Sleep(PRODUCTION_PRODUCING_INTERVAL * time.Millisecond)
 	}
-
-	return true
 }
 
-func (p *ProductionWorker) tidyInventory() bool {
+func (p *ProductionWorker) tidyInventory() {
+
+	if p.ManualMode {
+		return
+	}
+
 	px, py, ok := getPRItemWindowPos(p.hWnd)
 	if !ok {
 		log.Printf("Production %d cannot find the position of production window\n", p.hWnd)
-		return false
+		p.ManualMode = true
+		return
 	}
 
 	var j int32
 	for j = 1; j <= 2; j++ {
 		var i int32
 		for i = 4; i > 0; i-- {
-			sys.MoveToNowhere(p.hWnd)
+			MoveToNowhere(p.hWnd)
 			if isPRSlotFree(p.hWnd, px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN) {
 
 				continue
 			}
-			sys.LeftClick(p.hWnd, px+i*50, py+j*50)
-			sys.LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
+			LeftClick(p.hWnd, px+i*50, py+j*50)
+			LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
 			time.Sleep(PRODUCTION_TIDY_UP_INTERVAL * time.Millisecond)
 		}
 	}
-	return true
 }

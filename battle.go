@@ -25,6 +25,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type BattleGroup struct {
+	workers []BattleWorkers
+}
+
 func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 	id := 0
 	stopChans := make(map[int]chan bool)
@@ -89,9 +93,8 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 
 func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
 	var manaChecker = new(string)
-	var isInventoryFull = new(bool)
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, isInventoryFull)
-	stopChan = make(chan bool, len(workers))
+	stopChan = make(chan bool, len(games))
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, new(bool), stopChan)
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
@@ -118,15 +121,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		switch lever.Icon {
 		case theme.MediaPlayIcon():
 			for i := range workers {
-				workers[i].Work(stopChan)
+				workers[i].Work()
 			}
 			turn(theme.MediaStopIcon(), lever)
 		case theme.MediaStopIcon():
 			for i := range workers {
-				workers[i].ActionState.Enabled = false
-				stopChan <- true
+				workers[i].Stop()
 			}
-			StopBeeper()
 			turn(theme.MediaPlayIcon(), lever)
 		}
 	})
@@ -1185,7 +1186,7 @@ func stop(stopChan chan bool) {
 }
 
 func informBeeperConfig(title string) {
-	if !IsBeeperReady() {
+	if !Beeper.IsReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music!!!", window).Show()
@@ -1194,7 +1195,7 @@ func informBeeperConfig(title string) {
 }
 
 func informBeeperAndLogConfig(title string) {
-	if !IsBeeperReady() || *logDir == "" {
+	if !Beeper.IsReady() || *logDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()

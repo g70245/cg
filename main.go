@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cg/system"
+	. "cg/system"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -56,11 +56,10 @@ func main() {
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
 		alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if uc != nil {
-				system.CloseBeeper()
-				system.CreateBeeper(uc.URI().Path())
+				Beeper.Init(uc.URI().Path())
 				alertDialogButton.SetIcon(theme.MediaMusicIcon())
 			} else {
-				system.CloseBeeper()
+				Beeper.Close()
 				alertDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
@@ -92,7 +91,7 @@ func main() {
 	/* shortcuts */
 	muteShortcut := &desktop.CustomShortcut{KeyName: fyne.Key0, Modifier: fyne.KeyModifierControl}
 	window.Canvas().AddShortcut(muteShortcut, func(shortcut fyne.Shortcut) {
-		system.StopBeeper()
+		Beeper.Stop()
 	})
 
 	window.SetContent(content)
@@ -105,7 +104,7 @@ type Robot struct {
 }
 
 func generateRobotContainer() Robot {
-	games := system.FindWindows()
+	games := FindWindows()
 
 	autoBattleContainer, autoBattleStopChans := battleContainer(games)
 	productionContainer, productionStopChans := productionContainer(games)
