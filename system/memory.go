@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func ReadMemory(hWnd HWND, lpBaseAddress uint32, size uint) []byte {
+func readMemory(hWnd HWND, lpBaseAddress uint32, size uint) []byte {
 	lpdwProcessId := new(uint32)
 	GetWindowThreadProcessId(hWnd, lpdwProcessId)
 	readMemoryHandle, _ := OpenProcess(0x1F0FFF, false, uint32(*lpdwProcessId))
@@ -19,7 +19,7 @@ func ReadMemory(hWnd HWND, lpBaseAddress uint32, size uint) []byte {
 }
 
 func ReadMemoryString(hWnd HWND, lpBaseAddress uint32, size uint) string {
-	data := ReadMemory(hWnd, lpBaseAddress, size)
+	data := readMemory(hWnd, lpBaseAddress, size)
 	for i, v := range data {
 		if v == 0x00 {
 			data = data[:i]
@@ -33,6 +33,6 @@ func ReadMemoryString(hWnd HWND, lpBaseAddress uint32, size uint) string {
 }
 
 func ReadMemoryFloat32(hWnd HWND, lpBaseAddress uint32, size uint) float32 {
-	data := ReadMemory(hWnd, lpBaseAddress, size)
+	data := readMemory(hWnd, lpBaseAddress, size)
 	return math.Float32frombits(binary.LittleEndian.Uint32(data))
 }
