@@ -18,11 +18,11 @@ const (
 )
 
 type BattleWorker struct {
-	hWnd            HWND
-	logDir          *string
-	manaChecker     *string
-	isInventoryFull *bool
-	stopChan        chan bool
+	hWnd                  HWND
+	logDir                *string
+	manaChecker           *string
+	sharedInventoryStatus *bool
+	sharedStopChan        chan bool
 
 	ActionState   BattleActionState
 	MovementState BattleMovementState
@@ -40,7 +40,7 @@ type BattleWorker struct {
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, isInventoryFull *bool, stopChan chan bool) BattleWorkers {
+func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range hWnds {
 		newWorkerTicker := time.NewTicker(time.Hour)
@@ -52,12 +52,12 @@ func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, isInventoryF
 		newTeleportAndResourceCheckerTicker.Stop()
 
 		workers = append(workers, BattleWorker{
-			hWnd:            hWnd,
-			logDir:          logDir,
-			manaChecker:     manaChecker,
-			isInventoryFull: isInventoryFull,
-			stopChan:        stopChan,
-			ActionState:     CreateNewBattleActionState(hWnd, logDir, manaChecker),
+			hWnd:                  hWnd,
+			logDir:                logDir,
+			manaChecker:           manaChecker,
+			sharedInventoryStatus: sharedInventoryStatus,
+			sharedStopChan:        sharedStopChan,
+			ActionState:           CreateNewBattleActionState(hWnd, logDir, manaChecker),
 			MovementState: BattleMovementState{
 				hWnd: hWnd,
 				Mode: NONE,
@@ -136,7 +136,7 @@ func (b *BattleWorker) Work() {
 						Beeper.Play()
 					}
 				}
-			case <-b.stopChan:
+			case <-b.sharedStopChan:
 				log.Printf("Handle %d Auto Battle ended at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
 				return
 			}
@@ -152,7 +152,7 @@ func (b *BattleWorker) StopTickers() {
 
 func (b *BattleWorker) Stop() {
 	b.ActionState.Enabled = false
-	b.stopChan <- true
+	b.sharedStopChan <- true
 	Beeper.Stop()
 }
 
@@ -186,9 +186,9 @@ func (b *BattleWorker) StartTeleportAndResourceChecker() {
 }
 
 func (b *BattleWorker) setInventoryStatus(isFull bool) {
-	*b.isInventoryFull = isFull
+	*b.sharedInventoryStatus = isFull
 }
 
 func (b *BattleWorker) getInventoryStatus() bool {
-	return *b.isInventoryFull
+	return *b.sharedInventoryStatus
 }

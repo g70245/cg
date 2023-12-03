@@ -91,10 +91,11 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 	return main, stopChans
 }
 
-func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, stopChan chan bool) {
-	var manaChecker = new(string)
-	stopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, new(bool), stopChan)
+func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
+	manaChecker := new(string)
+	sharedInventoryStatus := new(bool)
+	sharedStopChan = make(chan bool, len(games))
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, sharedInventoryStatus, sharedStopChan)
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
@@ -141,8 +142,8 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 					workers[i].StopInventoryChecker()
 				}
 
-				stop(stopChan)
-				close(stopChan)
+				stop(sharedStopChan)
+				close(sharedStopChan)
 				destroy()
 			}
 		}, window)
@@ -1033,7 +1034,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 	}
 
 	autoBattleWidget = container.NewVBox(widget.NewSeparator(), mainWidget, widget.NewSeparator(), configContainer)
-	return autoBattleWidget, stopChan
+	return autoBattleWidget, sharedStopChan
 }
 
 type SelectorDialog struct {
