@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cg/game"
 	. "cg/system"
 
 	"fyne.io/fyne/v2"
@@ -104,7 +105,7 @@ type Robot struct {
 }
 
 func generateRobotContainer() Robot {
-	games := FindWindows()
+	games := game.NewGames()
 
 	autoBattleContainer, autoBattleStopChans := battleContainer(games)
 	productionContainer, productionStopChans := productionContainer(games)

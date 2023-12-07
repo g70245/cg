@@ -3,7 +3,6 @@ package system
 import (
 	"fmt"
 	"syscall"
-	"unsafe"
 
 	"github.com/g70245/win"
 )
@@ -31,14 +30,4 @@ func FindWindows() map[string]win.HWND {
 	win.EnumChildWindows(0, lpEnumFunc, 0)
 
 	return handles
-}
-
-func FindChildWindows(parentHWnd win.HWND) {
-
-	lpEnumFunc := func(h win.HWND, p uintptr) uintptr {
-		// write matching algorithn here
-		return 1 // continue
-	}
-
-	win.EnumChildWindows(parentHWnd, uintptr(unsafe.Pointer(&lpEnumFunc)), 0)
 }

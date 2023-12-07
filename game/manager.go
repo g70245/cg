@@ -1,11 +1,18 @@
 package game
 
 import (
+	. "cg/system"
+	"sort"
+
 	. "github.com/g70245/win"
 	"golang.org/x/exp/maps"
 )
 
 type Games map[string]HWND
+
+func NewGames() Games {
+	return FindWindows()
+}
 
 func (gs Games) New(selected []string) Games {
 	newGames := make(map[string]HWND)
@@ -38,8 +45,10 @@ func (gs Games) Add(games map[string]HWND) {
 	}
 }
 
-func (gs Games) GetAll() []string {
-	return maps.Keys(gs)
+func (gs Games) GetSortedKeys() []string {
+	keys := maps.Keys(gs)
+	sort.Sort(sort.StringSlice(keys))
+	return keys
 }
 
 func (gs Games) GetHWNDs() []HWND {

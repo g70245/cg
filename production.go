@@ -17,7 +17,7 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 	stopChans := make(map[string]chan bool)
 	productions := make(map[string]*fyne.Container)
 
-	gamesCheckGroup := widget.NewCheckGroup(games.GetAll(), nil)
+	gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
 	gamesCheckGroup.Horizontal = true
 
 	productionsContainer := container.NewVBox()
@@ -26,7 +26,7 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
 		gamesSelectorDialog.SetOnClosed(func() {
-			for _, game := range games.GetAll() {
+			for _, game := range games.GetSortedKeys() {
 				if slices.Contains(gamesCheckGroup.Selected, game) {
 					if _, ok := stopChans[game]; !ok {
 						newProductionWidget, newStopChan := newProductionContainer(game, games, nil)
