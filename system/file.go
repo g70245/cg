@@ -39,7 +39,6 @@ func findLastModifiedFileBefore(dir string, t time.Time) (path string, info os.F
 
 func getLinesWithSeek(filepath string, lineNumber int) []string {
 	fileHandle, err := os.Open(filepath)
-
 	if err != nil {
 		panic("Cannot open file")
 	}
