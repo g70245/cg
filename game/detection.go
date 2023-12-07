@@ -179,17 +179,17 @@ func isPetSkillWindowOpenedWhileRiding(hWnd HWND) bool {
 }
 
 func isHumanActionSuccessful(hWnd HWND) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
 }
 
 func isPetActionSuccessful(hWnd HWND) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
 
 func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := BATTLE_WINDOW_SKILL_FIRST.x
 	for x <= 164 {
 		y := BATTLE_WINDOW_SKILL_FIRST.y
@@ -205,7 +205,7 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.x+50 {
 		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
@@ -221,7 +221,7 @@ func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
 		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
@@ -237,7 +237,7 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func getPRItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := PRODUCTION_WINDOW_ITEM_PIVOT.x
 	for x <= PRODUCTION_WINDOW_ITEM_PIVOT.x+54 {
 		y := PRODUCTION_WINDOW_ITEM_PIVOT.y
@@ -253,7 +253,7 @@ func getPRItemWindowPos(hWnd HWND) (int32, int32, bool) {
 }
 
 func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 	var i, j int32
@@ -270,7 +270,7 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 }
 
 func isMoreThanTwoItemSlotsFree(hWnd HWND, px, py int32) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 
@@ -335,7 +335,7 @@ type pos struct {
 }
 
 func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -353,7 +353,7 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int
 }
 
 func getItemPosByThreads(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -413,7 +413,7 @@ func doesOnRidingMissSkillButtton(hWnd HWND) bool {
 }
 
 func isOnRide(hWnd HWND) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_DISABLE &&
 		(sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_DISABLE ||
@@ -478,7 +478,7 @@ func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
 }
 
 func canRecall(hWnd HWND) bool {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	return sys.GetColor(hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
 }
@@ -515,7 +515,7 @@ func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
 }
 
 func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
@@ -526,7 +526,7 @@ func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 }
 
 func countLifeBelow(hWnd HWND, ratio float32) (count int) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	for i := range allTargets {
 		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
@@ -590,7 +590,7 @@ var allPets = []CheckTarget{
 }
 
 func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
-	sys.MoveToNowhere(hWnd)
+	sys.MoveCursorToNowhere(hWnd)
 
 	targets := allHumans
 	if !isHuman {
@@ -638,7 +638,7 @@ func getEnemyTargets(hWnd HWND, checkTargets []CheckTarget) []CheckTarget {
 	targets := []CheckTarget{}
 
 	for i := range checkTargets {
-		sys.MoveMouseWithInterval(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
+		sys.MoveCursorWithDuration(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
 		if sys.GetColor(hWnd, MENU_T.x, MENU_T.y) == COLOR_MENU_HIDDEN {
 			targets = append(targets, checkTargets[i])
 		}

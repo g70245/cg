@@ -205,7 +205,7 @@ func (p *ProductionWorker) tidyInventory() {
 	for j = 1; j <= 2; j++ {
 		var i int32
 		for i = 4; i > 0; i-- {
-			MoveToNowhere(p.hWnd)
+			MoveCursorToNowhere(p.hWnd)
 			if isPRSlotFree(p.hWnd, px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN) {
 
 				continue

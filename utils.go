@@ -33,7 +33,7 @@ func PrintColorFromData(hWnd win.HWND, checkTargets []CheckTarget) {
 	for _, target := range checkTargets {
 		log.Print(target, " ")
 		log.Println(GetColor(hWnd, target.GetX(), target.GetY()))
-		MouseMsg(hWnd, target.GetX(), target.GetX(), win.WM_MOUSEMOVE)
+		// MouseMsg(hWnd, target.GetX(), target.GetX(), win.WM_MOUSEMOVE)
 		time.Sleep(300 * time.Millisecond)
 	}
 }
@@ -56,7 +56,7 @@ func CheckColor(hWnd win.HWND, oX, oY, dX, dY int32, color win.COLORREF) {
 		y := oY
 		for y <= dY {
 			if GetColor(hWnd, x, y) == color {
-				MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
+				// MouseMsg(hWnd, x, y, win.WM_MOUSEMOVE)
 				fmt.Printf("Found at (%d, %d)\n", x, y)
 				return
 			}

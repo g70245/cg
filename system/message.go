@@ -15,62 +15,50 @@ const (
 	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
 
-func MouseMsg(hWnd HWND, x, y int32, action uint32) {
+func mouseMsg(hWnd HWND, x, y int32, action uint32) {
 	wparam := uintptr(0)
 	lparam := uintptr(y<<16 | x)
 	PostMessage(hWnd, action, wparam, lparam)
 }
 
-func MouseMsgWithIndicator(hWnd HWND, x, y int32, action uint32, wparam uintptr) {
-	lparam := uintptr(y<<16 | x)
-	PostMessage(hWnd, action, wparam, lparam)
+func MoveCursorToNowhere(hWnd HWND) {
+	MoveCursorWithDuration(hWnd, -1, -1, MOUSE_MOVE_NOWHERE_INTERVAL)
 }
 
-func MoveToNowhere(hWnd HWND) {
-	MouseMsg(hWnd, -1, -1, WM_MOUSEMOVE)
-	time.Sleep(MOUSE_MOVE_NOWHERE_INTERVAL * time.Millisecond)
-}
-
-func MoveMouseWithDuration(hWnd HWND, x, y int32, d time.Duration) {
-	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
+func MoveCursorWithDuration(hWnd HWND, x, y int32, d time.Duration) {
+	mouseMsg(hWnd, x, y, WM_MOUSEMOVE)
 	time.Sleep(d * time.Millisecond)
 }
 
-func MoveMouse(hWnd HWND, x, y int32) {
-	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
-	time.Sleep(MOUSE_MOVE_INTERVAL * time.Millisecond)
-}
-
-func MoveMouseWithInterval(hWnd HWND, x, y int32, interval time.Duration) {
-	MouseMsg(hWnd, x, y, WM_MOUSEMOVE)
-	time.Sleep(interval * time.Millisecond)
+func MoveCursor(hWnd HWND, x, y int32) {
+	MoveCursorWithDuration(hWnd, x, y, MOUSE_MOVE_INTERVAL)
 }
 
 func LeftClick(hWnd HWND, x, y int32) {
-	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, x, y, WM_LBUTTONDOWN)
-	MouseMsg(hWnd, x, y, WM_LBUTTONUP)
+	MoveCursor(hWnd, x, y)
+	mouseMsg(hWnd, x, y, WM_LBUTTONDOWN)
+	mouseMsg(hWnd, x, y, WM_LBUTTONUP)
 	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
 func DoubleClickRepeatedly(hWnd HWND, x, y int32) {
-	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
+	MoveCursor(hWnd, x, y)
+	mouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
-	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
+	mouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
 }
 
 func DoubleClick(hWnd HWND, x, y int32) {
-	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
+	MoveCursor(hWnd, x, y)
+	mouseMsg(hWnd, x, y, WM_LBUTTONDBLCLK)
 	time.Sleep(DOUBLE_CLICK_INTERVAL * time.Millisecond)
 }
 
 func RightClick(hWnd HWND, x, y int32) {
-	MoveMouse(hWnd, x, y)
-	MouseMsg(hWnd, x, y, WM_RBUTTONDOWN)
-	MouseMsg(hWnd, x, y, WM_RBUTTONUP)
+	MoveCursor(hWnd, x, y)
+	mouseMsg(hWnd, x, y, WM_RBUTTONDOWN)
+	mouseMsg(hWnd, x, y, WM_RBUTTONUP)
 	time.Sleep(CLICK_INTERVAL * time.Millisecond)
 }
 
