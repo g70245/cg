@@ -1,7 +1,7 @@
 package game
 
 import (
-	sys "cg/system"
+	"cg/system"
 
 	"time"
 
@@ -10,58 +10,58 @@ import (
 
 const (
 	ACTION_INTERVAL                         = 200
-	BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC = 2
 	INVENTORY_CHECKER_WAITING_INTERVAL      = 400
+	BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC = 2
 )
 
 func closeAllWindows(hWnd HWND) {
-	sys.KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
+	system.KeyCombinationMsg(hWnd, VK_SHIFT, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func openWindowByShortcut(hWnd HWND, key uintptr) {
-	sys.RightClick(hWnd, GAME_WIDTH/2, 28)
+	system.RightClick(hWnd, GAME_WIDTH/2, 28)
 	closeAllWindows(hWnd)
-	sys.KeyCombinationMsg(hWnd, VK_CONTROL, key)
+	system.KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	resetAllWindowsPosition(hWnd)
+	resetPosition(hWnd)
 }
 
-func leverWindowByShortcutWithoutClosingOtherWindows(hWnd HWND, key uintptr) {
-	sys.KeyCombinationMsg(hWnd, VK_CONTROL, key)
+func switchWindowWithShortcut(hWnd HWND, key uintptr) {
+	system.KeyCombinationMsg(hWnd, VK_CONTROL, key)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	resetAllWindowsPosition(hWnd)
+	resetPosition(hWnd)
 }
 
-func resetAllWindowsPosition(hWnd HWND) {
-	sys.KeyCombinationMsg(hWnd, VK_CONTROL, VK_F12)
+func resetPosition(hWnd HWND) {
+	system.KeyCombinationMsg(hWnd, VK_CONTROL, VK_F12)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func useHumanSkill(hWnd HWND, x, y int32, id, level int) {
-	sys.LeftClick(hWnd, x, y+int32((id-1)*16))
+	system.LeftClick(hWnd, x, y+int32((id-1)*16))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
-	sys.LeftClick(hWnd, x, y+int32((level-1)*16))
+	system.LeftClick(hWnd, x, y+int32((level-1)*16))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func usePetSkill(hWnd HWND, x, y int32, id int) {
-	sys.LeftClick(hWnd, x, y+int32((id-1)*16))
+	system.LeftClick(hWnd, x, y+int32((id-1)*16))
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
 func clearChat(hWnd HWND) {
-	sys.KeyMsg(hWnd, VK_HOME)
+	system.KeyMsg(hWnd, VK_HOME)
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
-func checkInventory(hWnd HWND) bool {
+func isInventoryFull(hWnd HWND) bool {
 	defer closeAllWindows(hWnd)
 	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
 
 	time.Sleep(BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC * time.Second)
 	closeAllWindows(hWnd)
-	sys.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	system.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
 	openWindowByShortcut(hWnd, 0x45)
 
@@ -71,13 +71,13 @@ func checkInventory(hWnd HWND) bool {
 	return false
 }
 
-func checkActivityInventory(hWnd HWND) bool {
+func isInventoryFullForActivity(hWnd HWND) bool {
 	defer closeAllWindows(hWnd)
 	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
 
 	time.Sleep(BATTLE_RESULT_DISAPPEARING_INTERVAL_SEC * time.Second)
 	closeAllWindows(hWnd)
-	sys.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	system.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
 	openWindowByShortcut(hWnd, 0x45)
 
@@ -87,9 +87,9 @@ func checkActivityInventory(hWnd HWND) bool {
 	return false
 }
 
-func checkInventoryWithoutClosingAllWindows(hWnd HWND) bool {
-	defer leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)
-	leverWindowByShortcutWithoutClosingOtherWindows(hWnd, 0x45)
+func isInventoryFullWithoutClosingAllWindows(hWnd HWND) bool {
+	defer switchWindowWithShortcut(hWnd, 0x45)
+	switchWindowWithShortcut(hWnd, 0x45)
 
 	if px, py, ok := getNSItemWindowPos(hWnd); ok {
 		return !isAnyItemSlotFree(hWnd, px, py)
@@ -98,7 +98,7 @@ func checkInventoryWithoutClosingAllWindows(hWnd HWND) bool {
 }
 
 func getMapName(hWnd HWND) string {
-	return sys.ReadMemoryString(hWnd, 0x95C870, 32)
+	return system.ReadMemoryString(hWnd, 0x95C870, 32)
 }
 
 type GamePos struct {
@@ -106,7 +106,7 @@ type GamePos struct {
 }
 
 func getCurrentGamePos(hWnd HWND) GamePos {
-	fx := sys.ReadMemoryFloat32(hWnd, 0x95C88C, 32)
-	fy := sys.ReadMemoryFloat32(hWnd, 0x95C890, 32)
+	fx := system.ReadMemoryFloat32(hWnd, 0x95C88C, 32)
+	fy := system.ReadMemoryFloat32(hWnd, 0x95C890, 32)
 	return GamePos{float64(fx / 64), float64(fy / 64)}
 }

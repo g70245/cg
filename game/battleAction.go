@@ -748,7 +748,7 @@ func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindows(b.hWnd)
 	RightClick(b.hWnd, GAME_WIDTH/2, 28)
 	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
-	resetAllWindowsPosition(b.hWnd)
+	resetPosition(b.hWnd)
 }
 
 func (b *BattleActionState) openSkillWindowWithMouse() {

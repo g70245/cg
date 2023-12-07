@@ -86,7 +86,7 @@ func (p *ProductionWorker) Work() {
 					Beeper.Play()
 				}
 			case <-p.inventoryCheckerTicker.C:
-				if checkInventoryWithoutClosingAllWindows(p.hWnd) {
+				if isInventoryFullWithoutClosingAllWindows(p.hWnd) {
 					log.Printf("Production %d inventory is full\n", p.hWnd)
 					p.StopTickers()
 					Beeper.Play()
@@ -116,8 +116,8 @@ func (p *ProductionWorker) prepareMaterials() {
 		return
 	}
 
-	defer leverWindowByShortcutWithoutClosingOtherWindows(p.hWnd, 0x45)
-	leverWindowByShortcutWithoutClosingOtherWindows(p.hWnd, 0x45)
+	defer switchWindowWithShortcut(p.hWnd, 0x45)
+	switchWindowWithShortcut(p.hWnd, 0x45)
 
 	nx, ny, ok := getNSItemWindowPos(p.hWnd)
 	if !ok {

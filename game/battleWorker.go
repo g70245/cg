@@ -110,13 +110,13 @@ func (b *BattleWorker) Work() {
 			case <-b.inventoryCheckerTicker.C:
 				if b.InventoryCheckerEnabled {
 					if b.ActivityCheckerEnabled {
-						if checkActivityInventory(b.hWnd) {
+						if isInventoryFullForActivity(b.hWnd) {
 							log.Printf("Handle %d inventory is full\n", b.hWnd)
 							b.setInventoryStatus(true)
 							b.StopTickers()
 							Beeper.Play()
 						}
-					} else if checkInventory(b.hWnd) {
+					} else if isInventoryFull(b.hWnd) {
 						log.Printf("Handle %d inventory is full\n", b.hWnd)
 						b.setInventoryStatus(true)
 						b.StopTickers()
