@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func FindLastModifiedFileBefore(dir string, t time.Time) (path string, info os.FileInfo, err error) {
+func findLastModifiedFileBefore(dir string, t time.Time) (path string, info os.FileInfo, err error) {
 	isFirst := true
 	min := 0 * time.Second
 	err = filepath.Walk(dir, func(p string, i os.FileInfo, e error) error {
@@ -37,7 +37,7 @@ func FindLastModifiedFileBefore(dir string, t time.Time) (path string, info os.F
 	return
 }
 
-func GetLinesWithSeek(filepath string, lineNumber int) []string {
+func getLinesWithSeek(filepath string, lineNumber int) []string {
 	fileHandle, err := os.Open(filepath)
 
 	if err != nil {
@@ -85,11 +85,11 @@ func byteToString(buffer []byte) string {
 }
 
 func GetLastLineOfLog(logDir string) string {
-	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return GetLinesWithSeek(path, 1)[0]
+	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return getLinesWithSeek(path, 1)[0]
 }
 
 func GetLinesOfLog(logDir string, lineNumber int) []string {
-	path, _, _ := FindLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return GetLinesWithSeek(path, lineNumber)
+	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return getLinesWithSeek(path, lineNumber)
 }
