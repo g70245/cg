@@ -56,7 +56,6 @@ func CreateProductionWorker(hWnd HWND, logDir *string, stopChan chan bool) Produ
 
 func (p *ProductionWorker) Work() {
 
-	p.ManualMode = false
 	p.workerTicker.Reset(PRODUCTION_WORKER_INTERVAL * time.Millisecond)
 	p.logCheckerTicker.Reset(PRODUCTION_CHECKER_LOG_INTERVAL_SEC * time.Second)
 	p.inventoryCheckerTicker.Reset(PRODUCTION_CHECKER_INVENTORY_INTERVAL_SEC * time.Second)
@@ -107,6 +106,7 @@ func (p *ProductionWorker) StopTickers() {
 
 func (p *ProductionWorker) Stop() {
 	p.stopChan <- true
+	p.ManualMode = false
 	Beeper.Stop()
 }
 
