@@ -10,7 +10,7 @@ const (
 	CLICK_INTERVAL                   = 80
 	DOUBLE_CLICK_INTERVAL            = 120
 	KEY_INTERVAL                     = 80
-	MOUSE_MOVE__NOWHERE_INTERVAL     = 40
+	MOUSE_MOVE_NOWHERE_INTERVAL      = 40
 	MOUSE_MOVE_INTERVAL              = 140
 	BAD_COMPUTER_MOUSE_MOVE_INTERVAL = 180
 )
@@ -28,7 +28,7 @@ func MouseMsgWithIndicator(hWnd HWND, x, y int32, action uint32, wparam uintptr)
 
 func MoveToNowhere(hWnd HWND) {
 	MouseMsg(hWnd, -1, -1, WM_MOUSEMOVE)
-	time.Sleep(MOUSE_MOVE__NOWHERE_INTERVAL * time.Millisecond)
+	time.Sleep(MOUSE_MOVE_NOWHERE_INTERVAL * time.Millisecond)
 }
 
 func MoveMouseWithDuration(hWnd HWND, x, y int32, d time.Duration) {
