@@ -12,7 +12,6 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -107,7 +106,7 @@ type Robot struct {
 func generateRobotContainer() Robot {
 	games := game.NewGames()
 
-	autoBattleContainer, autoBattleStopChans := battleContainer(games)
+	autoBattleContainer, autoBattleGroups := battleContainer(games)
 	productionContainer, productionWorkers := productionContainer(games)
 
 	tabs := container.NewAppTabs(
@@ -119,14 +118,8 @@ func generateRobotContainer() Robot {
 	main := container.NewStack(tabs)
 	robot := Robot{main, func() {
 		main.RemoveAll()
-		stopWorkers(maps.Values(autoBattleStopChans))
+		autoBattleGroups.stopAll()
 		productionWorkers.stopAll()
 	}}
 	return robot
-}
-
-func stopWorkers(stopChans []chan bool) {
-	for _, stopChan := range stopChans {
-		stop(stopChan)
-	}
 }

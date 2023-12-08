@@ -70,7 +70,7 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 		})
 		gamesSelectorDialog.Show()
 
-		informBeeperAndLogConfig("About Production")
+		notifyBeeperAndLogConfig("About Production")
 	})
 
 	main := container.NewVBox(newProductionButton, productionsContainer)

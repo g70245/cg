@@ -25,13 +25,19 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type BattleGroup struct {
-	workers []BattleWorkers
+type BattleGroups struct {
+	stopChans map[int]chan bool
 }
 
-func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
+func (bgs *BattleGroups) stopAll() {
+	for k := range bgs.stopChans {
+		stop(bgs.stopChans[k])
+	}
+}
+
+func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 	id := 0
-	stopChans := make(map[int]chan bool)
+	bgs := BattleGroups{make(map[int]chan bool)}
 
 	groupTabs := container.NewAppTabs()
 	groupTabs.SetTabLocation(container.TabLocationBottom)
@@ -55,17 +61,18 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 			var newTabItem *container.TabItem
 			newGroupContainer, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), func(id int) func() {
 				return func() {
-					delete(stopChans, id)
+					delete(bgs.stopChans, id)
 
 					groupTabs.Remove(newTabItem)
-					if len(stopChans) == 0 {
+					if len(bgs.stopChans) == 0 {
 						groupTabs.Hide()
 					}
+
 					window.SetContent(window.Content())
 					window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 				}
 			}(id))
-			stopChans[id] = stopChan
+			bgs.stopChans[id] = stopChan
 
 			var newGroupName string
 			if groupNameEntry.Text != "" {
@@ -73,7 +80,6 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 			} else {
 				newGroupName = "Group " + fmt.Sprint(id)
 			}
-
 			newTabItem = container.NewTabItem(newGroupName, newGroupContainer)
 			groupTabs.Append(newTabItem)
 			groupTabs.Show()
@@ -86,9 +92,9 @@ func battleContainer(games Games) (*fyne.Container, map[int]chan bool) {
 	})
 
 	menu := container.NewVBox(newGroupButton)
-
 	main := container.NewBorder(menu, nil, nil, nil, groupTabs)
-	return main, stopChans
+
+	return main, bgs
 }
 
 func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
@@ -113,28 +119,28 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
 		manaCheckerSelectorDialog.Show()
 
-		informBeeperConfig("About Mana Checker")
+		notifyBeeperConfig("About Mana Checker")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
-	var lever *widget.Button
-	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
-		switch lever.Icon {
+	var switchButton *widget.Button
+	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
+		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
 			for i := range workers {
 				workers[i].Work()
 			}
-			turn(theme.MediaStopIcon(), lever)
+			turn(theme.MediaStopIcon(), switchButton)
 		case theme.MediaStopIcon():
 			for i := range workers {
 				workers[i].Stop()
 			}
-			turn(theme.MediaPlayIcon(), lever)
+			turn(theme.MediaPlayIcon(), switchButton)
 		}
 	})
-	lever.Importance = widget.WarningImportance
+	switchButton.Importance = widget.WarningImportance
 
-	delete := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+	deleteButton := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
 			if isDeleting {
 				for i := range workers {
@@ -150,70 +156,72 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		deleteDialog.SetConfirmImportance(widget.DangerImportance)
 		deleteDialog.Show()
 	})
-	delete.Importance = widget.DangerImportance
+	deleteButton.Importance = widget.DangerImportance
 
-	var logCheckers *widget.Button
-	var teleportAndResourceChecker *widget.Button
-	teleportAndResourceChecker = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
-		switch teleportAndResourceChecker.Icon {
+	var teleportAndResourceCheckerButton *widget.Button
+	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+		switch teleportAndResourceCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
 				workers[i].StopTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonIcon(), teleportAndResourceChecker)
+			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
 		case theme.CheckButtonIcon():
 			for i := range workers {
 				workers[i].StartTeleportAndResourceChecker()
 			}
-			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceChecker)
+			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
 
-			informBeeperAndLogConfig("About Teleport & Resource Checker")
+			notifyBeeperAndLogConfig("About Teleport & Resource Checker")
 		}
 	})
-	teleportAndResourceChecker.Importance = widget.HighImportance
-	var activitiesChecker *widget.Button
-	activitiesChecker = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
-		switch activitiesChecker.Icon {
+	teleportAndResourceCheckerButton.Importance = widget.HighImportance
+
+	var activitiesCheckerButton *widget.Button
+	activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
+		switch activitiesCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
 				workers[i].ActivityCheckerEnabled = false
 			}
-			turn(theme.CheckButtonIcon(), activitiesChecker)
+			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
 		case theme.CheckButtonIcon():
 			for i := range workers {
 				workers[i].ActivityCheckerEnabled = true
 			}
-			turn(theme.CheckButtonCheckedIcon(), activitiesChecker)
+			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
 
-			informBeeperAndLogConfig("About Activities Checker")
+			notifyBeeperAndLogConfig("About Activities Checker")
 		}
 	})
-	activitiesChecker.Importance = widget.HighImportance
-	logCheckers = widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
-		dialog.NewCustom("Log Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceChecker, activitiesChecker), window).Show()
-	})
-	logCheckers.Importance = widget.HighImportance
+	activitiesCheckerButton.Importance = widget.HighImportance
 
-	var inventoryChecker *widget.Button
-	inventoryChecker = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
-		switch inventoryChecker.Icon {
+	var logCheckersButton *widget.Button
+	logCheckersButton = widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
+		dialog.NewCustom("Log Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton), window).Show()
+	})
+	logCheckersButton.Importance = widget.HighImportance
+
+	var inventoryCheckerButton *widget.Button
+	inventoryCheckerButton = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
+		switch inventoryCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range workers {
 				workers[i].StopInventoryChecker()
 			}
-			turn(theme.CheckButtonIcon(), inventoryChecker)
+			turn(theme.CheckButtonIcon(), inventoryCheckerButton)
 		case theme.CheckButtonIcon():
 			for i := range workers {
 				workers[i].StartInventoryChecker()
 			}
-			turn(theme.CheckButtonCheckedIcon(), inventoryChecker)
+			turn(theme.CheckButtonCheckedIcon(), inventoryCheckerButton)
 
-			informBeeperConfig("About Inventory Checker")
+			notifyBeeperConfig("About Inventory Checker")
 		}
 	})
-	inventoryChecker.Importance = widget.HighImportance
+	inventoryCheckerButton.Importance = widget.HighImportance
 
-	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckers, inventoryChecker, delete, lever)
+	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckersButton, inventoryCheckerButton, deleteButton, switchButton)
 	mainWidget := container.NewVBox(mainButtons)
 
 	/* Configuration Widgets */
@@ -288,8 +296,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 			}, window)
 			jumpDialog.Show()
 		}
-
-		hCUSuccesOnChanged := func(s string) {
+		humanCUSuccesOnChanged := func(s string) {
 			if s != "" {
 				if s == C_U_JUMP {
 					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
@@ -302,7 +309,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				}
 			}
 		}
-		hCUFailureOnChanged := func(s string) {
+		humanCUFailureOnChanged := func(s string) {
 			if s != "" {
 				if s == C_U_JUMP {
 					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
@@ -315,7 +322,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				}
 			}
 		}
-		pCUSuccessOnChanged := func(s string) {
+		petCUSuccessOnChanged := func(s string) {
 			if s != "" {
 				if s == C_U_JUMP {
 					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
@@ -328,7 +335,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				}
 			}
 		}
-		pCUFailureOnChanged := func(s string) {
+		petCUFailureOnChanged := func(s string) {
 			if s != "" {
 				if s == C_U_JUMP {
 					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
@@ -341,6 +348,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				}
 			}
 		}
+
 		cuOnClosed := func() {
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
@@ -351,29 +359,29 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		cuFailureDialog = dialog.NewCustomWithoutButtons("Select next action after failed execution", selector, window)
 		cuFailureDialog.SetOnClosed(cuOnClosed)
 
-		hCUSuccessSelectorDialog := SelectorDialog{
+		humanCUSuccessSelectorDialog := SelectorDialog{
 			cuSuccessDialog,
 			selector,
 			ControlUnitOptions,
-			hCUSuccesOnChanged,
+			humanCUSuccesOnChanged,
 		}
-		hCUFailureSelectorDialog := SelectorDialog{
+		humanCUFailureSelectorDialog := SelectorDialog{
 			cuFailureDialog,
 			selector,
 			ControlUnitOptions,
-			hCUFailureOnChanged,
+			humanCUFailureOnChanged,
 		}
-		pCUSuccessSelectorDialog := SelectorDialog{
+		petCUSuccessSelectorDialog := SelectorDialog{
 			cuSuccessDialog,
 			selector,
 			ControlUnitOptions,
-			pCUSuccessOnChanged,
+			petCUSuccessOnChanged,
 		}
-		pCUFailureSelectorDialog := SelectorDialog{
+		petCUFailureSelectorDialog := SelectorDialog{
 			cuFailureDialog,
 			selector,
 			ControlUnitOptions,
-			pCUFailureOnChanged,
+			petCUFailureOnChanged,
 		}
 
 		/* Param Dialogs */
@@ -396,25 +404,31 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		paramsDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
 		paramsDialog.SetOnClosed(onClosed)
 
-		healingRatioSelectorDialog := SelectorDialog{
+		// healing
+		humanHealingRatioSelectorDialog := SelectorDialog{
 			paramsDialog,
 			selector,
 			HealingOptions,
 			humanParamsOnChanged,
 		}
-		pHealingRatioSelectorDialog := SelectorDialog{
+
+		petHealingRatioSelectorDialog := SelectorDialog{
 			paramsDialog,
 			selector,
 			HealingOptions,
 			petParamsOnChanged,
 		}
-		bombsSelectorDialog := SelectorDialog{
+
+		// bomb
+		bombSelectorDialog := SelectorDialog{
 			paramsDialog,
 			selector,
 			Bombs.GetOptions(),
 			humanParamsOnChanged,
 		}
-		hThresholdSelectorDialog := SelectorDialog{
+
+		// threshold
+		humanThresholdSelectorDialog := SelectorDialog{
 			paramsDialog,
 			selector,
 			ThresholdOptions,
@@ -423,13 +437,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 
 		/* Id Dialogs */
 		var idDialog *dialog.CustomDialog
-		hIdOnChanged := func(s string) {
+		humanIdOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddHumanSkillId(s)
 				idDialog.Hide()
 			}
 		}
-		pIdOnChanged := func(s string) {
+		petIdOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddPetSkillId(s)
 				idDialog.Hide()
@@ -437,17 +451,17 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		}
 		idDialog = dialog.NewCustomWithoutButtons("Select skill id", selector, window)
 		idDialog.SetOnClosed(onClosed)
-		hIdSelectorDialog := SelectorDialog{
+		humanIdSelectorDialog := SelectorDialog{
 			idDialog,
 			selector,
 			IdOptions,
-			hIdOnChanged,
+			humanIdOnChanged,
 		}
-		pIdSelectorDialog := SelectorDialog{
+		petIdSelectorDialog := SelectorDialog{
 			idDialog,
 			selector,
 			IdOptions,
-			pIdOnChanged,
+			petIdOnChanged,
 		}
 
 		/* Level Dialog */
@@ -460,7 +474,6 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		}
 		levelDialog = dialog.NewCustomWithoutButtons("Select skill level", selector, window)
 		levelDialog.SetOnClosed(onClosed)
-
 		levelSelectorDialog := SelectorDialog{
 			levelDialog,
 			selector,
@@ -496,14 +509,10 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_F_ATTACK)
 
 				dialogs := []SelectorDialog{
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			attackButton.Importance = widget.WarningImportance
 
@@ -511,7 +520,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_F_DEFEND)
 
 				dialogs := []SelectorDialog{
-					hCUSuccessSelectorDialog,
+					humanCUSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -521,16 +530,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_F_ESCAPE)
 
 				dialogs := []SelectorDialog{
-					hCUFailureSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				recallButton.Disable()
-				rideButton.Disable()
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			escapeButton.Importance = widget.WarningImportance
 
@@ -540,18 +542,11 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				statesViewer.Refresh()
 
 				dialogs := []SelectorDialog{
-					healingRatioSelectorDialog,
+					humanHealingRatioSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 
-				trainButton.Disable()
-
-				if *logDir == "" {
-					go func() {
-						time.Sleep(200 * time.Millisecond)
-						dialog.NewInformation("About Catch", "Remember to setup the log directory!!!", window).Show()
-					}()
-				}
+				notifyLogConfig("About Catch")
 			})
 			catchButton.Importance = widget.SuccessImportance
 
@@ -559,21 +554,11 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_BOMB)
 
 				dialogs := []SelectorDialog{
-					bombsSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					bombSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				escapeButton.Disable()
-				recallButton.Disable()
-				rideButton.Disable()
-				healSelfButton.Disable()
-				healOneButton.Disable()
-				healMultiButton.Disable()
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			bombButton.Importance = widget.HighImportance
 
@@ -581,9 +566,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_POTION)
 
 				dialogs := []SelectorDialog{
-					healingRatioSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanHealingRatioSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -593,11 +578,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_PET_RECALL)
 
 				dialogs := []SelectorDialog{
-					hCUSuccessSelectorDialog,
+					humanCUSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				rideButton.Disable()
 			})
 			recallButton.Importance = widget.HighImportance
 
@@ -605,7 +588,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_F_MOVE)
 
 				dialogs := []SelectorDialog{
-					hCUSuccessSelectorDialog,
+					humanCUSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -615,10 +598,6 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_S_HANG)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
-
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			hangButton.Importance = widget.SuccessImportance
 
@@ -626,16 +605,12 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_SKILL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			skillButton.Importance = widget.HighImportance
 
@@ -643,17 +618,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_T_SKILL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					hThresholdSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanThresholdSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				catchButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			thresholdSkillButton.Importance = widget.HighImportance
 
@@ -661,19 +632,12 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_S_STEAL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				healSelfButton.Disable()
-				healOneButton.Disable()
-				healMultiButton.Disable()
-				catchButton.Disable()
-				trainButton.Disable()
 			})
 			stealButton.Importance = widget.SuccessImportance
 
@@ -681,24 +645,12 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_S_TRAIN_SKILL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				defendButton.Disable()
-				moveButton.Disable()
-				skillButton.Disable()
-				bombButton.Disable()
-				rideButton.Disable()
-				potionButton.Disable()
-				healSelfButton.Disable()
-				healOneButton.Disable()
-				healMultiButton.Disable()
-				catchButton.Disable()
-				stealButton.Disable()
 			})
 			trainButton.Importance = widget.SuccessImportance
 
@@ -706,15 +658,12 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_RIDE)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			rideButton.Importance = widget.HighImportance
 
@@ -722,18 +671,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_SE_HEAL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					healingRatioSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanHealingRatioSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				healOneButton.Disable()
-				healMultiButton.Disable()
-				stealButton.Disable()
 			})
 			healSelfButton.Importance = widget.HighImportance
 
@@ -741,17 +685,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_O_HEAL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					healingRatioSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanHealingRatioSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				healSelfButton.Disable()
-				stealButton.Disable()
 			})
 			healOneButton.Importance = widget.HighImportance
 
@@ -759,18 +699,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_T_HEAL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					healingRatioSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanHealingRatioSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				healSelfButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			healTShapeButton.Importance = widget.HighImportance
 
@@ -778,18 +713,13 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddHumanState(H_C_M_HEAL)
 
 				dialogs := []SelectorDialog{
-					hIdSelectorDialog,
+					humanIdSelectorDialog,
 					levelSelectorDialog,
-					healingRatioSelectorDialog,
-					hCUSuccessSelectorDialog,
-					hCUFailureSelectorDialog,
+					humanHealingRatioSelectorDialog,
+					humanCUSuccessSelectorDialog,
+					humanCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
-
-				bombButton.Disable()
-				healSelfButton.Disable()
-				stealButton.Disable()
-				trainButton.Disable()
 			})
 			healMultiButton.Importance = widget.HighImportance
 
@@ -838,8 +768,8 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_F_ATTACK)
 
 				dialogs := []SelectorDialog{
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -856,9 +786,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_SkILL)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -868,9 +798,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_DEFEND)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -880,10 +810,10 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_SE_HEAL)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pHealingRatioSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petHealingRatioSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -893,10 +823,10 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_O_HEAL)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pHealingRatioSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petHealingRatioSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -906,9 +836,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_RIDE)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -918,9 +848,9 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_C_OFF_RIDE)
 
 				dialogs := []SelectorDialog{
-					pIdSelectorDialog,
-					pCUSuccessSelectorDialog,
-					pCUFailureSelectorDialog,
+					petIdSelectorDialog,
+					petCUSuccessSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -930,7 +860,7 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				worker.ActionState.AddPetState(P_F_ESCAPE)
 
 				dialogs := []SelectorDialog{
-					pCUFailureSelectorDialog,
+					petCUFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -941,12 +871,10 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
-				if *logDir == "" {
-					dialog.NewInformation("About Catch", "Remember to setup the log directory", window)
-				}
+				notifyLogConfig("About Catch")
 
 				dialogs := []SelectorDialog{
-					pHealingRatioSelectorDialog,
+					petHealingRatioSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -1186,7 +1114,7 @@ func stop(stopChan chan bool) {
 	}
 }
 
-func informBeeperConfig(title string) {
+func notifyBeeperConfig(title string) {
 	if !Beeper.IsReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
@@ -1195,7 +1123,16 @@ func informBeeperConfig(title string) {
 	}
 }
 
-func informBeeperAndLogConfig(title string) {
+func notifyLogConfig(title string) {
+	if *logDir == "" {
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			dialog.NewInformation(title, "Remember to setup the log directory!!!", window).Show()
+		}()
+	}
+}
+
+func notifyBeeperAndLogConfig(title string) {
 	if !Beeper.IsReady() || *logDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
