@@ -28,7 +28,7 @@ func (pw *ProductionWorkers) stop(game string) {
 }
 
 func (pw *ProductionWorkers) stopAll() {
-	for k, _ := range pw.stopChans {
+	for k := range pw.stopChans {
 		pw.stopChans[k] <- true
 	}
 }
