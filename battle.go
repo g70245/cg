@@ -233,7 +233,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		var nicknameButton *widget.Button
 		nicknameEntry := widget.NewEntry()
 		nicknameEntry.SetPlaceHolder("Enter nickname")
-		nicknameButton = widget.NewButtonWithIcon(worker.GetHandleString(), theme.AccountIcon(), func() {
+		nicknameButton = widget.NewButtonWithIcon(allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
 			nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
 			nicknameDialog.SetOnClosed(func() {
 				if _, ok := allGames[nicknameEntry.Text]; nicknameEntry.Text == "" || ok {

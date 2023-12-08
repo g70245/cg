@@ -48,6 +48,16 @@ func (gs Games) RemoveValue(hWnd HWND) {
 	}
 }
 
+func (gs Games) FindKey(hWnd HWND) (key string) {
+	for k, v := range gs {
+		if v == hWnd {
+			key = k
+			break
+		}
+	}
+	return
+}
+
 func (gs Games) Add(k string, v HWND) {
 	gs[k] = v
 }
