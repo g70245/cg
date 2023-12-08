@@ -70,7 +70,11 @@ func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInvent
 	return workers
 }
 
-func (w BattleWorker) GetHandle() string {
+func (w BattleWorker) GetHandle() HWND {
+	return w.hWnd
+}
+
+func (w BattleWorker) GetHandleString() string {
 	return fmt.Sprint(w.hWnd)
 }
 

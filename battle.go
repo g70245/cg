@@ -59,7 +59,7 @@ func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 			}
 
 			var newTabItem *container.TabItem
-			newGroupContainer, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), func(id int) func() {
+			newGroupContainer, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), games, func(id int) func() {
 				return func() {
 					delete(bgs.stopChans, id)
 
@@ -97,7 +97,7 @@ func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 	return main, bgs
 }
 
-func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
+func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
 	manaChecker := new(string)
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
@@ -233,14 +233,16 @@ func newBatttleGroupContainer(games Games, destroy func()) (autoBattleWidget *fy
 		var nicknameButton *widget.Button
 		nicknameEntry := widget.NewEntry()
 		nicknameEntry.SetPlaceHolder("Enter nickname")
-		nicknameButton = widget.NewButtonWithIcon(worker.GetHandle(), theme.AccountIcon(), func() {
+		nicknameButton = widget.NewButtonWithIcon(worker.GetHandleString(), theme.AccountIcon(), func() {
 			nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
 			nicknameDialog.SetOnClosed(func() {
-				nickname := ""
-				if nicknameEntry.Text != "" {
-					nickname = fmt.Sprintf("(%s)", nicknameEntry.Text)
+				if _, ok := allGames[nicknameEntry.Text]; nicknameEntry.Text == "" || ok {
+					return
 				}
-				nicknameButton.SetText(fmt.Sprintf("%s%s", worker.GetHandle(), nickname))
+
+				allGames.RemoveValue(worker.GetHandle())
+				allGames.Add(nicknameEntry.Text, worker.GetHandle())
+				nicknameButton.SetText(nicknameEntry.Text)
 			})
 			nicknameDialog.Show()
 		})

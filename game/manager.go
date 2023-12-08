@@ -39,7 +39,20 @@ func (gs Games) Remove(games []string) {
 	}
 }
 
-func (gs Games) Add(games map[string]HWND) {
+func (gs Games) RemoveValue(hWnd HWND) {
+	for k, v := range gs {
+		if v == hWnd {
+			delete(gs, k)
+			break
+		}
+	}
+}
+
+func (gs Games) Add(k string, v HWND) {
+	gs[k] = v
+}
+
+func (gs Games) AddGames(games map[string]HWND) {
 	for k, v := range games {
 		gs[k] = v
 	}

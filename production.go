@@ -38,11 +38,12 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 
 	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
 
-	gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
-	gamesCheckGroup.Horizontal = true
-
 	productionsContainer := container.NewVBox()
 	newProductionButton := widget.NewButtonWithIcon("New Production", theme.ContentAddIcon(), func() {
+
+		gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
+		gamesCheckGroup.Horizontal = true
+
 		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", gamesCheckGroup, window)
 		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
