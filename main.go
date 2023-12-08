@@ -108,7 +108,7 @@ func generateRobotContainer() Robot {
 	games := game.NewGames()
 
 	autoBattleContainer, autoBattleStopChans := battleContainer(games)
-	productionContainer, productionStopChans := productionContainer(games)
+	productionContainer, productionWorkers := productionContainer(games)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Auto Battle", autoBattleContainer),
@@ -120,7 +120,7 @@ func generateRobotContainer() Robot {
 	robot := Robot{main, func() {
 		main.RemoveAll()
 		stopWorkers(maps.Values(autoBattleStopChans))
-		stopWorkers(maps.Values(productionStopChans))
+		productionWorkers.stopAll()
 	}}
 	return robot
 }

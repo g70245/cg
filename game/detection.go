@@ -457,7 +457,7 @@ func checkProductionStatus(name, dir string) bool {
 }
 
 func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
-	lines := sys.GetLinesOfLog(dir, lineCount)
+	lines := sys.GetLastLinesOfLog(dir, lineCount)
 	now := time.Now()
 	for i := range lines {
 		h, hErr := strconv.Atoi(lines[i][1:3])

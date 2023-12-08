@@ -37,7 +37,7 @@ func findLastModifiedFileBefore(dir string, t time.Time) (path string, info os.F
 	return
 }
 
-func getLinesWithSeek(filepath string, lineNumber int) []string {
+func getLastLinesWithSeek(filepath string, lineNumber int) []string {
 	fileHandle, err := os.Open(filepath)
 	if err != nil {
 		panic("Cannot open file")
@@ -85,10 +85,10 @@ func byteToString(buffer []byte) string {
 
 func GetLastLineOfLog(logDir string) string {
 	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return getLinesWithSeek(path, 1)[0]
+	return getLastLinesWithSeek(path, 1)[0]
 }
 
-func GetLinesOfLog(logDir string, lineNumber int) []string {
+func GetLastLinesOfLog(logDir string, lineNumber int) []string {
 	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return getLinesWithSeek(path, lineNumber)
+	return getLastLinesWithSeek(path, lineNumber)
 }

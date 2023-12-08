@@ -13,9 +13,29 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
-	stopChans := make(map[string]chan bool)
-	productions := make(map[string]*fyne.Container)
+type ProductionWorkers struct {
+	containers map[string]*fyne.Container
+	stopChans  map[string]chan bool
+}
+
+func (pw *ProductionWorkers) isExisted(game string) bool {
+	_, ok := pw.stopChans[game]
+	return ok
+}
+
+func (pw *ProductionWorkers) stop(game string) {
+	pw.stopChans[game] <- true
+}
+
+func (pw *ProductionWorkers) stopAll() {
+	for k, _ := range pw.stopChans {
+		pw.stopChans[k] <- true
+	}
+}
+
+func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
+
+	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
 
 	gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
 	gamesCheckGroup.Horizontal = true
@@ -28,17 +48,20 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 		gamesSelectorDialog.SetOnClosed(func() {
 			for _, game := range games.GetSortedKeys() {
 				if slices.Contains(gamesCheckGroup.Selected, game) {
-					if _, ok := stopChans[game]; !ok {
-						newProductionWidget, newStopChan := newProductionContainer(game, games, nil)
-						stopChans[game] = newStopChan
-						productions[game] = newProductionWidget
-						productionsContainer.Add(newProductionWidget)
+					if !pw.isExisted(game) {
+						newContainer, newStopChan := newProductionContainer(game, games, nil)
+						pw.containers[game] = newContainer
+						pw.stopChans[game] = newStopChan
+						productionsContainer.Add(newContainer)
 					}
 				} else {
-					stop(stopChans[game])
-					productionsContainer.Remove(productions[game])
-					delete(stopChans, game)
-					delete(productions, game)
+					if pw.isExisted(game) {
+						productionsContainer.Remove(pw.containers[game])
+
+						pw.stop(game)
+						delete(pw.stopChans, game)
+						delete(pw.containers, game)
+					}
 				}
 			}
 
@@ -51,11 +74,11 @@ func productionContainer(games Games) (*fyne.Container, map[string]chan bool) {
 	})
 
 	main := container.NewVBox(newProductionButton, productionsContainer)
-	return main, stopChans
+	return main, pw
 }
 
-func newProductionContainer(handle string, games Games, destroy func()) (productionWidget *fyne.Container, stopChan chan bool) {
-	stopChan = make(chan bool)
+func newProductionContainer(handle string, games Games, destroy func()) (*fyne.Container, chan bool) {
+	stopChan := make(chan bool)
 	worker := CreateProductionWorker(games.Peek(handle), logDir, stopChan)
 
 	var nicknameButton *widget.Button
@@ -77,30 +100,29 @@ func newProductionContainer(handle string, games Games, destroy func()) (product
 	})
 	nicknameButton.Alignment = widget.ButtonAlignLeading
 
-	var isGathering *widget.Button
-	isGathering = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
-		switch isGathering.Icon {
+	var isGatheringButton *widget.Button
+	isGatheringButton = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
+		switch isGatheringButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			worker.GatheringMode = false
-			turn(theme.CheckButtonIcon(), isGathering)
+			turn(theme.CheckButtonIcon(), isGatheringButton)
 		case theme.CheckButtonIcon():
 			worker.GatheringMode = true
-			turn(theme.CheckButtonCheckedIcon(), isGathering)
+			turn(theme.CheckButtonCheckedIcon(), isGatheringButton)
 		}
 	})
 
-	var lever *widget.Button
-	lever = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
-		switch lever.Icon {
+	var switchButton *widget.Button
+	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
+		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
 			worker.Work()
-			turn(theme.MediaStopIcon(), lever)
+			turn(theme.MediaStopIcon(), switchButton)
 		case theme.MediaStopIcon():
 			worker.Stop()
-			turn(theme.MediaPlayIcon(), lever)
+			turn(theme.MediaPlayIcon(), switchButton)
 		}
 	})
 
-	productionWidget = container.NewGridWithColumns(6, nicknameButton, isGathering, lever)
-	return
+	return container.NewGridWithColumns(6, nicknameButton, isGatheringButton, switchButton), stopChan
 }
