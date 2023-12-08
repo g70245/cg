@@ -52,5 +52,13 @@ func (gs Games) GetSortedKeys() []string {
 }
 
 func (gs Games) GetHWNDs() []HWND {
-	return maps.Values(gs)
+	hWnds := make([]HWND, 0)
+
+	keys := maps.Keys(gs)
+	sort.Sort(sort.StringSlice(keys))
+	for _, key := range keys {
+		hWnds = append(hWnds, gs.Peek(key))
+	}
+
+	return hWnds
 }
