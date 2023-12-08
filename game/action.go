@@ -55,6 +55,10 @@ func clearChat(hWnd HWND) {
 	time.Sleep(ACTION_INTERVAL * time.Millisecond)
 }
 
+func openInventory(hWnd HWND) {
+	openWindowByShortcut(hWnd, 0x45)
+}
+
 func isInventoryFull(hWnd HWND) bool {
 	defer closeAllWindows(hWnd)
 	defer time.Sleep(INVENTORY_CHECKER_WAITING_INTERVAL * time.Millisecond)
@@ -63,7 +67,7 @@ func isInventoryFull(hWnd HWND) bool {
 	closeAllWindows(hWnd)
 	system.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
-	openWindowByShortcut(hWnd, 0x45)
+	openInventory(hWnd)
 
 	if px, py, ok := getNSItemWindowPos(hWnd); ok {
 		return !isAnyItemSlotFree(hWnd, px, py)
@@ -79,7 +83,7 @@ func isInventoryFullForActivity(hWnd HWND) bool {
 	closeAllWindows(hWnd)
 	system.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
-	openWindowByShortcut(hWnd, 0x45)
+	openInventory(hWnd)
 
 	if px, py, ok := getNSItemWindowPos(hWnd); ok {
 		return !isMoreThanTwoItemSlotsFree(hWnd, px, py)

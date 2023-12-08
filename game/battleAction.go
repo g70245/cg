@@ -155,7 +155,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 		case H_C_SKILL:
 			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
@@ -184,7 +184,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
@@ -289,7 +289,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 		case H_C_RIDE:
 			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
@@ -322,7 +322,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				}
 
 				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
@@ -347,7 +347,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
@@ -374,7 +374,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 			if target, ok := searchTShapeLifeBelow(b.hWnd, float32(ratio)); ok {
 				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
@@ -402,7 +402,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			count := countLifeBelow(b.hWnd, float32(ratio))
 			if count >= 4 {
 				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
@@ -435,7 +435,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 		case H_S_TRAIN_SKILL:
 			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.nextHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.nextHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
@@ -502,7 +502,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		switch b.PetStates[b.nextPetStateId] {
 		case P_F_ATTACK:
 			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				usePetSkill(b.hWnd, x, y, 1)
 				if b.attack(isPetActionSuccessful) {
 					b.logP("attacked")
@@ -518,7 +518,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		case P_C_SkILL:
 			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
@@ -540,7 +540,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			cu = C_U_REPEAT
 		case P_C_DEFEND:
 			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
@@ -565,7 +565,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				}
 
 				b.openPetSkillWindow()
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
 					if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
@@ -590,7 +590,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
@@ -607,7 +607,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 
 			b.openPetSkillWindow()
-			if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
@@ -622,7 +622,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			ratio, _ := strconv.ParseFloat(b.PetParams[b.nextPetStateId], 32)
 			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
 				b.openPetSkillWindow()
-				if x, y, ok := getSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.nextPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
 					if b.aim(target, isPetActionSuccessful) {

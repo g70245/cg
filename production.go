@@ -18,7 +18,7 @@ type ProductionWorkers struct {
 	stopChans  map[string]chan bool
 }
 
-func (pw *ProductionWorkers) isExisted(game string) bool {
+func (pw *ProductionWorkers) doesExist(game string) bool {
 	_, ok := pw.stopChans[game]
 	return ok
 }
@@ -48,14 +48,14 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 		gamesSelectorDialog.SetOnClosed(func() {
 			for _, game := range games.GetSortedKeys() {
 				if slices.Contains(gamesCheckGroup.Selected, game) {
-					if !pw.isExisted(game) {
+					if !pw.doesExist(game) {
 						newContainer, newStopChan := newProductionContainer(game, games, nil)
 						pw.containers[game] = newContainer
 						pw.stopChans[game] = newStopChan
 						productionsContainer.Add(newContainer)
 					}
 				} else {
-					if pw.isExisted(game) {
+					if pw.doesExist(game) {
 						productionsContainer.Remove(pw.containers[game])
 
 						pw.stop(game)

@@ -16,7 +16,7 @@ const (
 	GAME_HEIGHT  = 480
 	ITEM_COL_LEN = 50
 
-	DETECT_MON_TARGET_MOUSE_MOV_INTERVAL = 80
+	DETECT_MON_TARGET_CURSOR_MOV_INTERVAL = 80
 )
 
 type CheckTarget struct {
@@ -45,8 +45,8 @@ const (
 	COLOR_SCENE_BATTLE = 15595514
 
 	COLOR_MENU_BUTTON_NORMAL   = 15135992
-	COLOR_MENU_BUTTON_T        = 15201528
 	COLOR_MENU_BUTTON_POPOUT   = 10331818
+	COLOR_MENU_BUTTON_T        = 15201528
 	COLOR_MENU_BUTTON_R_POPOUT = 10331817
 	COLOR_MENU_HIDDEN          = 7568253
 
@@ -56,13 +56,13 @@ const (
 	COLOR_BATTLE_STAGE_HUMAN = 15398392
 	COLOR_BATTLE_STAGE_PET   = 8599608
 
-	COLOR_BATTLE_BLOOD_UPPER   = 9211135
-	COLOR_BATTLE_BLOOD_LOWER   = 255
-	COLOR_BATTLE_MANA_UPPER    = 16758653
-	COLOR_BATTLE_MANA_LOWER    = 16740864
-	COLOR_BATTLE_NO_BLOOD_MANA = 65536
-	COLOR_BATTLE_RECALL_BUTTON = 7694643
-	COLOR_BATTLE_SELF_TITLE    = 37083
+	COLOR_BATTLE_BLOOD_UPPER      = 9211135
+	COLOR_BATTLE_BLOOD_LOWER      = 255
+	COLOR_BATTLE_MANA_UPPER       = 16758653
+	COLOR_BATTLE_MANA_LOWER       = 16740864
+	COLOR_BATTLE_BLOOD_MANA_EMPTY = 65536
+	COLOR_BATTLE_RECALL_BUTTON    = 7694643
+	COLOR_BATTLE_NAME             = 37083
 
 	COLOR_WINDOW_SKILL_UNSELECTED   = 4411988
 	COLOR_WINDOW_SKILL_BOTTOM_SPACE = 11575428
@@ -130,12 +130,11 @@ var (
 	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
 	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{154, 132, COLOR_WINDOW_SKILL_UNSELECTED}
-	BATTLE_WINDOW_ITEM_MONEY_CLUMN  = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
-	NORMAL_WINDOW_ITEM_MONEY_CLUMN = CheckTarget{354, 134, COLOR_NS_ITEM_PIVOT}
-
-	PRODUCTION_WINDOW_ITEM_PIVOT = CheckTarget{560, 100, COLOR_PR_ITEM_PIVOT}
+	BATTLE_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
+	NORMAL_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{354, 134, COLOR_NS_ITEM_PIVOT}
+	PRODUCTION_WINDOW_ITEM_PIVOT   = CheckTarget{560, 100, COLOR_PR_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 396, COLOR_ANY}
@@ -188,7 +187,7 @@ func isPetActionSuccessful(hWnd HWND) bool {
 	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
 }
 
-func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
+func getBSSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 	sys.MoveCursorToNowhere(hWnd)
 	x := BATTLE_WINDOW_SKILL_FIRST.x
 	for x <= 164 {
@@ -206,11 +205,11 @@ func getSkillWindowPos(hWnd HWND) (int32, int32, bool) {
 
 func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	sys.MoveCursorToNowhere(hWnd)
-	x := BATTLE_WINDOW_ITEM_MONEY_CLUMN.x
-	for x <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.x+50 {
-		y := BATTLE_WINDOW_ITEM_MONEY_CLUMN.y
-		for y <= BATTLE_WINDOW_ITEM_MONEY_CLUMN.y+50 {
-			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color {
+	x := BATTLE_WINDOW_ITEM_MONEY_PIVOT.x
+	for x <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.x+50 {
+		y := BATTLE_WINDOW_ITEM_MONEY_PIVOT.y
+		for y <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.y+50 {
+			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x - 78, y + 20, true
 			}
 			y += 2
@@ -222,11 +221,11 @@ func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 
 func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	sys.MoveCursorToNowhere(hWnd)
-	x := NORMAL_WINDOW_ITEM_MONEY_CLUMN.x
-	for x <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.x+54 {
-		y := NORMAL_WINDOW_ITEM_MONEY_CLUMN.y
-		for y <= NORMAL_WINDOW_ITEM_MONEY_CLUMN.y+54 {
-			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_CLUMN.color {
+	x := NORMAL_WINDOW_ITEM_MONEY_PIVOT.x
+	for x <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.x+54 {
+		y := NORMAL_WINDOW_ITEM_MONEY_PIVOT.y
+		for y <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.y+54 {
+			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x, y + 20, true
 			}
 			y += 2
@@ -326,7 +325,7 @@ func isItemWindowStuck(hWnd HWND) bool {
 }
 
 func isBSItemWindowStillOpened(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_CLUMN.color
+	return sys.GetColor(hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color
 }
 
 type pos struct {
@@ -352,7 +351,7 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int
 	return 0, 0, false
 }
 
-func getItemPosByThreads(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
+func getItemPosWithThreads(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
 	sys.MoveCursorToNowhere(hWnd)
 
 	x := px
@@ -386,7 +385,6 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			// fmt.Println(x, y, sys.GetColor(hWnd, x, y))
 			currentColor := sys.GetColor(hWnd, x, y)
 			if currentColor == color {
 				return x, y, true
@@ -606,7 +604,7 @@ func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
 		for x <= targets[i].x+30 {
 			y := targets[i].y - 10
 			for y >= targets[i].y-26 {
-				if sys.GetColor(hWnd, x, y) == COLOR_BATTLE_SELF_TITLE {
+				if sys.GetColor(hWnd, x, y) == COLOR_BATTLE_NAME {
 					return &targets[i], true
 				}
 				y--
@@ -638,7 +636,7 @@ func getEnemyTargets(hWnd HWND, checkTargets []CheckTarget) []CheckTarget {
 	targets := []CheckTarget{}
 
 	for i := range checkTargets {
-		sys.MoveCursorWithDuration(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_MOUSE_MOV_INTERVAL)
+		sys.MoveCursorWithDuration(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_CURSOR_MOV_INTERVAL)
 		if sys.GetColor(hWnd, MENU_T.x, MENU_T.y) == COLOR_MENU_HIDDEN {
 			targets = append(targets, checkTargets[i])
 		}
