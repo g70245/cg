@@ -25,6 +25,7 @@ func (pw *ProductionWorkers) doesExist(game string) bool {
 
 func (pw *ProductionWorkers) stop(game string) {
 	pw.stopChans[game] <- true
+	close(pw.stopChans[game])
 }
 
 func (pw *ProductionWorkers) stopAll() {
@@ -78,7 +79,7 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 }
 
 func newProductionContainer(handle string, games Games, destroy func()) (*fyne.Container, chan bool) {
-	stopChan := make(chan bool)
+	stopChan := make(chan bool, 1)
 	worker := CreateProductionWorker(games.Peek(handle), logDir, stopChan)
 
 	var nicknameButton *widget.Button
