@@ -106,11 +106,11 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
 	manaCheckerSelector := widget.NewRadioGroup(games.GetSortedKeys(), func(s string) {
-		*manaChecker = s
-
-		if *manaChecker != "" {
-			manaCheckerSelectorButton.SetText("Mana Checker: " + *manaChecker)
+		if s != "" {
+			*manaChecker = fmt.Sprint(allGames[s])
+			manaCheckerSelectorButton.SetText("Mana Checker: " + s)
 		} else {
+			*manaChecker = NONE
 			manaCheckerSelectorButton.SetText("Select Mana Checker")
 		}
 		manaCheckerSelectorDialog.Hide()
