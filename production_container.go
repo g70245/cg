@@ -79,24 +79,21 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 	return main, pw
 }
 
-func newProductionContainer(handle string, games Games, destroy func()) (*fyne.Container, chan bool) {
+func newProductionContainer(game string, games Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
-	worker := CreateProductionWorker(games.Peek(handle), logDir, stopChan)
+	worker := CreateProductionWorker(games.Peek(game), logDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
 	nicknameEntry.SetPlaceHolder("Enter nickname")
-	nicknameButton = widget.NewButtonWithIcon(handle, theme.AccountIcon(), func() {
+	nicknameButton = widget.NewButtonWithIcon(game, theme.AccountIcon(), func() {
 		nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
 		nicknameDialog.SetOnClosed(func() {
-			nickname := ""
+			worker.SetName(nicknameEntry.Text)
+
 			if nicknameEntry.Text != "" {
-				worker.Name = nicknameEntry.Text
-				nickname = fmt.Sprintf("(%s)", nicknameEntry.Text)
-			} else {
-				worker.Name = NAME_NONE
+				nicknameButton.SetText(fmt.Sprintf("%s(%s)", game, nicknameEntry.Text))
 			}
-			nicknameButton.SetText(fmt.Sprintf("%s%s", handle, nickname))
 		})
 		nicknameDialog.Show()
 	})

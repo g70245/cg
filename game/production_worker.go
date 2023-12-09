@@ -25,7 +25,7 @@ type ProductionWorker struct {
 	logDir   *string
 	stopChan chan bool
 
-	Name          string
+	name          string
 	GatheringMode bool
 	ManualMode    bool
 
@@ -46,7 +46,7 @@ func CreateProductionWorker(hWnd HWND, logDir *string, stopChan chan bool) Produ
 	return ProductionWorker{
 		hWnd:                   hWnd,
 		logDir:                 logDir,
-		Name:                   NAME_NONE,
+		name:                   NAME_NONE,
 		stopChan:               stopChan,
 		workerTicker:           newWorkerTicker,
 		logCheckerTicker:       newLogCheckerTicker,
@@ -79,7 +79,7 @@ func (p *ProductionWorker) Work() {
 					}
 				}
 			case <-p.logCheckerTicker.C:
-				if checkProductionStatus(p.Name, *p.logDir) {
+				if checkProductionStatus(p.name, *p.logDir) {
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
 					p.StopTickers()
 					Beeper.Play()
@@ -215,4 +215,8 @@ func (p *ProductionWorker) tidyInventory() {
 			time.Sleep(PRODUCTION_TIDY_UP_INTERVAL * time.Millisecond)
 		}
 	}
+}
+
+func (p *ProductionWorker) SetName(name string) {
+	p.name = name
 }
