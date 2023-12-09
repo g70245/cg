@@ -144,11 +144,9 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
 			if isDeleting {
 				for i := range workers {
-					workers[i].ActionState.Enabled = false
-					workers[i].StopInventoryChecker()
+					workers[i].Stop()
 				}
 
-				stop(sharedStopChan)
 				close(sharedStopChan)
 				destroy()
 			}
