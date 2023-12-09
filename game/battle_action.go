@@ -459,7 +459,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.nextHumanStateId], 32)
 				if b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self); b.isOutOfHealth {
 					b.logH("is out of health")
-					Beeper.Play()
 				}
 			}
 		}
@@ -991,7 +990,6 @@ func (b *BattleActionState) checkHumanMana() {
 		clearChat(b.hWnd)
 		if b.isOutOfMana = isAnyPlayerOutOfMana(b.hWnd); b.isOutOfMana {
 			b.logH("someone is out of mana")
-			Beeper.Play()
 		}
 	}
 }
