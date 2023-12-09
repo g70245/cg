@@ -917,7 +917,7 @@ func (b *BattleActionState) detectEnemies() {
 		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
-	if getScene(b.hWnd) == NORMAL_SCENE || !b.Enabled || (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
+	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
 		return
 	}
 
@@ -985,6 +985,10 @@ func (b *BattleActionState) endPetHanging() {
 }
 
 func (b *BattleActionState) checkHumanMana() {
+	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled {
+		return
+	}
+
 	if b.isManaChecker() {
 		closeAllWindows(b.hWnd)
 		clearChat(b.hWnd)
