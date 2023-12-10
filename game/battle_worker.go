@@ -36,6 +36,8 @@ type BattleWorker struct {
 	workerTicker                     *time.Ticker
 	inventoryCheckerTicker           *time.Ticker
 	teleportAndResourceCheckerTicker *time.Ticker
+
+	isOutOfResource bool
 }
 
 type BattleWorkers []BattleWorker
@@ -100,7 +102,7 @@ func (b *BattleWorker) Work() {
 					b.ActionState.Act()
 				case NORMAL_SCENE:
 					if b.MovementState.Mode != NONE {
-						if b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
+						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
 							b.StopTickers()
 							Beeper.Play()
 							break
@@ -134,7 +136,7 @@ func (b *BattleWorker) Work() {
 						b.StopTickers()
 						Beeper.Play()
 					}
-					if isOutOfResource(*b.logDir) {
+					if b.isOutOfResource = isOutOfResource(*b.logDir); b.isOutOfResource {
 						log.Printf("Handle %d is out of resource\n", b.hWnd)
 						b.StopTickers()
 						Beeper.Play()
@@ -170,6 +172,8 @@ func (b *BattleWorker) reset() {
 	b.ActionState.ActivityCheckerEnabled = b.ActivityCheckerEnabled
 
 	b.MovementState.origin = getCurrentGamePos(b.hWnd)
+
+	b.isOutOfResource = false
 }
 
 func (b *BattleWorker) StopInventoryChecker() {
