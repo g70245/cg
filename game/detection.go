@@ -2,6 +2,8 @@ package game
 
 import (
 	sys "cg/system"
+	"math/rand"
+	"slices"
 
 	"strconv"
 	"strings"
@@ -508,16 +510,19 @@ func isAnyPlayerOutOfMana(hWnd HWND) bool {
 
 func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
 	healthPoint := int32(ratio*30) + checkTarget.x
-	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
-		sys.GetColor(hWnd, checkTarget.x-1, checkTarget.y) == COLOR_BATTLE_BLOOD_UPPER
+	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER
 }
 
 func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
 	sys.MoveCursorToNowhere(hWnd)
 
-	for i := range allTargets {
-		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
-			return &allTargets[i], true
+	copiedAllTargets := slices.Clone(allTargets)
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	rand.Shuffle(len(copiedAllTargets), func(i, j int) { copiedAllTargets[i], copiedAllTargets[j] = copiedAllTargets[j], copiedAllTargets[i] })
+
+	for i := range copiedAllTargets {
+		if isLifeBelow(hWnd, ratio, &copiedAllTargets[i]) {
+			return &copiedAllTargets[i], true
 		}
 	}
 	return nil, false
