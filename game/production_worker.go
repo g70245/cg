@@ -65,6 +65,8 @@ func (p *ProductionWorker) Work() {
 	go func() {
 		defer p.StopTickers()
 
+		p.Reset()
+
 		for {
 			select {
 			case <-p.workerTicker.C:
@@ -106,8 +108,12 @@ func (p *ProductionWorker) StopTickers() {
 
 func (p *ProductionWorker) Stop() {
 	p.stopChan <- true
-	p.ManualMode = false
+	p.ManualMode = true
 	Beeper.Stop()
+}
+
+func (p *ProductionWorker) Reset() {
+	p.ManualMode = false
 }
 
 func (p *ProductionWorker) prepareMaterials() {
