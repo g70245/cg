@@ -18,6 +18,7 @@ const (
 
 	PRODUCTION_CHECKER_LOG_INTERVAL_SEC       = 6
 	PRODUCTION_CHECKER_INVENTORY_INTERVAL_SEC = 16
+	PRODUCTION_CHECKER_AUDIBLE_CUE_SEC        = 4
 )
 
 type ProductionWorker struct {
@@ -32,16 +33,19 @@ type ProductionWorker struct {
 	workerTicker           *time.Ticker
 	logCheckerTicker       *time.Ticker
 	inventoryCheckerTicker *time.Ticker
+	audibleCueTicker       *time.Ticker
 }
 
 func CreateProductionWorker(hWnd HWND, logDir *string, stopChan chan bool) ProductionWorker {
 	newWorkerTicker := time.NewTicker(time.Hour)
 	newLogCheckerTicker := time.NewTicker(time.Hour)
 	newInventoryCheckerTicker := time.NewTicker(time.Hour)
+	newAudibleCueTicker := time.NewTicker(time.Hour)
 
 	newWorkerTicker.Stop()
 	newLogCheckerTicker.Stop()
 	newInventoryCheckerTicker.Stop()
+	newAudibleCueTicker.Stop()
 
 	return ProductionWorker{
 		hWnd:                   hWnd,
@@ -51,6 +55,7 @@ func CreateProductionWorker(hWnd HWND, logDir *string, stopChan chan bool) Produ
 		workerTicker:           newWorkerTicker,
 		logCheckerTicker:       newLogCheckerTicker,
 		inventoryCheckerTicker: newInventoryCheckerTicker,
+		audibleCueTicker:       newAudibleCueTicker,
 	}
 }
 
@@ -59,6 +64,7 @@ func (p *ProductionWorker) Work() {
 	p.workerTicker.Reset(PRODUCTION_WORKER_INTERVAL * time.Millisecond)
 	p.logCheckerTicker.Reset(PRODUCTION_CHECKER_LOG_INTERVAL_SEC * time.Second)
 	p.inventoryCheckerTicker.Reset(PRODUCTION_CHECKER_INVENTORY_INTERVAL_SEC * time.Second)
+	p.audibleCueTicker.Reset(PRODUCTION_CHECKER_AUDIBLE_CUE_SEC * time.Second)
 
 	log.Printf("Handle %d Production started\n", p.hWnd)
 
@@ -74,11 +80,6 @@ func (p *ProductionWorker) Work() {
 					p.prepareMaterials()
 					p.produce()
 					p.tidyInventory()
-
-					if p.ManualMode {
-						p.StopTickers()
-						Beeper.Play()
-					}
 				}
 			case <-p.logCheckerTicker.C:
 				if checkProductionStatus(p.name, *p.logDir) {
@@ -89,6 +90,11 @@ func (p *ProductionWorker) Work() {
 			case <-p.inventoryCheckerTicker.C:
 				if isInventoryFullWithoutClosingAllWindows(p.hWnd) {
 					log.Printf("Production %d inventory is full\n", p.hWnd)
+					p.StopTickers()
+					Beeper.Play()
+				}
+			case <-p.audibleCueTicker.C:
+				if p.ManualMode {
 					p.StopTickers()
 					Beeper.Play()
 				}
@@ -104,6 +110,7 @@ func (p *ProductionWorker) StopTickers() {
 	p.workerTicker.Stop()
 	p.logCheckerTicker.Stop()
 	p.inventoryCheckerTicker.Stop()
+	p.audibleCueTicker.Stop()
 }
 
 func (p *ProductionWorker) Stop() {
@@ -114,6 +121,7 @@ func (p *ProductionWorker) Stop() {
 
 func (p *ProductionWorker) Reset() {
 	p.ManualMode = false
+	Beeper.Stop()
 }
 
 func (p *ProductionWorker) prepareMaterials() {
@@ -121,6 +129,8 @@ func (p *ProductionWorker) prepareMaterials() {
 	if p.ManualMode {
 		return
 	}
+
+	log.Printf("Production %d is preparing\n", p.hWnd)
 
 	defer switchWindowWithShortcut(p.hWnd, 0x45)
 	switchWindowWithShortcut(p.hWnd, 0x45)
@@ -158,6 +168,8 @@ func (p *ProductionWorker) produce() {
 	if p.ManualMode {
 		return
 	}
+
+	log.Printf("Production %d is producing\n", p.hWnd)
 
 	px, py, ok := getPRItemWindowPos(p.hWnd)
 	if !ok {
@@ -199,6 +211,8 @@ func (p *ProductionWorker) tidyInventory() {
 	if p.ManualMode {
 		return
 	}
+
+	log.Printf("Production %d is tidying up\n", p.hWnd)
 
 	px, py, ok := getPRItemWindowPos(p.hWnd)
 	if !ok {

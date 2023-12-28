@@ -25,25 +25,25 @@ func init() {
 
 func (b *beeper) Init(path string) {
 
-	b.Close()
-
-	f, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	streamer, format, err := mp3.Decode(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
-	speaker.Play(ctrl)
-
-	b.isReady = true
-
 	go func() {
+		b.Close()
+
+		f, err := os.Open(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		streamer, format, err := mp3.Decode(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+		ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
+		speaker.Play(ctrl)
+
+		b.isReady = true
+
 		defer streamer.Close()
 		defer speaker.Clear()
 

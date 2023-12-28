@@ -135,7 +135,7 @@ var (
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
 	BATTLE_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
-	NORMAL_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{354, 134, COLOR_NS_ITEM_PIVOT}
+	NORMAL_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{350, 124, COLOR_NS_ITEM_PIVOT}
 	PRODUCTION_WINDOW_ITEM_PIVOT   = CheckTarget{560, 100, COLOR_PR_ITEM_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
@@ -230,9 +230,9 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x, y + 20, true
 			}
-			y += 2
+			y += 1
 		}
-		x += 2
+		x += 1
 	}
 	return 0, 0, false
 }
