@@ -227,12 +227,12 @@ func (p *ProductionWorker) tidyInventory() {
 		for i = 4; i > 0; i-- {
 			MoveCursorToNowhere(p.hWnd)
 			if isPRSlotFree(p.hWnd, px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN) {
-
 				continue
 			}
 			LeftClick(p.hWnd, px+i*50, py+j*50)
 			LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
 			time.Sleep(PRODUCTION_TIDY_UP_INTERVAL * time.Millisecond)
+			break
 		}
 	}
 }
