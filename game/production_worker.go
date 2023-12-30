@@ -232,7 +232,6 @@ func (p *ProductionWorker) tidyInventory() {
 			LeftClick(p.hWnd, px+i*50, py+j*50)
 			LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
 			time.Sleep(PRODUCTION_TIDY_UP_INTERVAL * time.Millisecond)
-			break
 		}
 	}
 }
