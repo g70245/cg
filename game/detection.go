@@ -510,7 +510,9 @@ func isAnyPlayerOutOfMana(hWnd HWND) bool {
 
 func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
 	healthPoint := int32(ratio*30) + checkTarget.x
-	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER
+	oy := checkTarget.y + 3
+	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
+		sys.GetColor(hWnd, checkTarget.x, oy) == COLOR_BATTLE_MANA_UPPER
 }
 
 func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
