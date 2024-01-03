@@ -2,6 +2,7 @@ package game
 
 import (
 	. "cg/system"
+	"sync"
 
 	"fmt"
 	"log"
@@ -23,6 +24,7 @@ type BattleWorker struct {
 	manaChecker           *string
 	sharedInventoryStatus *bool
 	sharedStopChan        chan bool
+	sharedWaitGroup       *sync.WaitGroup
 
 	ActionState   BattleActionState
 	MovementState BattleMovementState
@@ -42,7 +44,7 @@ type BattleWorker struct {
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool) BattleWorkers {
+func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range hWnds {
 		newWorkerTicker := time.NewTicker(time.Hour)
@@ -59,6 +61,7 @@ func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInvent
 			manaChecker:           manaChecker,
 			sharedInventoryStatus: sharedInventoryStatus,
 			sharedStopChan:        sharedStopChan,
+			sharedWaitGroup:       sharedWaitGroup,
 			ActionState:           CreateNewBattleActionState(hWnd, logDir, manaChecker),
 			MovementState: BattleMovementState{
 				hWnd: hWnd,
@@ -99,7 +102,9 @@ func (b *BattleWorker) Work() {
 			case <-b.workerTicker.C:
 				switch getScene(b.hWnd) {
 				case BATTLE_SCENE:
+					b.sharedWaitGroup.Add(1)
 					b.ActionState.Act()
+					b.sharedWaitGroup.Done()
 				case NORMAL_SCENE:
 					if b.MovementState.Mode != NONE {
 						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
@@ -108,6 +113,7 @@ func (b *BattleWorker) Work() {
 							break
 						}
 
+						b.sharedWaitGroup.Wait()
 						b.MovementState.Move()
 					}
 				default:
@@ -195,8 +201,4 @@ func (b *BattleWorker) StartTeleportAndResourceChecker() {
 
 func (b *BattleWorker) setInventoryStatus(isFull bool) {
 	*b.sharedInventoryStatus = isFull
-}
-
-func (b *BattleWorker) getInventoryStatus() bool {
-	return *b.sharedInventoryStatus
 }

@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"fmt"
@@ -101,7 +102,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 	manaChecker := new(string)
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, sharedInventoryStatus, sharedStopChan)
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
