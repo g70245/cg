@@ -102,9 +102,13 @@ func (b *BattleWorker) Work() {
 			case <-b.workerTicker.C:
 				switch getScene(b.hWnd) {
 				case BATTLE_SCENE:
-					b.sharedWaitGroup.Add(1)
-					b.ActionState.Act()
-					b.sharedWaitGroup.Done()
+					if b.isGrouping() {
+						b.sharedWaitGroup.Add(1)
+						b.ActionState.Act()
+						b.sharedWaitGroup.Done()
+					} else {
+						b.ActionState.Act()
+					}
 				case NORMAL_SCENE:
 					if b.MovementState.Mode != NONE {
 						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
@@ -113,8 +117,12 @@ func (b *BattleWorker) Work() {
 							break
 						}
 
-						b.sharedWaitGroup.Wait()
-						b.MovementState.Move()
+						if b.isGrouping() {
+							b.sharedWaitGroup.Wait()
+							b.MovementState.Move()
+						} else {
+							b.MovementState.Move()
+						}
 					}
 				default:
 					// do nothing
@@ -201,4 +209,8 @@ func (b *BattleWorker) StartTeleportAndResourceChecker() {
 
 func (b *BattleWorker) setInventoryStatus(isFull bool) {
 	*b.sharedInventoryStatus = isFull
+}
+
+func (b *BattleWorker) isGrouping() bool {
+	return *b.manaChecker != NONE
 }

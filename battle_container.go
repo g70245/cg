@@ -99,19 +99,19 @@ func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 }
 
 func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
-	manaChecker := new(string)
+	manaChecker := NONE
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
+	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
 	manaCheckerSelector := widget.NewRadioGroup(games.GetSortedKeys(), func(s string) {
 		if s != "" {
-			*manaChecker = fmt.Sprint(allGames[s])
+			manaChecker = fmt.Sprint(allGames[s])
 			manaCheckerSelectorButton.SetText("Mana Checker: " + s)
 		} else {
-			*manaChecker = NONE
+			manaChecker = NONE
 			manaCheckerSelectorButton.SetText("Select Mana Checker")
 		}
 		manaCheckerSelectorDialog.Hide()
@@ -915,7 +915,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 								actionState.SetHWND(worker.ActionState.GetHWND())
 								worker.ActionState = actionState
 								worker.ActionState.LogDir = logDir
-								worker.ActionState.ManaChecker = manaChecker
+								worker.ActionState.ManaChecker = &manaChecker
 								statesViewer.Objects = generateTags(*worker)
 								statesViewer.Refresh()
 							}
