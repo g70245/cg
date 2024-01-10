@@ -698,9 +698,11 @@ func (b *BattleActionState) useItem(x, y int32) {
 }
 
 func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
+	var targets []CheckTarget
+	copy(targets, b.enemies)
 	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(b.enemies), func(i, j int) { b.enemies[i], b.enemies[j] = b.enemies[j], b.enemies[i] })
-	for _, target := range b.enemies {
+	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
+	for _, target := range targets {
 		LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(BATTLE_ACTION_ATTACK_INTERVAL * time.Millisecond)
 		if stateChecker(b.hWnd) {
@@ -906,11 +908,11 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 
 func (b *BattleActionState) detectEnemies() {
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd) {
 		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
-	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
+	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || len(b.enemies) == 1 {
 		return
 	}
 
@@ -919,7 +921,7 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= 4 {
+	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= 3 {
 		b.enemies = allMonsterTargets
 	}
 
