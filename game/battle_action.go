@@ -907,7 +907,8 @@ func (b *BattleActionState) detectEnemies() {
 		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
 	}
 
-	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || len(b.enemies) == 1 {
+	// initial state: enemyDetectorCounter=0
+	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (b.enemyDetectorCounter != 0 && len(b.enemies) == 1) {
 		return
 	}
 
