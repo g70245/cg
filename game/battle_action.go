@@ -927,6 +927,8 @@ func (b *BattleActionState) detectEnemies() {
 		b.enemyDetectorCounter = 1
 	}
 	b.enemies = newEnemies
+
+	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(b.hWnd), len(b.enemies))
 }
 
 func (b *BattleActionState) endHumanHanging() {
