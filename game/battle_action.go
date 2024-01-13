@@ -236,7 +236,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			openWindowByShortcut(b.hWnd, 0x45)
 			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
-					DoubleClickRepeatedly(HWND(b.hWnd), x, y)
+					useItem(b.hWnd, x, y)
 					if isBSItemWindowStillOpened(b.hWnd, px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.currentHumanStateId]
@@ -264,7 +264,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				openWindowByShortcut(b.hWnd, 0x45)
 				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
-						DoubleClickRepeatedly(HWND(b.hWnd), x, y)
+						useItem(b.hWnd, x, y)
 						if isBSItemWindowStillOpened(b.hWnd, px, py) {
 							b.logH("failed at double clicking")
 							cu = b.HumanFailureControlUnits[b.currentHumanStateId]
@@ -692,13 +692,8 @@ func (b *BattleActionState) enableBattleCommandAttack() {
 	}
 }
 
-func (b *BattleActionState) useItem(x, y int32) {
-	DoubleClickRepeatedly(b.hWnd, x, y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
-}
-
 func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
-	var targets []CheckTarget
+	targets := make([]CheckTarget, len(b.enemies))
 	copy(targets, b.enemies)
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
@@ -997,6 +992,5 @@ func TestAction(hWnd HWND) (x int32, y int32, successful bool) {
 	closeAllWindows(hWnd)
 	clearChat(hWnd)
 	openWindowByShortcut(hWnd, 0x45)
-	x, y, successful = getBSItemWindowPos(hWnd)
 	return getItemPos(hWnd, x, y, 16448250, 3)
 }

@@ -114,3 +114,7 @@ func getCurrentGamePos(hWnd HWND) GamePos {
 	fy := system.ReadMemoryFloat32(hWnd, 0x95C890, 32)
 	return GamePos{float64(fx / 64), float64(fy / 64)}
 }
+
+func useItem(hWnd HWND, x, y int32) {
+	system.DoubleClickRepeatedly(hWnd, x, y)
+}
