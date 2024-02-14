@@ -81,7 +81,7 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 
 func newProductionContainer(game string, games Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
-	worker := CreateProductionWorker(games.Peek(game), logDir, stopChan)
+	worker := NewProductionWorker(games.Peek(game), logDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()

@@ -1,14 +1,14 @@
 package game
 
 import (
-	. "cg/system"
+	. "cg/utils"
 	"sync"
 
 	"fmt"
 	"log"
 	"time"
 
-	. "github.com/g70245/win"
+	"github.com/g70245/win"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 type BattleWorker struct {
-	hWnd                  HWND
+	hWnd                  win.HWND
 	logDir                *string
 	manaChecker           *string
 	sharedInventoryStatus *bool
@@ -44,9 +44,9 @@ type BattleWorker struct {
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) BattleWorkers {
+func CreateBattleWorkers(games Games, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) BattleWorkers {
 	var workers []BattleWorker
-	for _, hWnd := range hWnds {
+	for _, hWnd := range games.GetHWNDs() {
 		newWorkerTicker := time.NewTicker(time.Hour)
 		newInventoryCheckerTicker := time.NewTicker(time.Hour)
 		newTeleportAndResourceCheckerTicker := time.NewTicker(time.Hour)
@@ -75,7 +75,7 @@ func CreateBattleWorkers(hWnds []HWND, logDir, manaChecker *string, sharedInvent
 	return workers
 }
 
-func (w BattleWorker) GetHandle() HWND {
+func (w BattleWorker) GetHandle() win.HWND {
 	return w.hWnd
 }
 
@@ -130,7 +130,7 @@ func (b *BattleWorker) Work() {
 			case <-b.inventoryCheckerTicker.C:
 				if b.InventoryCheckerEnabled {
 					if b.ActivityCheckerEnabled {
-						if isInventoryFullForActivity(b.hWnd) {
+						if b.isInventoryFullForActivity() {
 							log.Printf("Handle %d inventory is full\n", b.hWnd)
 							b.setInventoryStatus(true)
 							b.StopTickers()

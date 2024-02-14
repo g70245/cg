@@ -2,7 +2,7 @@ package main
 
 import (
 	. "cg/game"
-	. "cg/system"
+	. "cg/utils"
 	"encoding/json"
 	"errors"
 	"image/color"
@@ -102,7 +102,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 	manaChecker := NONE
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games.GetHWNDs(), logDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
+	workers := CreateBattleWorkers(games, logDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button

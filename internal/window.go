@@ -1,14 +1,15 @@
-package system
+package internal
 
 import (
 	"fmt"
+	"slices"
 	"syscall"
 
 	"github.com/g70245/win"
 )
 
-const (
-	TARGET_CLASS = "Blue"
+var (
+	TARGET_CLASSES = []string{"Blue"}
 )
 
 func FindWindows() map[string]win.HWND {
@@ -21,7 +22,7 @@ func FindWindows() map[string]win.HWND {
 
 		win.GetClassName(win.HWND(h), &result[0], maxCount)
 
-		if syscall.UTF16ToString(result) == TARGET_CLASS {
+		if slices.Contains(TARGET_CLASSES, syscall.UTF16ToString(result)) {
 			handles[fmt.Sprint(h)] = win.HWND(h)
 		}
 		return 1 // continue

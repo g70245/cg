@@ -1,13 +1,13 @@
 package game
 
 import (
-	sys "cg/system"
+	. "cg/internal"
 
 	"log"
 	"math"
 	"math/rand"
 
-	. "github.com/g70245/win"
+	"github.com/g70245/win"
 )
 
 var (
@@ -29,7 +29,7 @@ const (
 var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
 
 type BattleMovementState struct {
-	hWnd   HWND
+	hWnd   win.HWND
 	origin GamePos
 	Mode   BattleMovementMode
 }
@@ -54,15 +54,15 @@ func (state *BattleMovementState) Move() {
 
 	log.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
-	sys.LeftClick(state.hWnd, x, y)
+	LeftClick(state.hWnd, x, y)
 }
 
-func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBias bool) (x, y int32) {
+func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBiasable bool) (x, y int32) {
 	xOrigin := int32(GAME_WIDTH / 2)
 	yOrigin := int32(GAME_HEIGHT / 2)
 
 	var randomBiasAngle float64
-	if isBias {
+	if isBiasable {
 		randomBiasAngle = rand.Float64() * BIAS_ANGLE * state.nextBiasMultiplier()
 	}
 

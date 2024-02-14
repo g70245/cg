@@ -1,4 +1,4 @@
-package system
+package utils
 
 import (
 	"log"
@@ -80,6 +80,6 @@ func (b *beeper) Close() {
 	}
 }
 
-func (b beeper) IsReady() bool {
+func (b *beeper) IsReady() bool {
 	return b.isReady
 }
