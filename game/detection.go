@@ -423,7 +423,7 @@ func isOnRide(hWnd HWND) bool {
 var (
 	TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	OUT_OF_RESOURCE    = []string{"道具已經用完了"}
-	ACTIVITY           = []string{"發現野生一級", "南瓜之王"}
+	ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王"}
 	PRODUCTION_FAILURE = []string{}
 )
 
@@ -432,7 +432,7 @@ func doesEncounterActivityMonsters(dir string) bool {
 		return false
 	}
 
-	return checkWord(dir, 5, 30, ACTIVITY)
+	return checkWord(dir, 5, 15, ACTIVITY)
 }
 
 func isTeleported(dir string) bool {
