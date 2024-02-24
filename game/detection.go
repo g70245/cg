@@ -5,7 +5,6 @@ import (
 
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/g70245/win"
@@ -192,10 +191,7 @@ func areMoreThanTwoInventorySlotsFree(hWnd win.HWND, px, py int32) bool {
 		}
 	}
 
-	if counter > 2 {
-		return true
-	}
-	return false
+	return counter > 2
 }
 
 func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
@@ -211,11 +207,6 @@ func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 		x += 5
 	}
 	return true
-}
-
-type pos struct {
-	x, y  int32
-	found bool
 }
 
 func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
@@ -237,34 +228,39 @@ func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int
 }
 
 // deprecated
-func getItemPosWithThreads(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
-	MoveCursorToNowhere(hWnd)
+// type pos struct {
+// 	x, y  int32
+// 	found bool
+// }
 
-	x := px
-	y := py
+// func getItemPosWithThreads(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+// 	MoveCursorToNowhere(hWnd)
 
-	var wg sync.WaitGroup
-	wg.Add(4)
+// 	x := px
+// 	y := py
 
-	var i, j int32
-	target := pos{}
+// 	var wg sync.WaitGroup
+// 	wg.Add(4)
 
-	for j = 0; j < 4; j++ {
-		go func(j int32, wg *sync.WaitGroup) {
-			defer wg.Done()
+// 	var i, j int32
+// 	target := pos{}
 
-			for i = 0; i < 5; i++ {
-				if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
-					target = pos{tx, ty, found}
-					return
-				}
-			}
-		}(j, &wg)
-	}
+// 	for j = 0; j < 4; j++ {
+// 		go func(j int32, wg *sync.WaitGroup) {
+// 			defer wg.Done()
 
-	wg.Wait()
-	return target.x, target.y, target.found
-}
+// 			for i = 0; i < 5; i++ {
+// 				if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
+// 					target = pos{tx, ty, found}
+// 					return
+// 				}
+// 			}
+// 		}(j, &wg)
+// 	}
+
+// 	wg.Wait()
+// 	return target.x, target.y, target.found
+// }
 
 func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
 	x := px
