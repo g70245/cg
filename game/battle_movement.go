@@ -2,6 +2,7 @@ package game
 
 import (
 	. "cg/internal"
+	"fmt"
 
 	"log"
 	"math"
@@ -16,17 +17,28 @@ var (
 )
 
 type BattleMovementMode string
+type BattleMovementModes []BattleMovementMode
+
+func (m BattleMovementModes) GetOptions() []string {
+	var options []string
+
+	for _, mode := range m {
+		options = append(options, fmt.Sprint(mode))
+	}
+
+	return options
+}
 
 const (
 	NONE                     BattleMovementMode = "None"
-	DIAGONAL                                    = "Diagonal"
-	BIASED_DIAGONAL                             = "B. Diagonal"
-	REVERSED_DIAGONAL                           = "Reversed Diagonal"
-	BIASED_REVERSED_DIAGONAL                    = "B. Reversed Diagonal"
-	HYBRID_DIAGONAL                             = "Hybrid Diagonal"
+	DIAGONAL                 BattleMovementMode = "Diagonal"
+	BIASED_DIAGONAL          BattleMovementMode = "B. Diagonal"
+	REVERSED_DIAGONAL        BattleMovementMode = "Reversed Diagonal"
+	BIASED_REVERSED_DIAGONAL BattleMovementMode = "B. Reversed Diagonal"
+	HYBRID_DIAGONAL          BattleMovementMode = "Hybrid Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
+var BATTLE_MOVEMENT_MODES BattleMovementModes = []BattleMovementMode{NONE, DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
 
 type BattleMovementState struct {
 	hWnd   win.HWND
