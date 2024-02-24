@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	TARGET_CLASSES = []string{"Blue", "Sandbox:CG1:Blue"}
+	TARGET_CLASSES = []string{"Blue"}
 )
 
 func FindWindows() map[string]win.HWND {
