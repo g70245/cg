@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func GetLatestLineOfLog(logDir string) string {
+func GetLastLineOfLog(logDir string) string {
 	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
 	return getLastLinesWithSeek(path, 1)[0]
 }
