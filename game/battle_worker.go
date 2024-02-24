@@ -12,10 +12,13 @@ import (
 )
 
 const (
-	BATTLE_WORKER_INTERVAL                    = 400
-	BATTLE_CHECKER_INTERVAL                   = 300
-	BATTLE_CHECKER_INVENTORY_INTERVAL_SEC     = 60
-	BATTLE_CHECKER_INVENTORY_WAITING_INTERVAL = 400
+	NO_MANA_CHECKER = "none"
+)
+
+const (
+	DURATION_BATTLE_WORKER            = 400 * time.Millisecond
+	DURATION_BATTLE_CHECKER_LOG       = 300 * time.Millisecond
+	DURATION_BATTLE_CHECKER_INVENTORY = 60 * time.Second
 )
 
 type BattleWorker struct {
@@ -86,9 +89,9 @@ func (w BattleWorker) GetHandleString() string {
 func (b *BattleWorker) Work() {
 	closeAllWindows(b.hWnd)
 
-	b.workerTicker.Reset(BATTLE_WORKER_INTERVAL * time.Millisecond)
-	b.inventoryCheckerTicker.Reset(BATTLE_CHECKER_INVENTORY_INTERVAL_SEC * time.Second)
-	b.teleportAndResourceCheckerTicker.Reset(BATTLE_CHECKER_INTERVAL * time.Millisecond)
+	b.workerTicker.Reset(DURATION_BATTLE_WORKER)
+	b.inventoryCheckerTicker.Reset(DURATION_BATTLE_CHECKER_INVENTORY)
+	b.teleportAndResourceCheckerTicker.Reset(DURATION_BATTLE_CHECKER_LOG)
 
 	go func() {
 		defer b.StopTickers()
@@ -212,5 +215,5 @@ func (b *BattleWorker) setInventoryStatus(isFull bool) {
 }
 
 func (b *BattleWorker) isGrouping() bool {
-	return *b.manaChecker != NONE
+	return *b.manaChecker != NO_MANA_CHECKER
 }

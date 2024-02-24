@@ -18,12 +18,12 @@ var (
 type BattleMovementMode string
 
 const (
-	NONE                     = "None"
-	DIAGONAL                 = "Diagonal"
-	BIASED_DIAGONAL          = "B. Diagonal"
-	REVERSED_DIAGONAL        = "Reversed Diagonal"
-	BIASED_REVERSED_DIAGONAL = "B. Reversed Diagonal"
-	HYBRID_DIAGONAL          = "Hybrid Diagonal"
+	NONE                     BattleMovementMode = "None"
+	DIAGONAL                                    = "Diagonal"
+	BIASED_DIAGONAL                             = "B. Diagonal"
+	REVERSED_DIAGONAL                           = "Reversed Diagonal"
+	BIASED_REVERSED_DIAGONAL                    = "B. Reversed Diagonal"
+	HYBRID_DIAGONAL                             = "Hybrid Diagonal"
 )
 
 var BATTLE_MOVEMENT_MODES = []string{DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}

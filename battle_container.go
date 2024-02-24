@@ -99,7 +99,7 @@ func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 }
 
 func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
-	manaChecker := NONE
+	manaChecker := NO_MANA_CHECKER
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
 	workers := CreateBattleWorkers(games, logDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
@@ -111,7 +111,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			manaChecker = fmt.Sprint(allGames[s])
 			manaCheckerSelectorButton.SetText("Mana Checker: " + s)
 		} else {
-			manaChecker = NONE
+			manaChecker = NO_MANA_CHECKER
 			manaCheckerSelectorButton.SetText("Select Mana Checker")
 		}
 		manaCheckerSelectorDialog.Hide()
