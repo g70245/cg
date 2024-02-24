@@ -1,4 +1,4 @@
-package system
+package internal
 
 import (
 	"bytes"
@@ -10,6 +10,16 @@ import (
 	"golang.org/x/text/encoding/traditionalchinese"
 	"golang.org/x/text/transform"
 )
+
+func GetLastLineOfLog(logDir string) string {
+	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return getLastLinesWithSeek(path, 1)[0]
+}
+
+func GetLastLinesOfLog(logDir string, lineCount int) []string {
+	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	return getLastLinesWithSeek(path, lineCount)
+}
 
 func findLastModifiedFileBefore(dir string, t time.Time) (path string, info os.FileInfo, err error) {
 	isFirst := true
@@ -81,14 +91,4 @@ func byteToString(buffer []byte) string {
 	transformReader := transform.NewReader(bytes.NewReader(buffer), traditionalchinese.Big5.NewDecoder())
 	decBytes, _ := io.ReadAll(transformReader)
 	return string(decBytes)
-}
-
-func GetLastLineOfLog(logDir string) string {
-	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return getLastLinesWithSeek(path, 1)[0]
-}
-
-func GetLastLinesOfLog(logDir string, lineNumber int) []string {
-	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
-	return getLastLinesWithSeek(path, lineNumber)
 }

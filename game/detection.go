@@ -1,43 +1,28 @@
 package game
 
 import (
-	sys "cg/system"
-	"math/rand"
-	"slices"
+	. "cg/internal"
 
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	. "github.com/g70245/win"
-)
-
-const (
-	GAME_WIDTH   = 640
-	GAME_HEIGHT  = 480
-	ITEM_COL_LEN = 50
-
-	DETECT_MON_TARGET_CURSOR_MOV_INTERVAL = 80
+	"github.com/g70245/win"
 )
 
 type CheckTarget struct {
 	x     int32
 	y     int32
-	color COLORREF
+	color win.COLORREF
 }
 
-func (c *CheckTarget) GetX() int32 {
-	return c.x
+func (t *CheckTarget) GetX() int32 {
+	return t.x
 }
 
-func (c *CheckTarget) GetY() int32 {
-	return c.y
-}
-
-func (c *CheckTarget) Set(x, y int32) {
-	c.x = x
-	c.y = y
+func (t *CheckTarget) GetY() int32 {
+	return t.y
 }
 
 const (
@@ -46,11 +31,11 @@ const (
 	COLOR_SCENE_NORMAL = 15595514
 	COLOR_SCENE_BATTLE = 15595514
 
-	COLOR_MENU_BUTTON_NORMAL   = 15135992
-	COLOR_MENU_BUTTON_POPOUT   = 10331818
-	COLOR_MENU_BUTTON_T        = 15201528
-	COLOR_MENU_BUTTON_R_POPOUT = 10331817
-	COLOR_MENU_HIDDEN          = 7568253
+	COLOR_MENU_BUTTON_NORMAL     = 15135992
+	COLOR_MENU_BUTTON_POPOUT     = 10331818
+	COLOR_MENU_BUTTON_CONTACT    = 15201528
+	COLOR_MENU_BUTTON_PET_POPOUT = 10331817
+	COLOR_MENU_HIDDEN            = 7568253
 
 	COLOR_BATTLE_COMMAND_ENABLE  = 7125907
 	COLOR_BATTLE_COMMAND_DISABLE = 6991316
@@ -63,21 +48,22 @@ const (
 	COLOR_BATTLE_MANA_UPPER       = 16758653
 	COLOR_BATTLE_MANA_LOWER       = 16740864
 	COLOR_BATTLE_BLOOD_MANA_EMPTY = 65536
-	COLOR_BATTLE_RECALL_BUTTON    = 7694643
-	COLOR_BATTLE_NAME             = 37083
+
+	COLOR_BATTLE_RECALL_BUTTON = 7694643
+	COLOR_BATTLE_NAME          = 37083
 
 	COLOR_WINDOW_SKILL_UNSELECTED   = 4411988
 	COLOR_WINDOW_SKILL_BOTTOM_SPACE = 11575428
 
-	COLOR_NS_ITEM_EMPTY = 15793151
-	COLOR_PR_ITEM_EMPTY = 15202301
+	COLOR_NS_INVENTORY_SLOT_EMPTY = 15793151
+	COLOR_PR_INVENTORY_SLOT_EMPTY = 15202301
 
-	COLOR_NS_ITEM_PIVOT = 15967 // 10729650
-	COLOR_BS_ITEM_PIVOT = 15967
-	COLOR_PR_ITEM_PIVOT = 11113016
+	COLOR_NS_INVENTORY_PIVOT = 15967
+	COLOR_BS_INVENTORY_PIVOT = 15967
+	COLOR_PR_INVENTORY_PIVOT = 11113016
 
-	COLOR_PR_PRODUCE_BUTTON   = 7683891
-	COLOR_PR_IS_NOT_PRODUCING = 11390937
+	COLOR_PR_PRODUCE_BUTTON = 7683891
+	COLOR_PR_NOT_PRODUCING  = 11390937
 
 	COLOR_ITEM_CAN_NOT_BE_USED = 255
 	COLOR_ITEM_BOMB_7B         = 10936306
@@ -102,20 +88,18 @@ var (
 	MON_POS_B_4 = CheckTarget{284, 187, COLOR_ANY}
 	MON_POS_B_5 = CheckTarget{343, 148, COLOR_ANY}
 
-	MENU_Q          = CheckTarget{60, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_W          = CheckTarget{136, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_E          = CheckTarget{212, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_R          = CheckTarget{288, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_T          = CheckTarget{366., 468, COLOR_MENU_BUTTON_T}
-	MENU_Y          = CheckTarget{442, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_ESC        = CheckTarget{514, 468, COLOR_MENU_BUTTON_NORMAL}
-	MENU_Q_POPOUT   = CheckTarget{60, 468, COLOR_MENU_BUTTON_POPOUT}
-	MENU_W_POPOUT   = CheckTarget{136, 468, COLOR_MENU_BUTTON_POPOUT}
-	MENU_E_POPOUT   = CheckTarget{212, 468, COLOR_MENU_BUTTON_POPOUT}
-	MENU_R_POPOUT   = CheckTarget{288, 468, COLOR_MENU_BUTTON_R_POPOUT}
-	MENU_T_POPOUT   = CheckTarget{366., 468, COLOR_MENU_BUTTON_POPOUT}
-	MENU_Y_POPOUT   = CheckTarget{442, 468, COLOR_MENU_BUTTON_POPOUT}
-	MENU_ESC_POPOUT = CheckTarget{514, 468, COLOR_MENU_BUTTON_POPOUT}
+	MENU_STATUS           = CheckTarget{60, 468, COLOR_MENU_BUTTON_NORMAL}
+	MENU_SKILL            = CheckTarget{136, 468, COLOR_MENU_BUTTON_NORMAL}
+	MENU_INVENTORY        = CheckTarget{212, 468, COLOR_MENU_BUTTON_NORMAL}
+	MENU_PET              = CheckTarget{288, 468, COLOR_MENU_BUTTON_NORMAL}
+	MENU_CONTACT          = CheckTarget{366., 468, COLOR_MENU_BUTTON_CONTACT}
+	MENU_ESC              = CheckTarget{514, 468, COLOR_MENU_BUTTON_NORMAL}
+	MENU_STATUS_POPOUT    = CheckTarget{60, 468, COLOR_MENU_BUTTON_POPOUT}
+	MENU_SKILL_POPOUT     = CheckTarget{136, 468, COLOR_MENU_BUTTON_POPOUT}
+	MENU_INVENTORY_POPOUT = CheckTarget{212, 468, COLOR_MENU_BUTTON_POPOUT}
+	MENU_PET_POPOUT       = CheckTarget{288, 468, COLOR_MENU_BUTTON_PET_POPOUT}
+	MENU_CONTACT_POPOUT   = CheckTarget{366., 468, COLOR_MENU_BUTTON_POPOUT}
+	MENU_ESC_POPOUT       = CheckTarget{514, 468, COLOR_MENU_BUTTON_POPOUT}
 
 	BATTLE_COMMAND_ATTACK  = CheckTarget{386, 28, COLOR_ANY}
 	BATTLE_COMMAND_DEFENCE = CheckTarget{386, 54, COLOR_ANY}
@@ -134,9 +118,9 @@ var (
 	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{154, 132, COLOR_WINDOW_SKILL_UNSELECTED}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
 
-	BATTLE_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{196, 114, COLOR_BS_ITEM_PIVOT}
-	NORMAL_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{354, 134, COLOR_NS_ITEM_PIVOT}
-	PRODUCTION_WINDOW_ITEM_PIVOT   = CheckTarget{560, 100, COLOR_PR_ITEM_PIVOT}
+	BATTLE_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{196, 114, COLOR_BS_INVENTORY_PIVOT}
+	NORMAL_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{354, 134, COLOR_NS_INVENTORY_PIVOT}
+	PRODUCTION_WINDOW_ITEM_PIVOT   = CheckTarget{560, 100, COLOR_PR_INVENTORY_PIVOT}
 
 	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
 	PLAYER_L_2_H = CheckTarget{394, 396, COLOR_ANY}
@@ -150,84 +134,22 @@ var (
 	PLAYER_L_5_P = CheckTarget{524, 241, COLOR_ANY}
 )
 
-func getScene(hWnd HWND) CheckTarget {
-	if sys.GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
+func getScene(hWnd win.HWND) CheckTarget {
+	if GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
 		return NORMAL_SCENE
-	} else if sys.GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
+	} else if GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
 		return BATTLE_SCENE
 	}
 	return NOWHERE_SCENE
 }
 
-func isBattleCommandEnable(hWnd HWND, checkTarget CheckTarget) bool {
-	return sys.GetColor(hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
-}
-
-func isHumanStageStable(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) == BATTLE_STAGE_HUMAN.color
-}
-
-func isPetStageStable(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
-}
-
-func isPetSkillWindowOpened(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
-}
-
-func isPetSkillWindowOpenedWhileRiding(hWnd HWND) bool {
-	return isPetSkillWindowOpenedWhileRiding(hWnd)
-}
-
-func isHumanActionSuccessful(hWnd HWND) bool {
-	sys.MoveCursorToNowhere(hWnd)
-	return sys.GetColor(hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
-}
-
-func isPetActionSuccessful(hWnd HWND) bool {
-	sys.MoveCursorToNowhere(hWnd)
-	return sys.GetColor(hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
-}
-
-func getBSSkillWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
-	x := BATTLE_WINDOW_SKILL_FIRST.x
-	for x <= 164 {
-		y := BATTLE_WINDOW_SKILL_FIRST.y
-		for y <= 232 {
-			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.color {
-				return x, y, true
-			}
-			y += 2
-		}
-		x += 2
-	}
-	return 0, 0, false
-}
-
-func getBSItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
-	x := BATTLE_WINDOW_ITEM_MONEY_PIVOT.x
-	for x <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.x+50 {
-		y := BATTLE_WINDOW_ITEM_MONEY_PIVOT.y
-		for y <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.y+50 {
-			if sys.GetColor(hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color {
-				return x - 78, y + 20, true
-			}
-			y += 2
-		}
-		x += 2
-	}
-	return 0, 0, false
-}
-
-func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
+func getItemWindowPos(hWnd win.HWND) (int32, int32, bool) {
+	MoveCursorToNowhere(hWnd)
 	x := NORMAL_WINDOW_ITEM_MONEY_PIVOT.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.x+34 {
 		y := NORMAL_WINDOW_ITEM_MONEY_PIVOT.y
 		for y <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.y+54 {
-			if sys.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
+			if GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x, y + 20, true
 			}
 			y += 1
@@ -237,31 +159,15 @@ func getNSItemWindowPos(hWnd HWND) (int32, int32, bool) {
 	return 0, 0, false
 }
 
-func getPRItemWindowPos(hWnd HWND) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
-	x := PRODUCTION_WINDOW_ITEM_PIVOT.x
-	for x <= PRODUCTION_WINDOW_ITEM_PIVOT.x+54 {
-		y := PRODUCTION_WINDOW_ITEM_PIVOT.y
-		for y <= PRODUCTION_WINDOW_ITEM_PIVOT.y+34 {
-			if sys.GetColor(hWnd, x, y) == PRODUCTION_WINDOW_ITEM_PIVOT.color {
-				return x - 4*50 - 30, y + 28, true
-			}
-			y += 1
-		}
-		x += 1
-	}
-	return 0, 0, false
-}
-
-func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
-	sys.MoveCursorToNowhere(hWnd)
+func isAnyInventorySlotFree(hWnd win.HWND, px, py int32) bool {
+	MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 	var i, j int32
 
 	for i = 0; i < 5; i++ {
 		for j = 0; j < 4; j++ {
-			if isSlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
+			if isInventorySlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
 				return true
 			}
 		}
@@ -270,8 +176,8 @@ func isAnyItemSlotFree(hWnd HWND, px, py int32) bool {
 	return false
 }
 
-func isMoreThanTwoItemSlotsFree(hWnd HWND, px, py int32) bool {
-	sys.MoveCursorToNowhere(hWnd)
+func areMoreThanTwoInventorySlotsFree(hWnd win.HWND, px, py int32) bool {
+	MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 
@@ -280,7 +186,7 @@ func isMoreThanTwoItemSlotsFree(hWnd HWND, px, py int32) bool {
 
 	for i = 0; i < 5; i++ {
 		for j = 0; j < 4; j++ {
-			if isSlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
+			if isInventorySlotFree(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN) {
 				counter++
 			}
 		}
@@ -292,12 +198,12 @@ func isMoreThanTwoItemSlotsFree(hWnd HWND, px, py int32) bool {
 	return false
 }
 
-func isSlotFree(hWnd HWND, px, py int32) bool {
+func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 	x := px
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if sys.GetColor(hWnd, x, y) != COLOR_NS_ITEM_EMPTY {
+			if GetColor(hWnd, x, y) != COLOR_NS_INVENTORY_SLOT_EMPTY {
 				return false
 			}
 			y += 5
@@ -305,29 +211,6 @@ func isSlotFree(hWnd HWND, px, py int32) bool {
 		x += 5
 	}
 	return true
-}
-
-func isPRSlotFree(hWnd HWND, px, py int32) bool {
-	x := px
-	for x < px+30 {
-		y := py
-		for y < py+30 {
-			if sys.GetColor(hWnd, x, y) != COLOR_PR_ITEM_EMPTY {
-				return false
-			}
-			y += 5
-		}
-		x += 5
-	}
-	return true
-}
-
-func isItemWindowStuck(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_COMMAND_ITEM.x, BATTLE_COMMAND_ITEM.y) == COLOR_BATTLE_COMMAND_ENABLE
-}
-
-func isBSItemWindowStillOpened(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color
 }
 
 type pos struct {
@@ -335,8 +218,8 @@ type pos struct {
 	found bool
 }
 
-func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
+func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+	MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -353,8 +236,9 @@ func getItemPos(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int
 	return 0, 0, false
 }
 
-func getItemPosWithThreads(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
-	sys.MoveCursorToNowhere(hWnd)
+// deprecated
+func getItemPosWithThreads(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+	MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -382,12 +266,12 @@ func getItemPosWithThreads(hWnd HWND, px, py int32, color COLORREF, granularity 
 	return target.x, target.y, target.found
 }
 
-func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int32) (int32, int32, bool) {
+func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
 	x := px
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			currentColor := sys.GetColor(hWnd, x, y)
+			currentColor := GetColor(hWnd, x, y)
 			if currentColor == color {
 				return x, y, true
 			} else if currentColor == COLOR_ITEM_CAN_NOT_BE_USED {
@@ -400,31 +284,17 @@ func searchSlotForColor(hWnd HWND, px, py int32, color COLORREF, granularity int
 	return 0, 0, false
 }
 
-func doesHumanMissSkillButton(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_BOTTOM_SPACE
-}
-
-func doesPetMissSkillButton(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
-}
-
-func doesOnRidingMissSkillButtton(hWnd HWND) bool {
-	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE
-}
-
-func isOnRide(hWnd HWND) bool {
-	sys.MoveCursorToNowhere(hWnd)
-
-	return sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_DISABLE &&
-		(sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_DISABLE ||
-			sys.GetColor(hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
-}
-
 var (
-	TELEPORTING        = []string{"被不可思", "你感覺到一股"}
-	OUT_OF_RESOURCE    = []string{"道具已經用完了"}
-	ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王"}
-	PRODUCTION_FAILURE = []string{}
+	LOG_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
+	LOG_OUT_OF_RESOURCE    = []string{"道具已經用完了"}
+	LOG_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王"}
+	LOG_PRODUCTION_FAILURE = []string{}
+)
+
+const (
+	DURATION_LOG_ACTIVITY        = 5 * time.Second
+	DURATION_LOG_TELEPORTING     = 30 * time.Second
+	DURATION_LOG_OUT_OF_RESOURCE = 30 * time.Second
 )
 
 func doesEncounterActivityMonsters(dir string) bool {
@@ -432,32 +302,25 @@ func doesEncounterActivityMonsters(dir string) bool {
 		return false
 	}
 
-	return checkWord(dir, 5, 15, ACTIVITY)
+	return checkWord(dir, 5, DURATION_LOG_ACTIVITY, LOG_ACTIVITY)
 }
 
 func isTeleported(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, TELEPORTING)
+	return checkWord(dir, 5, DURATION_LOG_TELEPORTING, LOG_TELEPORTING)
 }
 
 func isOutOfResource(dir string) bool {
 	if dir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30, OUT_OF_RESOURCE)
+	return checkWord(dir, 5, 30*time.Second, LOG_OUT_OF_RESOURCE)
 }
 
-func checkProductionStatus(name, dir string) bool {
-	if dir == "" {
-		return false
-	}
-	return checkWord(dir, 10, PRODUCTION_CHECKER_LOG_INTERVAL_SEC, append(PRODUCTION_FAILURE, name))
-}
-
-func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
-	lines := sys.GetLastLinesOfLog(dir, lineCount)
+func checkWord(dir string, lineCount int, before time.Duration, words []string) bool {
+	lines := GetLastLinesOfLog(dir, lineCount)
 	now := time.Now()
 	for i := range lines {
 		h, hErr := strconv.Atoi(lines[i][1:3])
@@ -469,7 +332,7 @@ func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
 
 		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
 		for j := range words {
-			if !logTime.Before(now.Add(time.Duration(-1*1e9*beforeSecs))) && strings.Contains(lines[i], words[j]) {
+			if !logTime.Before(now.Add(-before)) && strings.Contains(lines[i], words[j]) {
 				return true
 			}
 		}
@@ -477,188 +340,43 @@ func checkWord(dir string, lineCount int, beforeSecs int, words []string) bool {
 	return false
 }
 
-func canRecall(hWnd HWND) bool {
-	sys.MoveCursorToNowhere(hWnd)
+func isInventoryFull(hWnd win.HWND) bool {
+	defer closeAllWindows(hWnd)
+	defer time.Sleep(DURATION_INVENTORY_CHECKER_WAITING)
 
-	return sys.GetColor(hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
-}
+	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
+	closeAllWindows(hWnd)
 
-var allTargets = []CheckTarget{
-	PLAYER_L_1_P,
-	PLAYER_L_2_P,
-	PLAYER_L_3_P,
-	PLAYER_L_4_P,
-	PLAYER_L_5_P,
-	PLAYER_L_1_H,
-	PLAYER_L_2_H,
-	PLAYER_L_3_H,
-	PLAYER_L_4_H,
-	PLAYER_L_5_H,
-}
+	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
-func isAnyPlayerOutOfMana(hWnd HWND) bool {
-	for _, h := range allHumans {
-		oy := h.y + 3
-		manaPoint := h.x + 2
-		if sys.GetColor(hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER &&
-			sys.GetColor(hWnd, h.x, h.y) == COLOR_BATTLE_BLOOD_UPPER {
-			return true
-		}
+	openInventory(hWnd)
+
+	if px, py, ok := getItemWindowPos(hWnd); ok {
+		return !isAnyInventorySlotFree(hWnd, px, py)
 	}
 	return false
 }
 
-func isLifeBelow(hWnd HWND, ratio float32, checkTarget *CheckTarget) bool {
-	healthPoint := int32(ratio*30) + checkTarget.x
-	oy := checkTarget.y + 3
-	return sys.GetColor(hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
-		sys.GetColor(hWnd, checkTarget.x, oy) == COLOR_BATTLE_MANA_UPPER
-}
+func isInventoryFullWithoutClosingAllWindows(hWnd win.HWND) bool {
+	defer switchWindow(hWnd, 0x45)
+	switchWindow(hWnd, 0x45)
 
-func searchLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
-	sys.MoveCursorToNowhere(hWnd)
-
-	copiedAllTargets := slices.Clone(allTargets)
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(copiedAllTargets), func(i, j int) { copiedAllTargets[i], copiedAllTargets[j] = copiedAllTargets[j], copiedAllTargets[i] })
-
-	for i := range copiedAllTargets {
-		if isLifeBelow(hWnd, ratio, &copiedAllTargets[i]) {
-			return &copiedAllTargets[i], true
-		}
+	if px, py, ok := getItemWindowPos(hWnd); ok {
+		return !isAnyInventorySlotFree(hWnd, px, py)
 	}
-	return nil, false
+	return false
 }
 
-func countLifeBelow(hWnd HWND, ratio float32) (count int) {
-	sys.MoveCursorToNowhere(hWnd)
-
-	for i := range allTargets {
-		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
-			count++
-		}
-	}
-	return
+func getMapName(hWnd win.HWND) string {
+	return ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
 }
 
-func searchTShapeLifeBelow(hWnd HWND, ratio float32) (*CheckTarget, bool) {
-	detectedTargets := make([][]int, 2)
-	for i := range detectedTargets {
-		detectedTargets[i] = make([]int, 5)
-	}
-	counter := 0
-	for i := range allTargets {
-		if isLifeBelow(hWnd, ratio, &allTargets[i]) {
-			counter++
-			weight := 1 + i/5
-			detectedTargets[i/5][i%5] += weight
-			detectedTargets[(i/5)^1][i%5] += weight
-			if i%5 > 0 {
-				detectedTargets[i/5][i%5-1] += weight
-			}
-			if i%5 < 4 {
-				detectedTargets[i/5][i%5+1] += weight
-			}
-		}
-	}
-	if counter >= 2 {
-		max := 0
-		maxId := 0
-		for i := range allTargets {
-			if max <= detectedTargets[i/5][i%5] && doesPlayerTargetExist(hWnd, allTargets[i]) {
-				max = detectedTargets[i/5][i%5]
-				maxId = i
-			}
-		}
-
-		if max >= 2+maxId/5 {
-			return &allTargets[maxId], true
-		}
-	}
-	return nil, false
+type GamePos struct {
+	x, y float64
 }
 
-var allHumans = []CheckTarget{
-	PLAYER_L_1_H,
-	PLAYER_L_2_H,
-	PLAYER_L_3_H,
-	PLAYER_L_4_H,
-	PLAYER_L_5_H,
-}
-
-var allPets = []CheckTarget{
-	PLAYER_L_1_P,
-	PLAYER_L_2_P,
-	PLAYER_L_3_P,
-	PLAYER_L_4_P,
-	PLAYER_L_5_P,
-}
-
-func getSelfTarget(hWnd HWND, isHuman bool) (*CheckTarget, bool) {
-	sys.MoveCursorToNowhere(hWnd)
-
-	targets := allHumans
-	if !isHuman {
-		targets = allPets
-	}
-
-	for i := range targets {
-		if !doesPlayerTargetExist(hWnd, targets[i]) {
-			continue
-		}
-
-		x := targets[i].x + 8
-		for x <= targets[i].x+30 {
-			y := targets[i].y - 10
-			for y >= targets[i].y-26 {
-				if sys.GetColor(hWnd, x, y) == COLOR_BATTLE_NAME {
-					return &targets[i], true
-				}
-				y--
-			}
-			x++
-		}
-	}
-	return nil, false
-}
-
-func doesPlayerTargetExist(hWnd HWND, target CheckTarget) bool {
-	return sys.GetColor(hWnd, target.x, target.y) == COLOR_BATTLE_BLOOD_UPPER
-}
-
-var allMonsterTargets = []CheckTarget{
-	MON_POS_T_1,
-	MON_POS_T_2,
-	MON_POS_T_3,
-	MON_POS_T_4,
-	MON_POS_T_5,
-	MON_POS_B_1,
-	MON_POS_B_2,
-	MON_POS_B_3,
-	MON_POS_B_4,
-	MON_POS_B_5,
-}
-
-func getEnemyTargets(hWnd HWND, checkTargets []CheckTarget) []CheckTarget {
-	targets := []CheckTarget{}
-
-	for i := range checkTargets {
-		sys.MoveCursorWithDuration(hWnd, checkTargets[i].x, checkTargets[i].y, DETECT_MON_TARGET_CURSOR_MOV_INTERVAL)
-		if sys.GetColor(hWnd, MENU_T.x, MENU_T.y) == COLOR_MENU_HIDDEN {
-			targets = append(targets, checkTargets[i])
-		}
-	}
-	return targets
-}
-
-func canProduce(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x-270, y+180) == COLOR_PR_PRODUCE_BUTTON
-}
-
-func isProducing(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x-110, y+10) != COLOR_PR_IS_NOT_PRODUCING
-}
-
-func isProducingSuccessful(hWnd HWND, x, y int32) bool {
-	return sys.GetColor(hWnd, x-166, y+180) == COLOR_PR_PRODUCE_BUTTON
+func getCurrentGamePos(hWnd win.HWND) GamePos {
+	fx := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_X, 32)
+	fy := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
+	return GamePos{float64(fx / 64), float64(fy / 64)}
 }

@@ -1,7 +1,8 @@
 package game
 
 import (
-	. "cg/system"
+	. "cg/internal"
+	. "cg/utils"
 
 	"fmt"
 	"log"
@@ -15,9 +16,9 @@ import (
 )
 
 const (
-	BATTLE_ACTION_WAITING_LOOP_INTERVAL = 200
-	BATTLE_ACTION_ATTACK_INTERVAL       = 100
-	BATTLE_ACTION_INTERVAL              = 160
+	DURATION_BATTLE_ACTION_WAITING_LOOP = 200 * time.Millisecond
+	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
+	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 )
 
 const (
@@ -107,7 +108,7 @@ func (b *BattleActionState) Act() {
 		b.checkHumanMana()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
-		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
+		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 
 	b.currentHumanStateId = 0
@@ -121,8 +122,8 @@ func (b *BattleActionState) executeActivity() {
 		return
 	}
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd)) {
-		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!b.isHumanStageStable() && !b.isPetStageStable()) {
+		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 
 	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir); doesEncounterActivityMonsters {
@@ -130,14 +131,14 @@ func (b *BattleActionState) executeActivity() {
 		Beeper.Play()
 
 		for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-			time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
+			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 		}
 	}
 }
 
 func (b *BattleActionState) executeHumanStateMachine() {
 
-	for b.currentHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && isHumanStageStable(b.hWnd) && b.Enabled {
+	for b.currentHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && b.isHumanStageStable() && b.Enabled {
 
 		b.endPetHanging()
 
@@ -146,7 +147,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		switch b.HumanStates[b.currentHumanStateId] {
 		case H_F_ATTACK:
 			b.enableBattleCommandAttack()
-			if b.attack(isHumanActionSuccessful) {
+			if b.attack(b.isHumanActionSuccessful) {
 				b.logH("attacked")
 				cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 			} else {
@@ -154,17 +155,17 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanFailureControlUnits[b.currentHumanStateId]
 			}
 		case H_C_SKILL:
-			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			openWindow(b.hWnd, KEY_SKILL)
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if doesHumanMissSkillButton(b.hWnd, x, y) {
+				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
-				} else if isHumanActionSuccessful(b.hWnd) {
+				} else if b.isHumanActionSuccessful() {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
-				} else if b.attack(isHumanActionSuccessful) {
+				} else if b.attack(b.isHumanActionSuccessful) {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 				} else {
@@ -183,17 +184,17 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				break
 			}
 
-			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			openWindow(b.hWnd, KEY_SKILL)
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if doesHumanMissSkillButton(b.hWnd, x, y) {
+				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
-				} else if isHumanActionSuccessful(b.hWnd) {
+				} else if b.isHumanActionSuccessful() {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
-				} else if b.attack(isHumanActionSuccessful) {
+				} else if b.attack(b.isHumanActionSuccessful) {
 					b.logH("used a skill")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 				} else {
@@ -233,14 +234,14 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				break
 			}
 
-			openWindowByShortcut(b.hWnd, 0x45)
-			if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
+			openWindow(b.hWnd, KEY_INVENTORY)
+			if px, py, isPivotFound := b.getItemWindowPos(); isPivotFound {
 				if x, y, ok := getItemPos(b.hWnd, px, py, bomb.color, 2); ok {
 					useItem(b.hWnd, x, y)
-					if isBSItemWindowStillOpened(b.hWnd, px, py) {
+					if b.isItemWindowStillOpened(px, py) {
 						b.logH("failed at double clicking")
 						cu = b.HumanFailureControlUnits[b.currentHumanStateId]
-					} else if b.attack(isHumanActionSuccessful) {
+					} else if b.attack(b.isHumanActionSuccessful) {
 						b.logH("throwed a bomb")
 						cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 					} else {
@@ -260,15 +261,15 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
-			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
-				openWindowByShortcut(b.hWnd, 0x45)
-				if px, py, isPivotFound := getBSItemWindowPos(b.hWnd); isPivotFound {
+			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
+				openWindow(b.hWnd, KEY_INVENTORY)
+				if px, py, isPivotFound := b.getItemWindowPos(); isPivotFound {
 					if x, y, ok := getItemPos(b.hWnd, px, py, COLOR_ITEM_POTION, 3); ok {
 						useItem(b.hWnd, x, y)
-						if isBSItemWindowStillOpened(b.hWnd, px, py) {
+						if b.isItemWindowStillOpened(px, py) {
 							b.logH("failed at double clicking")
 							cu = b.HumanFailureControlUnits[b.currentHumanStateId]
-						} else if b.aim(target, isHumanActionSuccessful) {
+						} else if b.aim(target, b.isHumanActionSuccessful) {
 							b.logH("healed an ally")
 							cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 						} else {
@@ -287,12 +288,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found all good")
 			}
 		case H_C_RIDE:
-			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			openWindow(b.hWnd, KEY_SKILL)
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if doesHumanMissSkillButton(b.hWnd, x, y) {
+				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else {
 					b.logH("is tring to get on a pet")
@@ -311,20 +312,20 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case H_C_SE_HEAL:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := getSelfTarget(b.hWnd, true); ok {
+			if self, ok := b.getSelfTarget(true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
 
-				if !isLifeBelow(b.hWnd, float32(ratio), self) {
+				if !b.isHealthLowerThan(float32(ratio), self) {
 					b.logH("is a healthy boy")
 					break
 				}
 
-				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if doesHumanMissSkillButton(b.hWnd, x, y) {
+					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
 					} else {
 						b.logH("healed self")
@@ -343,15 +344,15 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
-			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
-				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if doesHumanMissSkillButton(b.hWnd, x, y) {
+					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(target, isHumanActionSuccessful) {
+					} else if b.aim(target, b.isHumanActionSuccessful) {
 						b.logH("healed an ally")
 						cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 					} else {
@@ -369,15 +370,15 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
-			if target, ok := searchTShapeLifeBelow(b.hWnd, float32(ratio)); ok {
-				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if target, ok := b.searchTShapeHealthLowerThan(float32(ratio)); ok {
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if doesHumanMissSkillButton(b.hWnd, x, y) {
+					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(target, isHumanActionSuccessful) {
+					} else if b.aim(target, b.isHumanActionSuccessful) {
 						b.logH("healed allies")
 						cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 					} else {
@@ -395,16 +396,16 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
-			count := countLifeBelow(b.hWnd, float32(ratio))
+			count := b.countHealthLowerThan(float32(ratio))
 			if count >= 4 {
-				openWindowByShortcut(b.hWnd, 0x57)
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 					level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 					useHumanSkill(b.hWnd, x, y, id, level)
-					if doesHumanMissSkillButton(b.hWnd, x, y) {
+					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(&PLAYER_L_3_H, isHumanActionSuccessful) {
+					} else if b.aim(&PLAYER_L_3_H, b.isHumanActionSuccessful) {
 						b.logH("healed allies")
 						cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 					} else {
@@ -419,8 +420,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("found all good")
 			}
 		case H_C_PET_RECALL:
-			openWindowByShortcut(b.hWnd, 0x52)
-			if canRecall(b.hWnd) {
+			openWindow(b.hWnd, KEY_PET)
+			if b.canRecall() {
 				b.recall()
 				b.logH("recalled")
 				cu = C_U_REPEAT
@@ -429,17 +430,17 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 			}
 		case H_S_TRAIN_SKILL:
-			openWindowByShortcut(b.hWnd, 0x57)
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			openWindow(b.hWnd, KEY_SKILL)
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.HumanSkillIds[b.currentHumanStateId])
 				level, _ := strconv.Atoi(b.HumanSkillLevels[b.currentHumanStateId])
 				useHumanSkill(b.hWnd, x, y, id, level)
-				if doesHumanMissSkillButton(b.hWnd, x, y) {
+				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
-				} else if isHumanActionSuccessful(b.hWnd) {
+				} else if b.isHumanActionSuccessful() {
 					b.logH("is training")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
-				} else if b.aim(&PLAYER_L_3_P, isHumanActionSuccessful) {
+				} else if b.aim(&PLAYER_L_3_P, b.isHumanActionSuccessful) {
 					b.logH("is training")
 					cu = b.HumanSuccessControlUnits[b.currentHumanStateId]
 				}
@@ -450,9 +451,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case H_S_CATCH:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := getSelfTarget(b.hWnd, true); ok {
+			if self, ok := b.getSelfTarget(true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanParams[b.currentHumanStateId], 32)
-				if b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self); b.isOutOfHealth {
+				if b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self); b.isOutOfHealth {
 					b.logH("is out of health")
 				}
 			}
@@ -487,7 +488,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 func (b *BattleActionState) executePetStateMachiine() {
 
-	for b.currentPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && isPetStageStable(b.hWnd) && b.Enabled {
+	for b.currentPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && b.isPetStageStable() && b.Enabled {
 
 		b.endHumanHanging()
 
@@ -496,9 +497,9 @@ func (b *BattleActionState) executePetStateMachiine() {
 		switch b.PetStates[b.currentPetStateId] {
 		case P_F_ATTACK:
 			b.openPetSkillWindow()
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				usePetSkill(b.hWnd, x, y, 1)
-				if b.attack(isPetActionSuccessful) {
+				if b.attack(b.isPetActionSuccessful) {
 					b.logP("attacked")
 					cu = b.PetSuccessControlUnits[b.currentPetStateId]
 				} else {
@@ -512,12 +513,12 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 		case P_C_SkILL:
 			b.openPetSkillWindow()
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
+				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
-				} else if b.attack(isPetActionSuccessful) {
+				} else if b.attack(b.isPetActionSuccessful) {
 					b.logP("used a skill")
 					cu = b.PetSuccessControlUnits[b.currentPetStateId]
 				} else {
@@ -534,10 +535,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 			cu = C_U_REPEAT
 		case P_C_DEFEND:
 			b.openPetSkillWindow()
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
-				if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
+				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
 				} else {
 					b.logP("defended")
@@ -550,18 +551,18 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case P_C_SE_HEAL:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := getSelfTarget(b.hWnd, false || isOnRide(b.hWnd)); ok {
+			if self, ok := b.getSelfTarget(false || b.isOnRide()); ok {
 				ratio, _ := strconv.ParseFloat(b.PetParams[b.currentPetStateId], 32)
-				if !isLifeBelow(b.hWnd, float32(ratio), self) {
+				if !b.isHealthLowerThan(float32(ratio), self) {
 					b.logP("is a healthy boy")
 					break
 				}
 
 				b.openPetSkillWindow()
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if doesPetMissSkillButton(b.hWnd) || doesOnRidingMissSkillButtton(b.hWnd) {
+					if b.didPetMissSkill() || b.didOnRideMissSkill() {
 						b.logP("missed the skill button or is out of mana")
 					} else {
 						b.logP("healed self")
@@ -576,14 +577,14 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.currentPetStateId]
 			}
 		case P_C_RIDE:
-			if isOnRide(b.hWnd) {
+			if b.isOnRide() {
 				b.logP("is on ride")
 				cu = b.PetSuccessControlUnits[b.currentPetStateId]
 				break
 			}
 
 			b.openPetSkillWindow()
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
@@ -593,14 +594,14 @@ func (b *BattleActionState) executePetStateMachiine() {
 				cu = b.PetFailureControlUnits[b.currentPetStateId]
 			}
 		case P_C_OFF_RIDE:
-			if !isOnRide(b.hWnd) {
+			if !b.isOnRide() {
 				b.logP("is off ride")
 				cu = b.PetSuccessControlUnits[b.currentPetStateId]
 				break
 			}
 
 			b.openPetSkillWindow()
-			if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+			if x, y, ok := b.getSkillWindowPos(); ok {
 				id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
@@ -613,12 +614,12 @@ func (b *BattleActionState) executePetStateMachiine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			ratio, _ := strconv.ParseFloat(b.PetParams[b.currentPetStateId], 32)
-			if target, ok := searchLifeBelow(b.hWnd, float32(ratio)); ok {
+			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				b.openPetSkillWindow()
-				if x, y, ok := getBSSkillWindowPos(b.hWnd); ok {
+				if x, y, ok := b.getSkillWindowPos(); ok {
 					id, _ := strconv.Atoi(b.PetSkillIds[b.currentPetStateId])
 					usePetSkill(b.hWnd, x, y, id)
-					if b.aim(target, isPetActionSuccessful) {
+					if b.aim(target, b.isPetActionSuccessful) {
 						b.logP("healed an ally")
 						cu = b.PetSuccessControlUnits[b.currentPetStateId]
 					} else {
@@ -634,7 +635,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logH("found all good")
 			}
 		case P_F_ESCAPE:
-			if !isOnRide(b.hWnd) {
+			if !b.isOnRide() {
 				b.logP("cannot escape while off ride")
 				break
 			}
@@ -645,9 +646,9 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case P_S_CATCH:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := getSelfTarget(b.hWnd, true); ok {
+			if self, ok := b.getSelfTarget(true); ok {
 				ratio, _ := strconv.ParseFloat(b.PetParams[b.currentPetStateId], 32)
-				b.isOutOfHealth = isLifeBelow(b.hWnd, float32(ratio), self)
+				b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self)
 				if b.isOutOfHealth {
 					b.logP("is out of health")
 				}
@@ -686,63 +687,63 @@ func (b BattleActionState) isManaChecker() bool {
 }
 
 func (b *BattleActionState) enableBattleCommandAttack() {
-	if !isBattleCommandEnable(b.hWnd, BATTLE_COMMAND_ATTACK) {
+	if !b.isBattleCommandEnable(BATTLE_COMMAND_ATTACK) {
 		LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
-		time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+		time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 	}
 }
 
-func (b *BattleActionState) attack(stateChecker func(hwnd HWND) bool) bool {
+func (b *BattleActionState) attack(stateChecker func() bool) bool {
 	targets := make([]CheckTarget, len(b.enemies))
 	copy(targets, b.enemies)
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
 	for _, target := range targets {
 		LeftClick(b.hWnd, target.x, target.y)
-		time.Sleep(BATTLE_ACTION_ATTACK_INTERVAL * time.Millisecond)
-		if stateChecker(b.hWnd) {
+		time.Sleep(DURATION_BATTLE_ACTION_ATTACK * time.Millisecond)
+		if stateChecker() {
 			return true
 		}
 	}
 	return false
 }
 
-func (b *BattleActionState) aim(target *CheckTarget, stateChecker func(hwnd HWND) bool) bool {
+func (b *BattleActionState) aim(target *CheckTarget, stateChecker func() bool) bool {
 	LeftClick(b.hWnd, target.x+15, target.y-22)
-	time.Sleep(BATTLE_ACTION_ATTACK_INTERVAL * time.Millisecond)
-	return stateChecker(b.hWnd)
+	time.Sleep(DURATION_BATTLE_ACTION_ATTACK * time.Millisecond)
+	return stateChecker()
 }
 
 func (b *BattleActionState) defend() {
 	LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 }
 
 func (b *BattleActionState) escape() {
 	LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 }
 
 func (b *BattleActionState) move() {
 	LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 }
 
 func (b *BattleActionState) recall() {
 	LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 }
 
 func (b *BattleActionState) openPetSkillWindow() {
 	closeAllWindows(b.hWnd)
 	RightClick(b.hWnd, GAME_WIDTH/2, 28)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
-	resetPosition(b.hWnd)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
+	resetAllWindows(b.hWnd)
 }
 
 func (b *BattleActionState) openSkillWindowWithMouse() {
 	LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
-	time.Sleep(BATTLE_ACTION_INTERVAL * time.Millisecond)
+	time.Sleep(DURATION_BATTLE_ACTION_GENERAL * time.Millisecond)
 }
 
 func (b *BattleActionState) logH(message string) {
@@ -903,8 +904,8 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 
 func (b *BattleActionState) detectEnemies() {
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !isHumanStageStable(b.hWnd) && !isPetStageStable(b.hWnd) {
-		time.Sleep(BATTLE_ACTION_WAITING_LOOP_INTERVAL)
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !b.isHumanStageStable() && !b.isPetStageStable() {
+		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 
 	// initial state: enemyDetectorCounter=0
@@ -912,16 +913,16 @@ func (b *BattleActionState) detectEnemies() {
 		return
 	}
 
-	if isItemWindowStuck(b.hWnd) {
+	if b.isInventoryWindowStuck() {
 		b.openSkillWindowWithMouse()
 	}
 	closeAllWindows(b.hWnd)
 
 	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= 3 {
-		b.enemies = allMonsterTargets
+		b.enemies = allMonsters
 	}
 
-	newEnemies := getEnemyTargets(b.hWnd, b.enemies)
+	newEnemies := b.getEnemies(b.enemies)
 	if reflect.DeepEqual(b.enemies, newEnemies) {
 		b.enemyDetectorCounter++
 	} else {
@@ -985,7 +986,7 @@ func (b *BattleActionState) checkHumanMana() {
 	if b.isManaChecker() {
 		closeAllWindows(b.hWnd)
 		clearChat(b.hWnd)
-		if b.isOutOfMana = isAnyPlayerOutOfMana(b.hWnd); b.isOutOfMana {
+		if b.isOutOfMana = b.isAnyPlayerOutOfMana(); b.isOutOfMana {
 			b.logH("someone is out of mana")
 		}
 	}
@@ -994,6 +995,6 @@ func (b *BattleActionState) checkHumanMana() {
 func TestAction(hWnd HWND) (x int32, y int32, successful bool) {
 	closeAllWindows(hWnd)
 	clearChat(hWnd)
-	openWindowByShortcut(hWnd, 0x45)
+	openWindow(hWnd, KEY_INVENTORY)
 	return getItemPos(hWnd, x, y, 16448250, 3)
 }

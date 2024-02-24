@@ -2,7 +2,7 @@ package main
 
 import (
 	"cg/game"
-	. "cg/system"
+	. "cg/utils"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
