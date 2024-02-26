@@ -2,20 +2,22 @@ package game
 
 import "fmt"
 
-type ControlUnit string
-type ControlUnits []ControlUnit
-type HumanAction int
-type PetAction int
+type controlUnit string
+type controlUnits []controlUnit
+type humanAction int
+type petAction int
 
 const (
-	CU_START_OVER ControlUnit = "Start Over"
-	CU_CONTINUE   ControlUnit = "Continue"
-	CU_REPEAT     ControlUnit = "Repeat"
-	CU_JUMP       ControlUnit = "Jump"
+	CU_START_OVER controlUnit = "Start Over"
+	CU_CONTINUE   controlUnit = "Continue"
+	CU_REPEAT     controlUnit = "Repeat"
+	CU_JUMP       controlUnit = "Jump"
 )
 
+var ControlUnits controlUnits = []controlUnit{CU_START_OVER, CU_CONTINUE, CU_REPEAT, CU_JUMP}
+
 const (
-	H_Attack HumanAction = iota
+	H_Attack humanAction = iota
 	H_Defend
 	H_ESCAPE
 	H_MOVE
@@ -36,7 +38,7 @@ const (
 )
 
 const (
-	P_ATTACK PetAction = iota
+	P_ATTACK petAction = iota
 	P_ESCAPE
 	P_SkILL
 	P_DEFEND
@@ -48,7 +50,7 @@ const (
 	P_HANG
 )
 
-func (c ControlUnits) GetOptions() []string {
+func (c controlUnits) GetOptions() []string {
 	var options []string
 	for i := range c {
 		options = append(options, fmt.Sprint(c[i]))
@@ -56,7 +58,7 @@ func (c ControlUnits) GetOptions() []string {
 	return options
 }
 
-func (ha HumanAction) String() string {
+func (ha humanAction) String() string {
 	switch ha {
 	case H_Attack:
 		return "**Attack"
@@ -99,7 +101,7 @@ func (ha HumanAction) String() string {
 	}
 }
 
-func (pa PetAction) String() string {
+func (pa petAction) String() string {
 	switch pa {
 	case P_ATTACK:
 		return "**Pet Attack"
