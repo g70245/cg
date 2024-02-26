@@ -14,8 +14,6 @@ const (
 	CU_JUMP       ControlUnit = "Jump"
 )
 
-var CcontrolUnits ControlUnits = []ControlUnit{CU_START_OVER, CU_CONTINUE, CU_REPEAT, CU_JUMP}
-
 const (
 	H_Attack HumanAction = iota
 	H_Defend
