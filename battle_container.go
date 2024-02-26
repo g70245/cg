@@ -99,25 +99,27 @@ func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 }
 
 func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
-	manaChecker := NONE
+	manaChecker := NO_MANA_CHECKER
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
 	workers := CreateBattleWorkers(games, logDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
-	manaCheckerSelector := widget.NewRadioGroup(games.GetSortedKeys(), func(s string) {
-		if s != "" {
-			manaChecker = fmt.Sprint(allGames[s])
-			manaCheckerSelectorButton.SetText("Mana Checker: " + s)
+	manaCheckerOptions := []string{NO_MANA_CHECKER}
+	manaCheckerOptions = append(manaCheckerOptions, games.GetSortedKeys()...)
+	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
+		if game, ok := allGames[s]; ok {
+			manaChecker = fmt.Sprint(game)
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", s))
 		} else {
-			manaChecker = NONE
-			manaCheckerSelectorButton.SetText("Select Mana Checker")
+			manaChecker = NO_MANA_CHECKER
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", manaChecker))
 		}
 		manaCheckerSelectorDialog.Hide()
 	})
 	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
-	manaCheckerSelectorButton = widget.NewButton("Select Mana Checker", func() {
+	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", manaChecker), func() {
 		manaCheckerSelectorDialog.Show()
 
 		notifyBeeperConfig("About Mana Checker")
@@ -248,7 +250,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 		var movementModeButton *widget.Button
 		var movementModeDialog *dialog.CustomDialog
-		movementModeSelector := widget.NewRadioGroup(BATTLE_MOVEMENT_MODES, func(s string) {
+		movementModeSelector := widget.NewRadioGroup(BATTLE_MOVEMENT_MODES.GetOptions(), func(s string) {
 			if s != "" {
 				worker.MovementState.Mode = BattleMovementMode(s)
 				movementModeButton.SetText(s)

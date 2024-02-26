@@ -9,6 +9,10 @@ const (
 	DURATION_LOG_PRODUCTION_STATUS = 400 * time.Millisecond
 )
 
+var (
+	PRODUCTION_WINDOW_ITEM_PIVOT = CheckTarget{560, 100, COLOR_PR_INVENTORY_PIVOT}
+)
+
 func (p *ProductionWorker) isSlotFree(px, py int32) bool {
 	x := px
 	for x < px+30 {

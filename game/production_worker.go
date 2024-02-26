@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	UNDEFINED_WORKER_NAME = "none"
+	NO_WORKER_NAME = "none"
 
 	DURATION_PRODUCTION_WORKER = 400 * time.Millisecond
 	DURATION_PRODUCING         = 800 * time.Millisecond
@@ -50,7 +50,7 @@ func NewProductionWorker(hWnd win.HWND, logDir *string, stopChan chan bool) Prod
 
 	return ProductionWorker{
 		hWnd:                   hWnd,
-		name:                   UNDEFINED_WORKER_NAME,
+		name:                   NO_WORKER_NAME,
 		logDir:                 logDir,
 		stopChan:               stopChan,
 		workerTicker:           newWorkerTicker,
