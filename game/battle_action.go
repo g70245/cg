@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DURATION_BATTLE_ACTION_WAITING_LOOP = 200 * time.Millisecond
+	DURATION_BATTLE_ACTION_LOOP_WAITING = 200 * time.Millisecond
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 )
@@ -108,7 +108,7 @@ func (b *BattleActionState) Act() {
 		b.checkHumanMana()
 		b.executeHumanStateMachine()
 		b.executePetStateMachiine()
-		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
 	b.currentHumanStateId = 0
@@ -123,7 +123,7 @@ func (b *BattleActionState) executeActivity() {
 	}
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!b.isHumanStageStable() && !b.isPetStageStable()) {
-		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
 	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir); doesEncounterActivityMonsters {
@@ -131,7 +131,7 @@ func (b *BattleActionState) executeActivity() {
 		Beeper.Play()
 
 		for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+			time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 		}
 	}
 }
@@ -905,7 +905,7 @@ func (b *BattleActionState) GetPetFailureControlUnits() []string {
 func (b *BattleActionState) detectEnemies() {
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !b.isHumanStageStable() && !b.isPetStageStable() {
-		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
 	// initial state: enemyDetectorCounter=0
