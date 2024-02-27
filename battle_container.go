@@ -1062,7 +1062,7 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 	}
 
 	for _, state := range anyStates {
-		tagColor := petSpecialTagColor
+		var tagColor color.RGBA
 		if role == Human {
 			tag = state.(HumanState).Action.String()
 			switch {
@@ -1100,6 +1100,7 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 		}
 
 		var param string
+		var threshold Threshold
 		var successControlUnit string
 		var successJumpId int
 		var failureControlUnit string
@@ -1107,12 +1108,14 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 
 		if role == Human {
 			param = state.(HumanState).Param
+			threshold = state.(HumanState).Threshold
 			successControlUnit = string(state.(HumanState).SuccessControlUnit)
 			failureControlUnit = string(state.(HumanState).FailureControlUnit)
 			successJumpId = state.(HumanState).SuccessJumpId
 			failureJumpId = state.(HumanState).FailureJumpId
 		} else {
 			param = state.(PetState).Param
+			threshold = state.(PetState).Threshold
 			successControlUnit = string(state.(PetState).SuccessControlUnit)
 			failureControlUnit = string(state.(PetState).FailureControlUnit)
 			successJumpId = state.(PetState).SuccessJumpId
@@ -1121,6 +1124,10 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 
 		if param != "" {
 			tag = fmt.Sprintf("%s:%s", tag, param)
+		}
+
+		if threshold != "" {
+			tag = fmt.Sprintf("%s:%s", tag, threshold)
 		}
 
 		if len(successControlUnit) > 0 {
