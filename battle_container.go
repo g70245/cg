@@ -278,200 +278,215 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		}
 
 		/* Control Unit Dialogs */
-		var cuSuccessDialog *dialog.CustomDialog
-		var cuFailureDialog *dialog.CustomDialog
+		var controlUnitSuccessDialog *dialog.CustomDialog
+		var controlUnitFailureDialog *dialog.CustomDialog
 
-		activateJumpDialog := func(totalStates int, callback func(cu string)) {
+		activateJumpDialog := func(totalStates int, callback func(jumpId int)) {
 			jumpEntry := widget.NewEntry()
-			jumpEntry.Validator = func(offsetStr string) error {
-				if offset, err := strconv.Atoi(offsetStr); err != nil {
+			jumpEntry.Validator = func(jumpIdStr string) error {
+				if jumpId, err := strconv.Atoi(jumpIdStr); err != nil {
 					return err
-				} else if offset >= totalStates-1 || offset < 1 {
+				} else if jumpId >= totalStates-1 || jumpId < 1 {
 					return errors.New("not a valid offset")
 				}
 				return nil
 			}
 
-			jumpDialog := dialog.NewForm("Enter next action offset", "Ok", "Dismiss", []*widget.FormItem{widget.NewFormItem("Offset", jumpEntry)}, func(isValid bool) {
+			jumpDialog := dialog.NewForm("Enter next action id", "Ok", "Dismiss", []*widget.FormItem{widget.NewFormItem("Jump Id", jumpEntry)}, func(isValid bool) {
 				if isValid {
-					callback(C_U_JUMP + jumpEntry.Text)
+					jumpId, _ := strconv.Atoi(jumpEntry.Text)
+					callback(jumpId)
 				}
 			}, window)
 			jumpDialog.Show()
 		}
-		humanCUSuccesOnChanged := func(s string) {
-			if s != "" {
-				if s == C_U_JUMP {
-					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
-						worker.ActionState.AddHumanSuccessControlUnit(cu)
-						cuSuccessDialog.Hide()
-					})
-				} else {
-					worker.ActionState.AddHumanSuccessControlUnit(s)
-					cuSuccessDialog.Hide()
-				}
+		humanControlUnitSuccesOnChanged := func(s string) {
+			if s == "" {
+				return
+			}
+
+			if cu := ControlUnit(s); cu == ControlUnitJump {
+				activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
+					worker.ActionState.AddHumanSuccessControlUnit(cu)
+					worker.ActionState.AddHumanSuccessJumpId(jumpId)
+					controlUnitSuccessDialog.Hide()
+				})
+			} else {
+				worker.ActionState.AddHumanSuccessControlUnit(cu)
+				controlUnitSuccessDialog.Hide()
 			}
 		}
-		humanCUFailureOnChanged := func(s string) {
-			if s != "" {
-				if s == C_U_JUMP {
-					activateJumpDialog(len(worker.ActionState.HumanStates), func(cu string) {
-						worker.ActionState.AddHumanFailureControlUnit(cu)
-						cuFailureDialog.Hide()
-					})
-				} else {
-					worker.ActionState.AddHumanFailureControlUnit(s)
-					cuFailureDialog.Hide()
-				}
+		humanControlUnitFailureOnChanged := func(s string) {
+			if s == "" {
+				return
+			}
+
+			if cu := ControlUnit(s); cu == ControlUnitJump {
+				activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
+					worker.ActionState.AddHumanFailureControlUnit(cu)
+					worker.ActionState.AddHumanFailureJumpId(jumpId)
+					controlUnitFailureDialog.Hide()
+				})
+			} else {
+				worker.ActionState.AddHumanFailureControlUnit(cu)
+				controlUnitFailureDialog.Hide()
 			}
 		}
-		petCUSuccessOnChanged := func(s string) {
-			if s != "" {
-				if s == C_U_JUMP {
-					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
-						worker.ActionState.AddPetSuccessControlUnit(cu)
-						cuSuccessDialog.Hide()
-					})
-				} else {
-					worker.ActionState.AddPetSuccessControlUnit(s)
-					cuSuccessDialog.Hide()
-				}
+		petControlUnitSuccessOnChanged := func(s string) {
+			if s == "" {
+				return
+			}
+
+			if cu := ControlUnit(s); cu == ControlUnitJump {
+				activateJumpDialog(len(worker.ActionState.PetStates), func(jumpId int) {
+					worker.ActionState.AddPetSuccessControlUnit(cu)
+					worker.ActionState.AddPetSuccessJumpId(jumpId)
+					controlUnitSuccessDialog.Hide()
+				})
+			} else {
+				worker.ActionState.AddPetSuccessControlUnit(cu)
+				controlUnitSuccessDialog.Hide()
 			}
 		}
-		petCUFailureOnChanged := func(s string) {
-			if s != "" {
-				if s == C_U_JUMP {
-					activateJumpDialog(len(worker.ActionState.PetStates), func(cu string) {
-						worker.ActionState.AddPetFailureControlUnit(cu)
-						cuFailureDialog.Hide()
-					})
-				} else {
-					worker.ActionState.AddPetFailureControlUnit(s)
-					cuFailureDialog.Hide()
-				}
+		petControlUnitFailureOnChanged := func(s string) {
+			if s == "" {
+				return
+			}
+			if cu := ControlUnit(s); cu == ControlUnitJump {
+				activateJumpDialog(len(worker.ActionState.PetStates), func(jumpId int) {
+					worker.ActionState.AddPetFailureControlUnit(cu)
+					worker.ActionState.AddPetFailueJumpId(jumpId)
+					controlUnitFailureDialog.Hide()
+				})
+			} else {
+				worker.ActionState.AddPetFailureControlUnit(cu)
+				controlUnitFailureDialog.Hide()
 			}
 		}
 
-		cuOnClosed := func() {
+		controlUnitOnClosed := func() {
 			statesViewer.Objects = generateTags(*worker)
 			statesViewer.Refresh()
 			enableChan <- true
 		}
-		cuSuccessDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
-		cuSuccessDialog.SetOnClosed(cuOnClosed)
-		cuFailureDialog = dialog.NewCustomWithoutButtons("Select next action after failed execution", selector, window)
-		cuFailureDialog.SetOnClosed(cuOnClosed)
+		controlUnitSuccessDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
+		controlUnitSuccessDialog.SetOnClosed(controlUnitOnClosed)
+		controlUnitFailureDialog = dialog.NewCustomWithoutButtons("Select next action after failed execution", selector, window)
+		controlUnitFailureDialog.SetOnClosed(controlUnitOnClosed)
 
-		humanCUSuccessSelectorDialog := SelectorDialog{
-			cuSuccessDialog,
+		humanControlUnitSuccessSelectorDialog := SelectorDialog{
+			controlUnitSuccessDialog,
 			selector,
-			ControlUnitOptions,
-			humanCUSuccesOnChanged,
+			ControlUnits.GetOptions(),
+			humanControlUnitSuccesOnChanged,
 		}
-		humanCUFailureSelectorDialog := SelectorDialog{
-			cuFailureDialog,
+		humanControlUnitFailureSelectorDialog := SelectorDialog{
+			controlUnitFailureDialog,
 			selector,
-			ControlUnitOptions,
-			humanCUFailureOnChanged,
+			ControlUnits.GetOptions(),
+			humanControlUnitFailureOnChanged,
 		}
-		petCUSuccessSelectorDialog := SelectorDialog{
-			cuSuccessDialog,
+		petControlUnitSuccessSelectorDialog := SelectorDialog{
+			controlUnitSuccessDialog,
 			selector,
-			ControlUnitOptions,
-			petCUSuccessOnChanged,
+			ControlUnits.GetOptions(),
+			petControlUnitSuccessOnChanged,
 		}
-		petCUFailureSelectorDialog := SelectorDialog{
-			cuFailureDialog,
+		petControlUnitFailureSelectorDialog := SelectorDialog{
+			controlUnitFailureDialog,
 			selector,
-			ControlUnitOptions,
-			petCUFailureOnChanged,
+			ControlUnits.GetOptions(),
+			petControlUnitFailureOnChanged,
 		}
 
 		/* Param Dialogs */
-		var paramsDialog *dialog.CustomDialog
-		humanParamsOnChanged := func(s string) {
+		var paramDialog *dialog.CustomDialog
+		humanParamOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddHumanParam(s)
-				paramsDialog.Hide()
+				paramDialog.Hide()
 			}
 		}
-		petParamsOnChanged := func(s string) {
+		petParamOnChanged := func(s string) {
 			if s != "" {
 				worker.ActionState.AddPetParam(s)
-				paramsDialog.Hide()
+				paramDialog.Hide()
 			}
 		}
-		paramsSelector := widget.NewRadioGroup(nil, nil)
-		paramsSelector.Horizontal = true
-		paramsSelector.Required = true
-		paramsDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
-		paramsDialog.SetOnClosed(onClosed)
+		paramSelector := widget.NewRadioGroup(nil, nil)
+		paramSelector.Horizontal = true
+		paramSelector.Required = true
+		paramDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
+		paramDialog.SetOnClosed(onClosed)
 
-		// healing
+		/* Healing Dialog */
 		humanHealingRatioSelectorDialog := SelectorDialog{
-			paramsDialog,
+			paramDialog,
 			selector,
-			HealingOptions,
-			humanParamsOnChanged,
+			Ratios.GetOptions(),
+			humanParamOnChanged,
 		}
 
 		petHealingRatioSelectorDialog := SelectorDialog{
-			paramsDialog,
+			paramDialog,
 			selector,
-			HealingOptions,
-			petParamsOnChanged,
+			Ratios.GetOptions(),
+			petParamOnChanged,
 		}
 
-		// bomb
+		/* Bomb Dialog */
 		bombSelectorDialog := SelectorDialog{
-			paramsDialog,
+			paramDialog,
 			selector,
 			Bombs.GetOptions(),
-			humanParamsOnChanged,
+			humanParamOnChanged,
 		}
 
-		// threshold
+		/* Threshold Dialog */
 		humanThresholdSelectorDialog := SelectorDialog{
-			paramsDialog,
+			paramDialog,
 			selector,
-			ThresholdOptions,
-			humanParamsOnChanged,
+			Thresholds.GetOptions(),
+			humanParamOnChanged,
 		}
 
-		/* Id Dialogs */
-		var idDialog *dialog.CustomDialog
-		humanIdOnChanged := func(s string) {
+		/* Offset Dialogs */
+		var offsetDialog *dialog.CustomDialog
+		humanOffsetOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanSkillId(s)
-				idDialog.Hide()
+				offset, _ := strconv.Atoi(s)
+				worker.ActionState.AddHumanSkillOffset(Offset(offset))
+				offsetDialog.Hide()
 			}
 		}
-		petIdOnChanged := func(s string) {
+		petOffsetOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddPetSkillId(s)
-				idDialog.Hide()
+				offset, _ := strconv.Atoi(s)
+				worker.ActionState.AddPetSkillOffset(Offset(offset))
+				offsetDialog.Hide()
 			}
 		}
-		idDialog = dialog.NewCustomWithoutButtons("Select skill id", selector, window)
-		idDialog.SetOnClosed(onClosed)
-		humanIdSelectorDialog := SelectorDialog{
-			idDialog,
+		offsetDialog = dialog.NewCustomWithoutButtons("Select skill offset", selector, window)
+		offsetDialog.SetOnClosed(onClosed)
+		humanOffsetSelectorDialog := SelectorDialog{
+			offsetDialog,
 			selector,
-			IdOptions,
-			humanIdOnChanged,
+			Offsets.GetOptions(),
+			humanOffsetOnChanged,
 		}
-		petIdSelectorDialog := SelectorDialog{
-			idDialog,
+		petOffsetSelectorDialog := SelectorDialog{
+			offsetDialog,
 			selector,
-			IdOptions,
-			petIdOnChanged,
+			Offsets.GetOptions(),
+			petOffsetOnChanged,
 		}
 
 		/* Level Dialog */
 		var levelDialog *dialog.CustomDialog
 		levelOnChanged := func(s string) {
 			if s != "" {
-				worker.ActionState.AddHumanSkillLevel(s)
+				level, _ := strconv.Atoi(s)
+				worker.ActionState.AddHumanSkillLevel(Level(level))
 				levelDialog.Hide()
 			}
 		}
@@ -480,7 +495,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		levelSelectorDialog := SelectorDialog{
 			levelDialog,
 			selector,
-			LevelOptions,
+			Levels.GetOptions(),
 			levelOnChanged,
 		}
 
@@ -508,39 +523,39 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			var healTShapeButton *widget.Button
 			var healMultiButton *widget.Button
 
-			attackButton = widget.NewButton(H_F_ATTACK, func() {
-				worker.ActionState.AddHumanState(H_F_ATTACK)
+			attackButton = widget.NewButton(HumanAttack.String(), func() {
+				worker.ActionState.AddHumanState(HumanAttack)
 
 				dialogs := []SelectorDialog{
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			attackButton.Importance = widget.WarningImportance
 
-			defendButton = widget.NewButton(H_F_DEFEND, func() {
-				worker.ActionState.AddHumanState(H_F_DEFEND)
+			defendButton = widget.NewButton(HumanDefend.String(), func() {
+				worker.ActionState.AddHumanState(HumanDefend)
 
 				dialogs := []SelectorDialog{
-					humanCUSuccessSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			defendButton.Importance = widget.WarningImportance
 
-			escapeButton = widget.NewButton(H_F_ESCAPE, func() {
-				worker.ActionState.AddHumanState(H_F_ESCAPE)
+			escapeButton = widget.NewButton(HumanEscape.String(), func() {
+				worker.ActionState.AddHumanState(HumanEscape)
 
 				dialogs := []SelectorDialog{
-					humanCUFailureSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			escapeButton.Importance = widget.WarningImportance
 
-			catchButton = widget.NewButton(H_S_CATCH, func() {
-				worker.ActionState.AddHumanState(H_S_CATCH)
+			catchButton = widget.NewButton(HumanCatch.String(), func() {
+				worker.ActionState.AddHumanState(HumanCatch)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
@@ -553,174 +568,174 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			})
 			catchButton.Importance = widget.SuccessImportance
 
-			bombButton = widget.NewButton(H_C_BOMB, func() {
-				worker.ActionState.AddHumanState(H_C_BOMB)
+			bombButton = widget.NewButton(HumanBomb.String(), func() {
+				worker.ActionState.AddHumanState(HumanBomb)
 
 				dialogs := []SelectorDialog{
 					bombSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			bombButton.Importance = widget.HighImportance
 
-			potionButton = widget.NewButton(H_C_POTION, func() {
-				worker.ActionState.AddHumanState(H_C_POTION)
+			potionButton = widget.NewButton(HumanPotion.String(), func() {
+				worker.ActionState.AddHumanState(HumanPotion)
 
 				dialogs := []SelectorDialog{
 					humanHealingRatioSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			potionButton.Importance = widget.HighImportance
 
-			recallButton = widget.NewButton(H_C_PET_RECALL, func() {
-				worker.ActionState.AddHumanState(H_C_PET_RECALL)
+			recallButton = widget.NewButton(HumanRecall.String(), func() {
+				worker.ActionState.AddHumanState(HumanRecall)
 
 				dialogs := []SelectorDialog{
-					humanCUSuccessSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			recallButton.Importance = widget.HighImportance
 
-			moveButton = widget.NewButton(H_F_MOVE, func() {
-				worker.ActionState.AddHumanState(H_F_MOVE)
+			moveButton = widget.NewButton(HumanMove.String(), func() {
+				worker.ActionState.AddHumanState(HumanMove)
 
 				dialogs := []SelectorDialog{
-					humanCUSuccessSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			moveButton.Importance = widget.WarningImportance
 
-			hangButton = widget.NewButton(H_S_HANG, func() {
-				worker.ActionState.AddHumanState(H_S_HANG)
+			hangButton = widget.NewButton(HumanHang.String(), func() {
+				worker.ActionState.AddHumanState(HumanHang)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			hangButton.Importance = widget.SuccessImportance
 
-			skillButton = widget.NewButton(H_C_SKILL, func() {
-				worker.ActionState.AddHumanState(H_C_SKILL)
+			skillButton = widget.NewButton(HumanSkill.String(), func() {
+				worker.ActionState.AddHumanState(HumanSkill)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			skillButton.Importance = widget.HighImportance
 
-			thresholdSkillButton = widget.NewButton(H_C_T_SKILL, func() {
-				worker.ActionState.AddHumanState(H_C_T_SKILL)
+			thresholdSkillButton = widget.NewButton(HumanThresholdSkill.String(), func() {
+				worker.ActionState.AddHumanState(HumanThresholdSkill)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
 					humanThresholdSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			thresholdSkillButton.Importance = widget.HighImportance
 
-			stealButton = widget.NewButton(H_S_STEAL, func() {
-				worker.ActionState.AddHumanState(H_S_STEAL)
+			stealButton = widget.NewButton(HumanSteal.String(), func() {
+				worker.ActionState.AddHumanState(HumanSteal)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			stealButton.Importance = widget.SuccessImportance
 
-			trainButton = widget.NewButton(H_S_TRAIN_SKILL, func() {
-				worker.ActionState.AddHumanState(H_S_TRAIN_SKILL)
+			trainButton = widget.NewButton(HumanTrainSkill.String(), func() {
+				worker.ActionState.AddHumanState(HumanTrainSkill)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			trainButton.Importance = widget.SuccessImportance
 
-			rideButton = widget.NewButton(H_C_RIDE, func() {
-				worker.ActionState.AddHumanState(H_C_RIDE)
+			rideButton = widget.NewButton(HumanRide.String(), func() {
+				worker.ActionState.AddHumanState(HumanRide)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			rideButton.Importance = widget.HighImportance
 
-			healSelfButton = widget.NewButton(H_C_SE_HEAL, func() {
-				worker.ActionState.AddHumanState(H_C_SE_HEAL)
+			healSelfButton = widget.NewButton(HumanHealSelf.String(), func() {
+				worker.ActionState.AddHumanState(HumanHealSelf)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
 					humanHealingRatioSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			healSelfButton.Importance = widget.HighImportance
 
-			healOneButton = widget.NewButton(H_C_O_HEAL, func() {
-				worker.ActionState.AddHumanState(H_C_O_HEAL)
+			healOneButton = widget.NewButton(HumanHealOne.String(), func() {
+				worker.ActionState.AddHumanState(HumanHealOne)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
 					humanHealingRatioSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			healOneButton.Importance = widget.HighImportance
 
-			healTShapeButton = widget.NewButton(H_C_T_HEAL, func() {
-				worker.ActionState.AddHumanState(H_C_T_HEAL)
+			healTShapeButton = widget.NewButton(HumanHealTShaped.String(), func() {
+				worker.ActionState.AddHumanState(HumanHealTShaped)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
 					humanHealingRatioSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			healTShapeButton.Importance = widget.HighImportance
 
-			healMultiButton = widget.NewButton(H_C_M_HEAL, func() {
-				worker.ActionState.AddHumanState(H_C_M_HEAL)
+			healMultiButton = widget.NewButton(HumanHealMulti.String(), func() {
+				worker.ActionState.AddHumanState(HumanHealMulti)
 
 				dialogs := []SelectorDialog{
-					humanIdSelectorDialog,
+					humanOffsetSelectorDialog,
 					levelSelectorDialog,
 					humanHealingRatioSelectorDialog,
-					humanCUSuccessSelectorDialog,
-					humanCUFailureSelectorDialog,
+					humanControlUnitSuccessSelectorDialog,
+					humanControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
@@ -767,110 +782,110 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			var petOffRideButton *widget.Button
 			var petCatchButton *widget.Button
 
-			petAttackButton = widget.NewButton(P_F_ATTACK, func() {
-				worker.ActionState.AddPetState(P_F_ATTACK)
+			petAttackButton = widget.NewButton(PetAttack.String(), func() {
+				worker.ActionState.AddPetState(PetAttack)
 
 				dialogs := []SelectorDialog{
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petAttackButton.Importance = widget.WarningImportance
 
-			petHangButton = widget.NewButton(P_S_HANG, func() {
-				worker.ActionState.AddPetState(P_S_HANG)
+			petHangButton = widget.NewButton(PetHang.String(), func() {
+				worker.ActionState.AddPetState(PetHang)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
-			petSkillButton = widget.NewButton(P_C_SkILL, func() {
-				worker.ActionState.AddPetState(P_C_SkILL)
+			petSkillButton = widget.NewButton(PetSkill.String(), func() {
+				worker.ActionState.AddPetState(PetSkill)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petOffsetSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petSkillButton.Importance = widget.HighImportance
 
-			petDefendButton = widget.NewButton(P_C_DEFEND, func() {
-				worker.ActionState.AddPetState(P_C_DEFEND)
+			petDefendButton = widget.NewButton(PetDefend.String(), func() {
+				worker.ActionState.AddPetState(PetDefend)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petOffsetSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petDefendButton.Importance = widget.HighImportance
 
-			petHealSelfButton = widget.NewButton(P_C_SE_HEAL, func() {
-				worker.ActionState.AddPetState(P_C_SE_HEAL)
+			petHealSelfButton = widget.NewButton(PetHealSelf.String(), func() {
+				worker.ActionState.AddPetState(PetHealSelf)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
+					petOffsetSelectorDialog,
 					petHealingRatioSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petHealSelfButton.Importance = widget.HighImportance
 
-			petHealOneButton = widget.NewButton(P_C_O_HEAL, func() {
-				worker.ActionState.AddPetState(P_C_O_HEAL)
+			petHealOneButton = widget.NewButton(PetHealOne.String(), func() {
+				worker.ActionState.AddPetState(PetHealOne)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
+					petOffsetSelectorDialog,
 					petHealingRatioSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petHealOneButton.Importance = widget.HighImportance
 
-			petRideButton = widget.NewButton(P_C_RIDE, func() {
-				worker.ActionState.AddPetState(P_C_RIDE)
+			petRideButton = widget.NewButton(PetRide.String(), func() {
+				worker.ActionState.AddPetState(PetRide)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petOffsetSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petRideButton.Importance = widget.HighImportance
 
-			petOffRideButton = widget.NewButton(P_C_OFF_RIDE, func() {
-				worker.ActionState.AddPetState(P_C_OFF_RIDE)
+			petOffRideButton = widget.NewButton(PetOffRide.String(), func() {
+				worker.ActionState.AddPetState(PetOffRide)
 
 				dialogs := []SelectorDialog{
-					petIdSelectorDialog,
-					petCUSuccessSelectorDialog,
-					petCUFailureSelectorDialog,
+					petOffsetSelectorDialog,
+					petControlUnitSuccessSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petOffRideButton.Importance = widget.HighImportance
 
-			petEscapeButton = widget.NewButton(P_F_ESCAPE, func() {
-				worker.ActionState.AddPetState(P_F_ESCAPE)
+			petEscapeButton = widget.NewButton(PetEscape.String(), func() {
+				worker.ActionState.AddPetState(PetEscape)
 
 				dialogs := []SelectorDialog{
-					petCUFailureSelectorDialog,
+					petControlUnitFailureSelectorDialog,
 				}
 				activateDialogs(dialogs, enableChan)
 			})
 			petEscapeButton.Importance = widget.WarningImportance
 
-			petCatchButton = widget.NewButton(P_S_CATCH, func() {
-				worker.ActionState.AddPetState(P_S_CATCH)
+			petCatchButton = widget.NewButton(PetCatch.String(), func() {
+				worker.ActionState.AddPetState(PetCatch)
 				statesViewer.Objects = generateTags(*worker)
 				statesViewer.Refresh()
 
@@ -999,8 +1014,8 @@ func activateDialogs(selectorDialogs []SelectorDialog, enableChan chan bool) {
 }
 
 func generateTags(worker BattleWorker) (tagContaines []fyne.CanvasObject) {
-	tagContaines = createTagContainers(worker.ActionState, true)
-	tagContaines = append(tagContaines, createTagContainers(worker.ActionState, false)...)
+	tagContaines = createTagContainers(worker.ActionState, Human)
+	tagContaines = append(tagContaines, createTagContainers(worker.ActionState, Pet)...)
 	return
 }
 
@@ -1013,30 +1028,37 @@ var (
 	petSpecialTagColor       = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
 )
 
-func createTagContainers(actionState BattleActionState, isHuman bool) (tagContainers []fyne.CanvasObject) {
-	var tags []string
-	if isHuman {
-		tags = actionState.GetHumanStates()
+func createTagContainers(actionState BattleActionState, role Role) (tagContainers []fyne.CanvasObject) {
+	var tag string
+	var anyStates []any
+	if role == Human {
+		for _, hs := range actionState.GetHumanStates() {
+			anyStates = append(anyStates, hs)
+		}
 	} else {
-		tags = actionState.GetPetStates()
+		for _, ps := range actionState.GetPetStates() {
+			anyStates = append(anyStates, ps)
+		}
 	}
 
-	for i, tag := range tags {
+	for _, state := range anyStates {
 		tagColor := petSpecialTagColor
-		if isHuman {
+		if role == Human {
+			tag = state.(HumanState).Action.String()
 			switch {
-			case strings.Contains(tag, "**"):
+			case strings.Contains(state.(HumanState).Action.String(), "**"):
 				tagColor = humanFinishingTagColor
-			case strings.Contains(tag, "*"):
+			case strings.Contains(state.(HumanState).Action.String(), "*"):
 				tagColor = humanConditionalTagColor
 			default:
 				tagColor = humanSpecialTagColor
 			}
 		} else {
+			tag = state.(PetState).Action.String()
 			switch {
-			case strings.Contains(tag, "**"):
+			case strings.Contains(state.(PetState).Action.String(), "**"):
 				tagColor = petFinishingTagColor
-			case strings.Contains(tag, "*"):
+			case strings.Contains(state.(PetState).Action.String(), "*"):
 				tagColor = petConditionalTagColor
 			default:
 				tagColor = petSpecialTagColor
@@ -1047,49 +1069,55 @@ func createTagContainers(actionState BattleActionState, isHuman bool) (tagContai
 		tagCanvas.SetMinSize(fyne.NewSize(60, 22))
 		tagContainer := container.NewStack(tagCanvas)
 
-		if isHuman {
-			if v := actionState.GetHumanSkillIds()[i]; v != "" {
-				tag = fmt.Sprintf("%s:%s:%s", tag, v, actionState.GetHumanSkillLevels()[i])
+		if role == Human {
+			if offset := state.(HumanState).Offset; offset != 0 {
+				tag = fmt.Sprintf("%s:%s:%d", tag, offset, state.(HumanState).Level)
 			}
 		} else {
-			if v := actionState.GetPetSkillIds()[i]; v != "" {
-				tag = fmt.Sprintf("%s:%s", tag, v)
+			if offset := state.(PetState).Offset; offset != 0 {
+				tag = fmt.Sprintf("%s:%s", tag, offset)
 			}
 		}
 
-		var params []string
-		var successControlUnits []string
-		var failureControlUnits []string
+		var param string
+		var successControlUnit string
+		var successJumpId int
+		var failureControlUnit string
+		var failureJumpId int
 
-		if isHuman {
-			params = actionState.GetHumanParams()
-			successControlUnits = actionState.GetHumanSuccessControlUnits()
-			failureControlUnits = actionState.GetHumanFailureControlUnits()
+		if role == Human {
+			param = state.(HumanState).Param
+			successControlUnit = string(state.(HumanState).SuccessControlUnit)
+			failureControlUnit = string(state.(HumanState).FailureControlUnit)
+			successJumpId = state.(HumanState).SuccessJumpId
+			failureJumpId = state.(HumanState).FailureJumpId
 		} else {
-			params = actionState.GetPetParams()
-			successControlUnits = actionState.GetPetSuccessControlUnits()
-			failureControlUnits = actionState.GetPetFailureControlUnits()
+			param = state.(PetState).Param
+			successControlUnit = string(state.(PetState).SuccessControlUnit)
+			failureControlUnit = string(state.(PetState).FailureControlUnit)
+			successJumpId = state.(PetState).SuccessJumpId
+			failureJumpId = state.(PetState).FailureJumpId
 		}
 
-		if param := params[i]; param != "" {
+		if param != "" {
 			tag = fmt.Sprintf("%s:%s", tag, param)
 		}
 
-		if len(successControlUnits[i]) > 0 {
-			cuFirstLetter := strings.ToLower(successControlUnits[i][:1])
-			tag = fmt.Sprintf("%s:%s", tag, cuFirstLetter)
-			if cuFirstLetter == "j" {
-				tag = fmt.Sprintf("%s%s", tag, successControlUnits[i][4:])
+		if len(successControlUnit) > 0 {
+			controlUnitFirstLetter := strings.ToLower(successControlUnit[:1])
+			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
+			if controlUnitFirstLetter == "j" {
+				tag = fmt.Sprintf("%s%s", tag, successJumpId)
 			}
 		} else {
 			tag = tag + ":"
 		}
 
-		if len(failureControlUnits[i]) > 0 {
-			cuFirstLetter := strings.ToLower(failureControlUnits[i][:1])
-			tag = fmt.Sprintf("%s:%s", tag, cuFirstLetter)
-			if cuFirstLetter == "j" {
-				tag = fmt.Sprintf("%s%s", tag, failureControlUnits[i][4:])
+		if len(failureControlUnit) > 0 {
+			controlUnitFirstLetter := strings.ToLower(failureControlUnit)
+			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
+			if controlUnitFirstLetter == "j" {
+				tag = fmt.Sprintf("%s%s", tag, failureJumpId)
 			}
 		} else {
 			tag = tag + ":"
