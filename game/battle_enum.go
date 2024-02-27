@@ -7,7 +7,7 @@ var (
 	Offsets      offsets      = []Offset{OffsetOne, OffsetTwo, OffsetThree, OffsetFour, OffsetFive, OffsetSix, OffsetSeven, OffsetEight, OffsetNine, OffsetTen}
 	Levels       levels       = []Level{LevelOne, LevelTwo, LevelThree, LevelFour, LevelFive, LevelSix, LevelSeven, LevelEight, LevelNine, LevelTen}
 	Ratios       ratios       = []ratio{RatioOneTenth, RatioTwoTenth, RatioThreeTenth, RatioFourTenth, RatioFiveTenth, RatioSixTenth, RatioSevenTenth, RatioEightTenth, RatioNineTenth}
-	Thresholds   thresholds   = []threshold{ThresholdOne, ThresholdTwo, ThresholdThree, ThresholdFour, ThresholdFive, ThresholdSix, ThresholdSeven, ThresholdEight, ThresholdNine, ThresholdTen}
+	Thresholds   thresholds   = []Threshold{ThresholdOne, ThresholdTwo, ThresholdThree, ThresholdFour, ThresholdFive, ThresholdSix, ThresholdSeven, ThresholdEight, ThresholdNine, ThresholdTen}
 )
 
 type Role int
@@ -112,20 +112,20 @@ const (
 	RatioNineTenth  ratio = 0.9
 )
 
-type threshold string
-type thresholds []threshold
+type Threshold string
+type thresholds []Threshold
 
 const (
-	ThresholdOne   threshold = "1 foe"
-	ThresholdTwo   threshold = "2 foes"
-	ThresholdThree threshold = "3 foes"
-	ThresholdFour  threshold = "4 foes"
-	ThresholdFive  threshold = "5 foes"
-	ThresholdSix   threshold = "6 foes"
-	ThresholdSeven threshold = "7 foes"
-	ThresholdEight threshold = "8 foes"
-	ThresholdNine  threshold = "9 foes"
-	ThresholdTen   threshold = "10 foes"
+	ThresholdOne   Threshold = "1 foe"
+	ThresholdTwo   Threshold = "2 foes"
+	ThresholdThree Threshold = "3 foes"
+	ThresholdFour  Threshold = "4 foes"
+	ThresholdFive  Threshold = "5 foes"
+	ThresholdSix   Threshold = "6 foes"
+	ThresholdSeven Threshold = "7 foes"
+	ThresholdEight Threshold = "8 foes"
+	ThresholdNine  Threshold = "9 foes"
+	ThresholdTen   Threshold = "10 foes"
 )
 
 func (ha humanAction) String() string {

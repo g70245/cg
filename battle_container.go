@@ -419,6 +419,26 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		paramDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
 		paramDialog.SetOnClosed(onClosed)
 
+		/* Param Dialogs */
+		var thresholdDialog *dialog.CustomDialog
+		humanThresholdOnChanged := func(s string) {
+			if s != "" {
+				worker.ActionState.AddHumanThreshold(Threshold(s))
+				thresholdDialog.Hide()
+			}
+		}
+		// petThresholdOnChanged := func(s string) {
+		// 	if s != "" {
+		// 		worker.ActionState.AddPetThreshold(Threshold(s))
+		// 		thresholdDialog.Hide()
+		// 	}
+		// }
+		thresholdSelector := widget.NewRadioGroup(nil, nil)
+		thresholdSelector.Horizontal = true
+		paramSelector.Required = true
+		thresholdDialog = dialog.NewCustomWithoutButtons("Select threshold", selector, window)
+		thresholdDialog.SetOnClosed(onClosed)
+
 		/* Healing Dialog */
 		humanHealingRatioSelectorDialog := SelectorDialog{
 			paramDialog,
@@ -444,10 +464,10 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 		/* Threshold Dialog */
 		humanThresholdSelectorDialog := SelectorDialog{
-			paramDialog,
+			thresholdDialog,
 			selector,
 			Thresholds.GetOptions(),
-			humanParamOnChanged,
+			humanThresholdOnChanged,
 		}
 
 		/* Offset Dialogs */

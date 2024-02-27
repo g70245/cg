@@ -25,7 +25,7 @@ type HumanState struct {
 	Action             humanAction
 	Offset             Offset
 	Level              Level
-	Threshold          threshold
+	Threshold          Threshold
 	Param              string
 	SuccessControlUnit ControlUnit
 	FailureControlUnit ControlUnit
@@ -36,7 +36,7 @@ type HumanState struct {
 type PetState struct {
 	Action             petAction
 	Offset             Offset
-	Threshold          threshold
+	Threshold          Threshold
 	Param              string
 	SuccessControlUnit ControlUnit
 	FailureControlUnit ControlUnit
@@ -759,14 +759,14 @@ func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleAc
 	return BattleActionState{
 		hWnd: hWnd,
 		HumanStates: []HumanState{
-			HumanState{
+			{
 				Action:             HumanAttack,
 				SuccessControlUnit: ControlUnitContinue,
 				FailureControlUnit: ControlUnitContinue,
 			},
 		},
 		PetStates: []PetState{
-			PetState{
+			{
 				Action:             PetAttack,
 				SuccessControlUnit: ControlUnitContinue,
 				FailureControlUnit: ControlUnitContinue,
@@ -807,6 +807,10 @@ func (b *BattleActionState) AddHumanSkillLevel(level Level) {
 	b.HumanStates[len(b.HumanStates)-1].Level = level
 }
 
+func (b *BattleActionState) AddHumanThreshold(threshold Threshold) {
+	b.HumanStates[len(b.HumanStates)-1].Threshold = threshold
+}
+
 func (b *BattleActionState) AddHumanParam(param string) {
 	b.HumanStates[len(b.HumanStates)-1].Param = param
 }
@@ -828,6 +832,10 @@ func (b *BattleActionState) AddHumanFailureJumpId(jumpId int) {
 
 func (b *BattleActionState) AddPetSkillOffset(offset Offset) {
 	b.PetStates[len(b.PetStates)-1].Offset = offset
+}
+
+func (b *BattleActionState) AddPetThreshold(threshold Threshold) {
+	b.PetStates[len(b.PetStates)-1].Threshold = threshold
 }
 
 func (b *BattleActionState) AddPetParam(param string) {
