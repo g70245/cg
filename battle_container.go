@@ -1071,11 +1071,11 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 
 		if role == Human {
 			if offset := state.(HumanState).Offset; offset != 0 {
-				tag = fmt.Sprintf("%s:%s:%d", tag, offset, state.(HumanState).Level)
+				tag = fmt.Sprintf("%s:%d:%d", tag, offset, state.(HumanState).Level)
 			}
 		} else {
 			if offset := state.(PetState).Offset; offset != 0 {
-				tag = fmt.Sprintf("%s:%s", tag, offset)
+				tag = fmt.Sprintf("%s:%d", tag, offset)
 			}
 		}
 
@@ -1107,17 +1107,17 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 			controlUnitFirstLetter := strings.ToLower(successControlUnit[:1])
 			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
 			if controlUnitFirstLetter == "j" {
-				tag = fmt.Sprintf("%s%s", tag, successJumpId)
+				tag = fmt.Sprintf("%s%d", tag, successJumpId)
 			}
 		} else {
 			tag = tag + ":"
 		}
 
 		if len(failureControlUnit) > 0 {
-			controlUnitFirstLetter := strings.ToLower(failureControlUnit)
+			controlUnitFirstLetter := strings.ToLower(failureControlUnit[:1])
 			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
 			if controlUnitFirstLetter == "j" {
-				tag = fmt.Sprintf("%s%s", tag, failureJumpId)
+				tag = fmt.Sprintf("%s%d", tag, failureJumpId)
 			}
 		} else {
 			tag = tag + ":"
