@@ -266,10 +266,10 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		selectorDialogEnableChan := make(chan bool)
 		getNewSelectorDialog := SelectorDialoger(selector)
 
-		var statesViewer *fyne.Container
+		var actionsViewer *fyne.Container
 		onClosed := func() {
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
+			actionsViewer.Objects = generateTags(*worker)
+			actionsViewer.Refresh()
 			selectorDialogEnableChan <- true
 		}
 
@@ -277,12 +277,12 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		var successControlUnitDialog *dialog.CustomDialog
 		var failureControlUnitDialog *dialog.CustomDialog
 
-		activateJumpDialog := func(totalStates int, callback func(jumpId int)) {
+		activateJumpDialog := func(totalActions int, callback func(jumpId int)) {
 			jumpEntry := widget.NewEntry()
 			jumpEntry.Validator = func(jumpIdStr string) error {
 				if jumpId, err := strconv.Atoi(jumpIdStr); err != nil {
 					return err
-				} else if jumpId >= totalStates-1 || jumpId < 1 {
+				} else if jumpId >= totalActions-1 || jumpId < 1 {
 					return errors.New("not a valid offset")
 				}
 				return nil
@@ -303,7 +303,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				}
 
 				if cu := ControlUnit(s); cu == Jump {
-					activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
+					activateJumpDialog(len(worker.ActionState.HumanActions), func(jumpId int) {
 						worker.ActionState.AddSuccessControlUnit(r, cu)
 						worker.ActionState.AddSuccessJumpId(r, jumpId)
 						successControlUnitDialog.Hide()
@@ -321,7 +321,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				}
 
 				if cu := ControlUnit(s); cu == Jump {
-					activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
+					activateJumpDialog(len(worker.ActionState.HumanActions), func(jumpId int) {
 						worker.ActionState.AddFailureControlUnit(r, cu)
 						worker.ActionState.AddFailureJumpId(r, jumpId)
 						failureControlUnitDialog.Hide()
@@ -333,8 +333,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			}
 		}
 		controlUnitOnClosed := func() {
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
+			actionsViewer.Objects = generateTags(*worker)
+			actionsViewer.Refresh()
 			selectorDialogEnableChan <- true
 		}
 		successControlUnitDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
@@ -408,11 +408,11 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 		levelSelectorDialog := getNewSelectorDialog(levelDialog, Levels.GetOptions(), levelOnChanged)
 
-		/* Human States */
-		humanStateSelector := widget.NewButtonWithIcon("Man Actions", theme.ContentAddIcon(), func() {
-			worker.ActionState.ClearHumanStates()
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
+		/* Human Actions */
+		humanActionSelector := widget.NewButtonWithIcon("Man Actions", theme.ContentAddIcon(), func() {
+			worker.ActionState.ClearHumanActions()
+			actionsViewer.Objects = generateTags(*worker)
+			actionsViewer.Refresh()
 
 			var attackButton *widget.Button
 			var defendButton *widget.Button
@@ -434,7 +434,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			var healMultiButton *widget.Button
 
 			attackButton = widget.NewButton(HumanAttack.String(), func() {
-				worker.ActionState.AddHumanState(HumanAttack)
+				worker.ActionState.AddHumanAction(HumanAttack)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(Human),
@@ -445,7 +445,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			attackButton.Importance = widget.WarningImportance
 
 			defendButton = widget.NewButton(HumanDefend.String(), func() {
-				worker.ActionState.AddHumanState(HumanDefend)
+				worker.ActionState.AddHumanAction(HumanDefend)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(Human),
@@ -455,7 +455,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			defendButton.Importance = widget.WarningImportance
 
 			escapeButton = widget.NewButton(HumanEscape.String(), func() {
-				worker.ActionState.AddHumanState(HumanEscape)
+				worker.ActionState.AddHumanAction(HumanEscape)
 
 				dialogs := []func(){
 					failureControlUnitSelectorDialog(Human),
@@ -465,9 +465,9 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			escapeButton.Importance = widget.WarningImportance
 
 			catchButton = widget.NewButton(HumanCatch.String(), func() {
-				worker.ActionState.AddHumanState(HumanCatch)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+				worker.ActionState.AddHumanAction(HumanCatch)
+				actionsViewer.Objects = generateTags(*worker)
+				actionsViewer.Refresh()
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(Human),
@@ -479,7 +479,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			catchButton.Importance = widget.SuccessImportance
 
 			bombButton = widget.NewButton(HumanBomb.String(), func() {
-				worker.ActionState.AddHumanState(HumanBomb)
+				worker.ActionState.AddHumanAction(HumanBomb)
 
 				dialogs := []func(){
 					bombSelectorDialog(Human),
@@ -491,7 +491,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			bombButton.Importance = widget.HighImportance
 
 			potionButton = widget.NewButton(HumanPotion.String(), func() {
-				worker.ActionState.AddHumanState(HumanPotion)
+				worker.ActionState.AddHumanAction(HumanPotion)
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(Human),
@@ -503,7 +503,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			potionButton.Importance = widget.HighImportance
 
 			recallButton = widget.NewButton(HumanRecall.String(), func() {
-				worker.ActionState.AddHumanState(HumanRecall)
+				worker.ActionState.AddHumanAction(HumanRecall)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(Human),
@@ -513,7 +513,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			recallButton.Importance = widget.HighImportance
 
 			moveButton = widget.NewButton(HumanMove.String(), func() {
-				worker.ActionState.AddHumanState(HumanMove)
+				worker.ActionState.AddHumanAction(HumanMove)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(Human),
@@ -523,14 +523,14 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			moveButton.Importance = widget.WarningImportance
 
 			hangButton = widget.NewButton(HumanHang.String(), func() {
-				worker.ActionState.AddHumanState(HumanHang)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+				worker.ActionState.AddHumanAction(HumanHang)
+				actionsViewer.Objects = generateTags(*worker)
+				actionsViewer.Refresh()
 			})
 			hangButton.Importance = widget.SuccessImportance
 
 			skillButton = widget.NewButton(HumanSkill.String(), func() {
-				worker.ActionState.AddHumanState(HumanSkill)
+				worker.ActionState.AddHumanAction(HumanSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -543,7 +543,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			skillButton.Importance = widget.HighImportance
 
 			thresholdSkillButton = widget.NewButton(HumanThresholdSkill.String(), func() {
-				worker.ActionState.AddHumanState(HumanThresholdSkill)
+				worker.ActionState.AddHumanAction(HumanThresholdSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -557,7 +557,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			thresholdSkillButton.Importance = widget.HighImportance
 
 			stealButton = widget.NewButton(HumanSteal.String(), func() {
-				worker.ActionState.AddHumanState(HumanSteal)
+				worker.ActionState.AddHumanAction(HumanSteal)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -570,7 +570,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			stealButton.Importance = widget.SuccessImportance
 
 			trainButton = widget.NewButton(HumanTrainSkill.String(), func() {
-				worker.ActionState.AddHumanState(HumanTrainSkill)
+				worker.ActionState.AddHumanAction(HumanTrainSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -583,7 +583,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			trainButton.Importance = widget.SuccessImportance
 
 			rideButton = widget.NewButton(HumanRide.String(), func() {
-				worker.ActionState.AddHumanState(HumanRide)
+				worker.ActionState.AddHumanAction(HumanRide)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -596,7 +596,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			rideButton.Importance = widget.HighImportance
 
 			healSelfButton = widget.NewButton(HumanHealSelf.String(), func() {
-				worker.ActionState.AddHumanState(HumanHealSelf)
+				worker.ActionState.AddHumanAction(HumanHealSelf)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -610,7 +610,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			healSelfButton.Importance = widget.HighImportance
 
 			healOneButton = widget.NewButton(HumanHealOne.String(), func() {
-				worker.ActionState.AddHumanState(HumanHealOne)
+				worker.ActionState.AddHumanAction(HumanHealOne)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -624,7 +624,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			healOneButton.Importance = widget.HighImportance
 
 			healTShapeButton = widget.NewButton(HumanHealTShaped.String(), func() {
-				worker.ActionState.AddHumanState(HumanHealTShaped)
+				worker.ActionState.AddHumanAction(HumanHealTShaped)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -638,7 +638,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			healTShapeButton.Importance = widget.HighImportance
 
 			healMultiButton = widget.NewButton(HumanHealMulti.String(), func() {
-				worker.ActionState.AddHumanState(HumanHealMulti)
+				worker.ActionState.AddHumanAction(HumanHealMulti)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Human),
@@ -651,7 +651,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			})
 			healMultiButton.Importance = widget.HighImportance
 
-			actionStatesContainer := container.NewGridWithColumns(4,
+			actionsContainer := container.NewGridWithColumns(4,
 				attackButton,
 				defendButton,
 				escapeButton,
@@ -672,15 +672,15 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				trainButton,
 			)
 
-			actionStatesDialog := dialog.NewCustom("Select man actions with order", "Leave", actionStatesContainer, window)
-			actionStatesDialog.Show()
+			actionsDialog := dialog.NewCustom("Select man actions with order", "Leave", actionsContainer, window)
+			actionsDialog.Show()
 		})
 
-		/* Pet States */
-		petStateSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
-			worker.ActionState.ClearPetStates()
-			statesViewer.Objects = generateTags(*worker)
-			statesViewer.Refresh()
+		/* Pet Actions */
+		petActionSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
+			worker.ActionState.ClearPetActions()
+			actionsViewer.Objects = generateTags(*worker)
+			actionsViewer.Refresh()
 
 			var petAttackButton *widget.Button
 			var petHangButton *widget.Button
@@ -694,7 +694,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			var petCatchButton *widget.Button
 
 			petAttackButton = widget.NewButton(PetAttack.String(), func() {
-				worker.ActionState.AddPetState(PetAttack)
+				worker.ActionState.AddPetAction(PetAttack)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(Pet),
@@ -705,14 +705,14 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petAttackButton.Importance = widget.WarningImportance
 
 			petHangButton = widget.NewButton(PetHang.String(), func() {
-				worker.ActionState.AddPetState(PetHang)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+				worker.ActionState.AddPetAction(PetHang)
+				actionsViewer.Objects = generateTags(*worker)
+				actionsViewer.Refresh()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
 			petSkillButton = widget.NewButton(PetSkill.String(), func() {
-				worker.ActionState.AddPetState(PetSkill)
+				worker.ActionState.AddPetAction(PetSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -724,7 +724,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petSkillButton.Importance = widget.HighImportance
 
 			petDefendButton = widget.NewButton(PetDefend.String(), func() {
-				worker.ActionState.AddPetState(PetDefend)
+				worker.ActionState.AddPetAction(PetDefend)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -736,7 +736,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petDefendButton.Importance = widget.HighImportance
 
 			petHealSelfButton = widget.NewButton(PetHealSelf.String(), func() {
-				worker.ActionState.AddPetState(PetHealSelf)
+				worker.ActionState.AddPetAction(PetHealSelf)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -749,7 +749,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petHealSelfButton.Importance = widget.HighImportance
 
 			petHealOneButton = widget.NewButton(PetHealOne.String(), func() {
-				worker.ActionState.AddPetState(PetHealOne)
+				worker.ActionState.AddPetAction(PetHealOne)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -762,7 +762,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petHealOneButton.Importance = widget.HighImportance
 
 			petRideButton = widget.NewButton(PetRide.String(), func() {
-				worker.ActionState.AddPetState(PetRide)
+				worker.ActionState.AddPetAction(PetRide)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -774,7 +774,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petRideButton.Importance = widget.HighImportance
 
 			petOffRideButton = widget.NewButton(PetOffRide.String(), func() {
-				worker.ActionState.AddPetState(PetOffRide)
+				worker.ActionState.AddPetAction(PetOffRide)
 
 				dialogs := []func(){
 					offsetSelectorDialog(Pet),
@@ -786,7 +786,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petOffRideButton.Importance = widget.HighImportance
 
 			petEscapeButton = widget.NewButton(PetEscape.String(), func() {
-				worker.ActionState.AddPetState(PetEscape)
+				worker.ActionState.AddPetAction(PetEscape)
 
 				dialogs := []func(){
 					failureControlUnitSelectorDialog(Pet),
@@ -796,9 +796,9 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			petEscapeButton.Importance = widget.WarningImportance
 
 			petCatchButton = widget.NewButton(PetCatch.String(), func() {
-				worker.ActionState.AddPetState(PetCatch)
-				statesViewer.Objects = generateTags(*worker)
-				statesViewer.Refresh()
+				worker.ActionState.AddPetAction(PetCatch)
+				actionsViewer.Objects = generateTags(*worker)
+				actionsViewer.Refresh()
 
 				notifyLogConfig("About Catch")
 
@@ -809,7 +809,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			})
 			petCatchButton.Importance = widget.SuccessImportance
 
-			actionStatesContainer := container.NewGridWithColumns(4,
+			actionsContainer := container.NewGridWithColumns(4,
 				petAttackButton,
 				petEscapeButton,
 				petDefendButton,
@@ -822,12 +822,12 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				petHangButton,
 			)
 
-			actionStatesDialog := dialog.NewCustom("Select pet actions with order", "Leave", actionStatesContainer, window)
-			actionStatesDialog.Show()
+			actionsDialog := dialog.NewCustom("Select pet actions with order", "Leave", actionsContainer, window)
+			actionsDialog.Show()
 
 		})
-		humanStateSelector.Importance = widget.MediumImportance
-		petStateSelector.Importance = widget.MediumImportance
+		humanActionSelector.Importance = widget.MediumImportance
+		petActionSelector.Importance = widget.MediumImportance
 
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 			fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
@@ -843,8 +843,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 								worker.ActionState = actionState
 								worker.ActionState.LogDir = logDir
 								worker.ActionState.ManaChecker = &manaChecker
-								statesViewer.Objects = generateTags(*worker)
-								statesViewer.Refresh()
+								actionsViewer.Objects = generateTags(*worker)
+								actionsViewer.Refresh()
 							}
 						}
 					}
@@ -878,14 +878,14 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 		workerMenuContainer.Add(aliasButton)
 		workerMenuContainer.Add(movementModeButton)
-		workerMenuContainer.Add(humanStateSelector)
-		workerMenuContainer.Add(petStateSelector)
+		workerMenuContainer.Add(humanActionSelector)
+		workerMenuContainer.Add(petActionSelector)
 		workerMenuContainer.Add(loadSettingButton)
 		workerMenuContainer.Add(saveSettingButton)
 
-		statesViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
+		actionsViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
 
-		workerContainer := container.NewVBox(workerMenuContainer, statesViewer)
+		workerContainer := container.NewVBox(workerMenuContainer, actionsViewer)
 		configContainer.Add(workerContainer)
 	}
 
@@ -943,35 +943,35 @@ var (
 
 func createTagContainers(actionState BattleActionState, role Role) (tagContainers []fyne.CanvasObject) {
 	var tag string
-	var anyStates []any
+	var anyActions []any
 	if role == Human {
-		for _, hs := range actionState.GetHumanStates() {
-			anyStates = append(anyStates, hs)
+		for _, hs := range actionState.GetHumanActions() {
+			anyActions = append(anyActions, hs)
 		}
 	} else {
-		for _, ps := range actionState.GetPetStates() {
-			anyStates = append(anyStates, ps)
+		for _, ps := range actionState.GetPetActions() {
+			anyActions = append(anyActions, ps)
 		}
 	}
 
-	for _, state := range anyStates {
+	for _, action := range anyActions {
 		var tagColor color.RGBA
 		if role == Human {
-			tag = state.(HumanState).Action.String()
+			tag = action.(HumanAction).Action.String()
 			switch {
-			case strings.Contains(state.(HumanState).Action.String(), "**"):
+			case strings.Contains(action.(HumanAction).Action.String(), "**"):
 				tagColor = humanFinishingTagColor
-			case strings.Contains(state.(HumanState).Action.String(), "*"):
+			case strings.Contains(action.(HumanAction).Action.String(), "*"):
 				tagColor = humanConditionalTagColor
 			default:
 				tagColor = humanSpecialTagColor
 			}
 		} else {
-			tag = state.(PetState).Action.String()
+			tag = action.(PetAction).Action.String()
 			switch {
-			case strings.Contains(state.(PetState).Action.String(), "**"):
+			case strings.Contains(action.(PetAction).Action.String(), "**"):
 				tagColor = petFinishingTagColor
-			case strings.Contains(state.(PetState).Action.String(), "*"):
+			case strings.Contains(action.(PetAction).Action.String(), "*"):
 				tagColor = petConditionalTagColor
 			default:
 				tagColor = petSpecialTagColor
@@ -983,11 +983,11 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 		tagContainer := container.NewStack(tagCanvas)
 
 		if role == Human {
-			if offset := state.(HumanState).Offset; offset != 0 {
-				tag = fmt.Sprintf("%s:%d:%d", tag, offset, state.(HumanState).Level)
+			if offset := action.(HumanAction).Offset; offset != 0 {
+				tag = fmt.Sprintf("%s:%d:%d", tag, offset, action.(HumanAction).Level)
 			}
 		} else {
-			if offset := state.(PetState).Offset; offset != 0 {
+			if offset := action.(PetAction).Offset; offset != 0 {
 				tag = fmt.Sprintf("%s:%d", tag, offset)
 			}
 		}
@@ -1000,19 +1000,19 @@ func createTagContainers(actionState BattleActionState, role Role) (tagContainer
 		var failureJumpId int
 
 		if role == Human {
-			param = state.(HumanState).Param
-			threshold = state.(HumanState).Threshold
-			successControlUnit = string(state.(HumanState).SuccessControlUnit)
-			failureControlUnit = string(state.(HumanState).FailureControlUnit)
-			successJumpId = state.(HumanState).SuccessJumpId
-			failureJumpId = state.(HumanState).FailureJumpId
+			param = action.(HumanAction).Param
+			threshold = action.(HumanAction).Threshold
+			successControlUnit = string(action.(HumanAction).SuccessControlUnit)
+			failureControlUnit = string(action.(HumanAction).FailureControlUnit)
+			successJumpId = action.(HumanAction).SuccessJumpId
+			failureJumpId = action.(HumanAction).FailureJumpId
 		} else {
-			param = state.(PetState).Param
-			threshold = state.(PetState).Threshold
-			successControlUnit = string(state.(PetState).SuccessControlUnit)
-			failureControlUnit = string(state.(PetState).FailureControlUnit)
-			successJumpId = state.(PetState).SuccessJumpId
-			failureJumpId = state.(PetState).FailureJumpId
+			param = action.(PetAction).Param
+			threshold = action.(PetAction).Threshold
+			successControlUnit = string(action.(PetAction).SuccessControlUnit)
+			failureControlUnit = string(action.(PetAction).FailureControlUnit)
+			successJumpId = action.(PetAction).SuccessJumpId
+			failureJumpId = action.(PetAction).FailureJumpId
 		}
 
 		if param != "" {
