@@ -153,46 +153,45 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 	})
 	deleteButton.Importance = widget.DangerImportance
 
-	var teleportAndResourceCheckerButton *widget.Button
-	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
-		switch teleportAndResourceCheckerButton.Icon {
-		case theme.CheckButtonCheckedIcon():
-			for i := range workers {
-				workers[i].StopTeleportAndResourceChecker()
-			}
-			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
-		case theme.CheckButtonIcon():
-			for i := range workers {
-				workers[i].StartTeleportAndResourceChecker()
-			}
-			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
+	logCheckersButton := widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
+		var teleportAndResourceCheckerButton *widget.Button
+		teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+			switch teleportAndResourceCheckerButton.Icon {
+			case theme.CheckButtonCheckedIcon():
+				for i := range workers {
+					workers[i].StopTeleportAndResourceChecker()
+				}
+				turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
+			case theme.CheckButtonIcon():
+				for i := range workers {
+					workers[i].StartTeleportAndResourceChecker()
+				}
+				turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
 
-			notifyBeeperAndLogConfig("About Teleport & Resource Checker")
-		}
-	})
-	teleportAndResourceCheckerButton.Importance = widget.HighImportance
-
-	var activitiesCheckerButton *widget.Button
-	activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
-		switch activitiesCheckerButton.Icon {
-		case theme.CheckButtonCheckedIcon():
-			for i := range workers {
-				workers[i].ActivityCheckerEnabled = false
+				notifyBeeperAndLogConfig("About Teleport & Resource Checker")
 			}
-			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
-		case theme.CheckButtonIcon():
-			for i := range workers {
-				workers[i].ActivityCheckerEnabled = true
+		})
+		teleportAndResourceCheckerButton.Importance = widget.HighImportance
+
+		var activitiesCheckerButton *widget.Button
+		activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
+			switch activitiesCheckerButton.Icon {
+			case theme.CheckButtonCheckedIcon():
+				for i := range workers {
+					workers[i].ActivityCheckerEnabled = false
+				}
+				turn(theme.CheckButtonIcon(), activitiesCheckerButton)
+			case theme.CheckButtonIcon():
+				for i := range workers {
+					workers[i].ActivityCheckerEnabled = true
+				}
+				turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
+
+				notifyBeeperAndLogConfig("About Activities Checker")
 			}
-			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
+		})
+		activitiesCheckerButton.Importance = widget.HighImportance
 
-			notifyBeeperAndLogConfig("About Activities Checker")
-		}
-	})
-	activitiesCheckerButton.Importance = widget.HighImportance
-
-	var logCheckersButton *widget.Button
-	logCheckersButton = widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
 		dialog.NewCustom("Log Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton), window).Show()
 	})
 	logCheckersButton.Importance = widget.HighImportance
