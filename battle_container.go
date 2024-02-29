@@ -224,21 +224,22 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		workerMenuContainer := container.NewGridWithColumns(6)
 		worker := &workers[i]
 
-		var nicknameButton *widget.Button
-		nicknameEntry := widget.NewEntry()
-		nicknameEntry.SetPlaceHolder("Enter nickname")
-		nicknameButton = widget.NewButtonWithIcon(allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
-			nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
-			nicknameDialog.SetOnClosed(func() {
-				if _, ok := allGames[nicknameEntry.Text]; nicknameEntry.Text == "" || ok {
+		var aliasButton *widget.Button
+		aliasButton = widget.NewButtonWithIcon(allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
+			aliasEntry := widget.NewEntry()
+			aliasEntry.SetPlaceHolder("Enter alias")
+
+			aliasDialog := dialog.NewCustom("Enter alias", "Ok", aliasEntry, window)
+			aliasDialog.SetOnClosed(func() {
+				if _, ok := allGames[aliasEntry.Text]; aliasEntry.Text == "" || ok {
 					return
 				}
 
 				allGames.RemoveValue(worker.GetHandle())
-				allGames.Add(nicknameEntry.Text, worker.GetHandle())
-				nicknameButton.SetText(nicknameEntry.Text)
+				allGames.Add(aliasEntry.Text, worker.GetHandle())
+				aliasButton.SetText(aliasEntry.Text)
 			})
-			nicknameDialog.Show()
+			aliasDialog.Show()
 		})
 
 		var movementModeButton *widget.Button
@@ -932,14 +933,13 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		petStateSelector.Importance = widget.MediumImportance
 
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
-			var fileOpenDialog *dialog.FileDialog
-			fileOpenDialog = dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+			fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 				if uc != nil {
 					var actionState BattleActionState
 					file, openErr := os.Open(uc.URI().Path())
-					defer file.Close()
 
 					if openErr == nil {
+						defer file.Close()
 						if buffer, readErr := io.ReadAll(file); readErr == nil {
 							if json.Unmarshal(buffer, &actionState) == nil {
 								actionState.SetHWND(worker.ActionState.GetHWND())
@@ -979,7 +979,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		})
 		saveSettingButton.Importance = widget.MediumImportance
 
-		workerMenuContainer.Add(nicknameButton)
+		workerMenuContainer.Add(aliasButton)
 		workerMenuContainer.Add(movementModeButton)
 		workerMenuContainer.Add(humanStateSelector)
 		workerMenuContainer.Add(petStateSelector)
