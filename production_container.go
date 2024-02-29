@@ -18,22 +18,6 @@ type ProductionWorkers struct {
 	stopChans  map[string]chan bool
 }
 
-func (pw *ProductionWorkers) doesExist(game string) bool {
-	_, ok := pw.stopChans[game]
-	return ok
-}
-
-func (pw *ProductionWorkers) stop(game string) {
-	pw.stopChans[game] <- true
-	close(pw.stopChans[game])
-}
-
-func (pw *ProductionWorkers) stopAll() {
-	for k := range pw.stopChans {
-		pw.stopChans[k] <- true
-	}
-}
-
 func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 
 	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
@@ -124,4 +108,20 @@ func newProductionContainer(game string, games Games, destroy func()) (*fyne.Con
 	})
 
 	return container.NewGridWithColumns(6, nicknameButton, isGatheringButton, switchButton), stopChan
+}
+
+func (pw *ProductionWorkers) doesExist(game string) bool {
+	_, ok := pw.stopChans[game]
+	return ok
+}
+
+func (pw *ProductionWorkers) stop(game string) {
+	pw.stopChans[game] <- true
+	close(pw.stopChans[game])
+}
+
+func (pw *ProductionWorkers) stopAll() {
+	for k := range pw.stopChans {
+		pw.stopChans[k] <- true
+	}
 }

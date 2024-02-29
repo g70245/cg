@@ -30,12 +30,6 @@ type BattleGroups struct {
 	stopChans map[int]chan bool
 }
 
-func (bgs *BattleGroups) stopAll() {
-	for k := range bgs.stopChans {
-		stop(bgs.stopChans[k])
-	}
-}
-
 func battleContainer(games Games) (*fyne.Container, BattleGroups) {
 	id := 0
 	bgs := BattleGroups{make(map[int]chan bool)}
@@ -1169,6 +1163,12 @@ func stop(stopChan chan bool) {
 	for i < cap(stopChan) {
 		stopChan <- true
 		i++
+	}
+}
+
+func (bgs *BattleGroups) stopAll() {
+	for k := range bgs.stopChans {
+		stop(bgs.stopChans[k])
 	}
 }
 
