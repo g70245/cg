@@ -305,7 +305,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				return
 			}
 
-			if cu := ControlUnit(s); cu == ControlUnitJump {
+			if cu := ControlUnit(s); cu == Jump {
 				activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
 					worker.ActionState.AddHumanSuccessControlUnit(cu)
 					worker.ActionState.AddHumanSuccessJumpId(jumpId)
@@ -321,7 +321,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				return
 			}
 
-			if cu := ControlUnit(s); cu == ControlUnitJump {
+			if cu := ControlUnit(s); cu == Jump {
 				activateJumpDialog(len(worker.ActionState.HumanStates), func(jumpId int) {
 					worker.ActionState.AddHumanFailureControlUnit(cu)
 					worker.ActionState.AddHumanFailureJumpId(jumpId)
@@ -337,7 +337,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 				return
 			}
 
-			if cu := ControlUnit(s); cu == ControlUnitJump {
+			if cu := ControlUnit(s); cu == Jump {
 				activateJumpDialog(len(worker.ActionState.PetStates), func(jumpId int) {
 					worker.ActionState.AddPetSuccessControlUnit(cu)
 					worker.ActionState.AddPetSuccessJumpId(jumpId)
@@ -352,7 +352,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			if s == "" {
 				return
 			}
-			if cu := ControlUnit(s); cu == ControlUnitJump {
+			if cu := ControlUnit(s); cu == Jump {
 				activateJumpDialog(len(worker.ActionState.PetStates), func(jumpId int) {
 					worker.ActionState.AddPetFailureControlUnit(cu)
 					worker.ActionState.AddPetFailueJumpId(jumpId)
@@ -506,7 +506,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		levelOnChanged := func(s string) {
 			if s != "" {
 				level, _ := strconv.Atoi(s)
-				worker.ActionState.AddHumanSkillLevel(Level(level))
+				worker.ActionState.AddHumanSkillLevel(Offset(level))
 				levelDialog.Hide()
 			}
 		}

@@ -24,7 +24,7 @@ const (
 type HumanState struct {
 	Action             humanAction
 	Offset             Offset
-	Level              Level
+	Level              Offset
 	Threshold          Threshold
 	Param              string
 	SuccessControlUnit ControlUnit
@@ -185,7 +185,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanHang:
 			b.logH("is hanging")
 			b.isHumanHanging = true
-			b.currentControlUnit = ControlUnitRepeat
+			b.currentControlUnit = Repeat
 		case HumanBomb:
 			var bomb Item
 			for i := range Bombs {
@@ -389,7 +389,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if b.canRecall() {
 				b.recall()
 				b.logH("recalled")
-				b.currentControlUnit = ControlUnitRepeat
+				b.currentControlUnit = Repeat
 			} else {
 				b.logH("already recalled")
 				b.setSuccessState(Human)
@@ -478,7 +478,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetHang:
 			b.logP("is hanging")
 			b.isPetHanging = true
-			b.currentControlUnit = ControlUnitRepeat
+			b.currentControlUnit = Repeat
 		case PetDefend:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
@@ -534,7 +534,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id := int(b.PetStates[b.currentPetStateId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
-				b.currentControlUnit = ControlUnitRepeat
+				b.currentControlUnit = Repeat
 			} else {
 				b.logP("cannot find the position of window")
 				b.setFailureState(Pet)
@@ -551,7 +551,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 				id := int(b.PetStates[b.currentPetStateId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
-				b.currentControlUnit = ControlUnitRepeat
+				b.currentControlUnit = Repeat
 			} else {
 				b.logP("cannot find the position of window")
 				b.setFailureState(Pet)
@@ -645,26 +645,26 @@ func (b *BattleActionState) updateCurrentStateId(r Role) {
 	switch r {
 	case Human:
 		switch b.currentControlUnit {
-		case ControlUnitStartOver:
+		case StartOver:
 			b.currentHumanStateId = 0
-		case ControlUnitContinue:
+		case Continue:
 			b.currentHumanStateId++
-		case ControlUnitRepeat:
+		case Repeat:
 			return
-		case ControlUnitJump:
+		case Jump:
 			b.currentHumanStateId = b.currentJumpId
 		default:
 			b.currentHumanStateId++
 		}
 	case Pet:
 		switch b.currentControlUnit {
-		case ControlUnitStartOver:
+		case StartOver:
 			b.currentPetStateId = 0
-		case ControlUnitContinue:
+		case Continue:
 			b.currentPetStateId++
-		case ControlUnitRepeat:
+		case Repeat:
 			return
-		case ControlUnitJump:
+		case Jump:
 			b.currentPetStateId = b.currentJumpId
 		default:
 			b.currentPetStateId++
@@ -761,15 +761,15 @@ func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleAc
 		HumanStates: []HumanState{
 			{
 				Action:             HumanAttack,
-				SuccessControlUnit: ControlUnitContinue,
-				FailureControlUnit: ControlUnitContinue,
+				SuccessControlUnit: Continue,
+				FailureControlUnit: Continue,
 			},
 		},
 		PetStates: []PetState{
 			{
 				Action:             PetAttack,
-				SuccessControlUnit: ControlUnitContinue,
-				FailureControlUnit: ControlUnitContinue,
+				SuccessControlUnit: Continue,
+				FailureControlUnit: Continue,
 			},
 		},
 		LogDir:      logDir,
@@ -803,7 +803,7 @@ func (b *BattleActionState) AddHumanSkillOffset(offset Offset) {
 	b.HumanStates[len(b.HumanStates)-1].Offset = offset
 }
 
-func (b *BattleActionState) AddHumanSkillLevel(level Level) {
+func (b *BattleActionState) AddHumanSkillLevel(level Offset) {
 	b.HumanStates[len(b.HumanStates)-1].Level = level
 }
 
@@ -912,11 +912,11 @@ func (b *BattleActionState) endHumanHanging() {
 		jumpId := b.HumanStates[b.currentHumanStateId].SuccessJumpId
 
 		switch cu {
-		case ControlUnitStartOver:
+		case StartOver:
 			b.currentHumanStateId = 0
-		case ControlUnitContinue:
+		case Continue:
 			b.currentHumanStateId++
-		case ControlUnitJump:
+		case Jump:
 			b.currentHumanStateId = jumpId
 		}
 	}
@@ -928,11 +928,11 @@ func (b *BattleActionState) endPetHanging() {
 		jumpId := b.PetStates[b.currentPetStateId].SuccessJumpId
 
 		switch cu {
-		case ControlUnitStartOver:
+		case StartOver:
 			b.currentPetStateId = 0
-		case ControlUnitContinue:
+		case Continue:
 			b.currentPetStateId++
-		case ControlUnitJump:
+		case Jump:
 			b.currentPetStateId = jumpId
 		}
 	}

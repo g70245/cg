@@ -11,7 +11,7 @@ import (
 	"github.com/g70245/win"
 )
 
-var (
+const (
 	RADIUS     float64 = 120
 	BIAS_ANGLE float64 = 30
 )
