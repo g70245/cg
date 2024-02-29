@@ -123,6 +123,7 @@ func (b *BattleActionState) isItemWindowStillOpened(x, y int32) bool {
 }
 
 func (b *BattleActionState) didHumanMissSkill(x, y int32) bool {
+	MoveCursorToNowhere(b.hWnd)
 	return GetColor(b.hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_BOTTOM_SPACE
 }
 
