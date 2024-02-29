@@ -21,7 +21,7 @@ const (
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 )
 
-type HumanState struct {
+type HumanAction struct {
 	Action             humanAction
 	Offset             Offset
 	Level              Offset
@@ -33,7 +33,7 @@ type HumanState struct {
 	FailureJumpId      int
 }
 
-type PetState struct {
+type PetAction struct {
 	Action             petAction
 	Offset             Offset
 	Threshold          Threshold
@@ -47,12 +47,12 @@ type PetState struct {
 type BattleActionState struct {
 	hWnd HWND `json:"-"`
 
-	HumanStates         []HumanState
-	PetStates           []PetState
-	currentHumanStateId int         `json:"-"`
-	currentPetStateId   int         `json:"-"`
-	currentControlUnit  ControlUnit `json:"-"`
-	currentJumpId       int         `json:"-"`
+	HumanActions         []HumanAction
+	PetActions           []PetAction
+	currentHumanActionId int         `json:"-"`
+	currentPetActionId   int         `json:"-"`
+	currentControlUnit   ControlUnit `json:"-"`
+	currentJumpId        int         `json:"-"`
 
 	Enabled                bool `json:"-"`
 	ActivityCheckerEnabled bool `json:"-"`
@@ -105,11 +105,11 @@ func (b *BattleActionState) executeActivity() {
 
 func (b *BattleActionState) executeHumanStateMachine() {
 
-	for b.currentHumanStateId < len(b.HumanStates) && getScene(b.hWnd) == BATTLE_SCENE && b.isHumanStageStable() && b.Enabled {
+	for b.currentHumanActionId < len(b.HumanActions) && getScene(b.hWnd) == BATTLE_SCENE && b.isHumanStageStable() && b.Enabled {
 
 		b.endPetHanging()
 
-		switch b.HumanStates[b.currentHumanStateId].Action {
+		switch b.HumanActions[b.currentHumanActionId].Action {
 		case HumanAttack:
 			b.enableBattleCommandAttack()
 			if b.attack(b.isHumanActionSuccessful) {
@@ -122,8 +122,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanSkill:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanStates[b.currentHumanStateId].Offset)
-				level := int(b.HumanStates[b.currentHumanStateId].Level)
+				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				level := int(b.HumanActions[b.currentHumanActionId].Level)
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
@@ -143,7 +143,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			}
 
 		case HumanThresholdSkill:
-			threshold, _ := strconv.Atoi(strings.Split(string(b.HumanStates[b.currentHumanStateId].Threshold), " ")[0])
+			threshold, _ := strconv.Atoi(strings.Split(string(b.HumanActions[b.currentHumanActionId].Threshold), " ")[0])
 			if len(b.enemies) < threshold {
 				b.logH("performs next action due to too few enemies")
 				break
@@ -151,8 +151,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanStates[b.currentHumanStateId].Offset)
-				level := int(b.HumanStates[b.currentHumanStateId].Level)
+				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				level := int(b.HumanActions[b.currentHumanActionId].Level)
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
@@ -189,7 +189,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanBomb:
 			var bomb Item
 			for i := range Bombs {
-				if Bombs[i].name == b.HumanStates[b.currentHumanStateId].Param {
+				if Bombs[i].name == b.HumanActions[b.currentHumanActionId].Param {
 					bomb = Bombs[i]
 				}
 			}
@@ -225,7 +225,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanPotion:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				openWindow(b.hWnd, KEY_INVENTORY)
 				if px, py, isPivotFound := b.getItemWindowPos(); isPivotFound {
@@ -255,16 +255,16 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanRide:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanStates[b.currentHumanStateId].Offset)
-				level := int(b.HumanStates[b.currentHumanStateId].Level)
+				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				level := int(b.HumanActions[b.currentHumanActionId].Level)
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else {
 					b.logH("is tring to get on a pet")
-					for i, v := range b.PetStates {
+					for i, v := range b.PetActions {
 						if v.Action == PetRide {
-							b.currentPetStateId = i
+							b.currentPetActionId = i
 							break
 						}
 					}
@@ -278,7 +278,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 
 				if !b.isHealthLowerThan(float32(ratio), self) {
 					b.logH("is a healthy boy")
@@ -287,8 +287,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanStates[b.currentHumanStateId].Offset)
-					level := int(b.HumanStates[b.currentHumanStateId].Level)
+					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
@@ -308,12 +308,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanHealOne:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanStates[b.currentHumanStateId].Offset)
-					level := int(b.HumanStates[b.currentHumanStateId].Level)
+					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
@@ -334,12 +334,12 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanHealTShaped:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 			if target, ok := b.searchTShapeHealthLowerThan(float32(ratio)); ok {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanStates[b.currentHumanStateId].Offset)
-					level := int(b.HumanStates[b.currentHumanStateId].Level)
+					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
@@ -360,13 +360,13 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanHealMulti:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 			count := b.countHealthLowerThan(float32(ratio))
 			if count >= 4 {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanStates[b.currentHumanStateId].Offset)
-					level := int(b.HumanStates[b.currentHumanStateId].Level)
+					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
 					useHumanSkill(b.hWnd, x, y, id, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
@@ -397,8 +397,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanTrainSkill:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanStates[b.currentHumanStateId].Offset)
-				level := int(b.HumanStates[b.currentHumanStateId].Level)
+				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				level := int(b.HumanActions[b.currentHumanActionId].Level)
 				useHumanSkill(b.hWnd, x, y, id, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
@@ -417,30 +417,30 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.HumanStates[b.currentHumanStateId].Param, 32)
+				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
 				if b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self); b.isOutOfHealth {
 					b.logH("is out of health")
 				}
 			}
 		}
 
-		b.updateCurrentStateId(Human)
+		b.updateCurrentActionId(Human)
 	}
 
-	if len(b.HumanStates) != 0 {
-		b.currentHumanStateId %= len(b.HumanStates)
+	if len(b.HumanActions) != 0 {
+		b.currentHumanActionId %= len(b.HumanActions)
 	} else {
-		b.currentHumanStateId = 0
+		b.currentHumanActionId = 0
 	}
 }
 
 func (b *BattleActionState) executePetStateMachiine() {
 
-	for b.currentPetStateId < len(b.PetStates) && getScene(b.hWnd) == BATTLE_SCENE && b.isPetStageStable() && b.Enabled {
+	for b.currentPetActionId < len(b.PetActions) && getScene(b.hWnd) == BATTLE_SCENE && b.isPetStageStable() && b.Enabled {
 
 		b.endHumanHanging()
 
-		switch b.PetStates[b.currentPetStateId].Action {
+		switch b.PetActions[b.currentPetActionId].Action {
 		case PetAttack:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
@@ -460,7 +460,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetSkill:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetStates[b.currentPetStateId].Offset)
+				id := int(b.PetActions[b.currentPetActionId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
@@ -482,7 +482,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetDefend:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetStates[b.currentPetStateId].Offset)
+				id := int(b.PetActions[b.currentPetActionId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
@@ -498,7 +498,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(false || b.isOnRide()); ok {
-				ratio, _ := strconv.ParseFloat(b.PetStates[b.currentPetStateId].Param, 32)
+				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
 				if !b.isHealthLowerThan(float32(ratio), self) {
 					b.logP("is a healthy boy")
 					break
@@ -506,7 +506,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 				b.openPetSkillWindow()
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.PetStates[b.currentPetStateId].Offset)
+					id := int(b.PetActions[b.currentPetActionId].Offset)
 					usePetSkill(b.hWnd, x, y, id)
 					if b.didPetMissSkill() || b.didOnRideMissSkill() {
 						b.logP("missed the skill button or is out of mana")
@@ -531,7 +531,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetStates[b.currentPetStateId].Offset)
+				id := int(b.PetActions[b.currentPetActionId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get on ride")
 				b.currentControlUnit = Repeat
@@ -548,7 +548,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetStates[b.currentPetStateId].Offset)
+				id := int(b.PetActions[b.currentPetActionId].Offset)
 				usePetSkill(b.hWnd, x, y, id)
 				b.logP("tries to get off ride")
 				b.currentControlUnit = Repeat
@@ -559,11 +559,11 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetHealOne:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.PetStates[b.currentPetStateId].Param, 32)
+			ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
 			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				b.openPetSkillWindow()
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.PetStates[b.currentPetStateId].Offset)
+					id := int(b.PetActions[b.currentPetActionId].Offset)
 					usePetSkill(b.hWnd, x, y, id)
 					if b.aim(target, b.isPetActionSuccessful) {
 						b.logP("healed an ally")
@@ -593,7 +593,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.PetStates[b.currentPetStateId].Param, 32)
+				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
 				b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self)
 				if b.isOutOfHealth {
 					b.logP("is out of health")
@@ -601,19 +601,19 @@ func (b *BattleActionState) executePetStateMachiine() {
 			}
 		}
 
-		b.updateCurrentStateId(Pet)
+		b.updateCurrentActionId(Pet)
 	}
 
-	if len(b.PetStates) != 0 {
-		b.currentPetStateId %= len(b.PetStates)
+	if len(b.PetActions) != 0 {
+		b.currentPetActionId %= len(b.PetActions)
 	} else {
-		b.currentPetStateId = 0
+		b.currentPetActionId = 0
 	}
 }
 
 func (b *BattleActionState) reset() {
-	b.currentHumanStateId = 0
-	b.currentPetStateId = 0
+	b.currentHumanActionId = 0
+	b.currentPetActionId = 0
 	b.currentControlUnit = ""
 	b.currentJumpId = 0
 	b.enemyDetectorCounter = 0
@@ -622,52 +622,52 @@ func (b *BattleActionState) reset() {
 func (b *BattleActionState) setSuccessState(r Role) {
 	switch r {
 	case Human:
-		b.currentControlUnit = b.HumanStates[b.currentHumanStateId].SuccessControlUnit
-		b.currentJumpId = b.HumanStates[b.currentHumanStateId].SuccessJumpId
+		b.currentControlUnit = b.HumanActions[b.currentHumanActionId].SuccessControlUnit
+		b.currentJumpId = b.HumanActions[b.currentHumanActionId].SuccessJumpId
 	case Pet:
-		b.currentControlUnit = b.PetStates[b.currentPetStateId].SuccessControlUnit
-		b.currentJumpId = b.PetStates[b.currentPetStateId].SuccessJumpId
+		b.currentControlUnit = b.PetActions[b.currentPetActionId].SuccessControlUnit
+		b.currentJumpId = b.PetActions[b.currentPetActionId].SuccessJumpId
 	}
 }
 
 func (b *BattleActionState) setFailureState(r Role) {
 	switch r {
 	case Human:
-		b.currentControlUnit = b.HumanStates[b.currentHumanStateId].FailureControlUnit
-		b.currentJumpId = b.HumanStates[b.currentHumanStateId].FailureJumpId
+		b.currentControlUnit = b.HumanActions[b.currentHumanActionId].FailureControlUnit
+		b.currentJumpId = b.HumanActions[b.currentHumanActionId].FailureJumpId
 	case Pet:
-		b.currentControlUnit = b.PetStates[b.currentPetStateId].FailureControlUnit
-		b.currentJumpId = b.PetStates[b.currentPetStateId].FailureJumpId
+		b.currentControlUnit = b.PetActions[b.currentPetActionId].FailureControlUnit
+		b.currentJumpId = b.PetActions[b.currentPetActionId].FailureJumpId
 	}
 }
 
-func (b *BattleActionState) updateCurrentStateId(r Role) {
+func (b *BattleActionState) updateCurrentActionId(r Role) {
 	switch r {
 	case Human:
 		switch b.currentControlUnit {
 		case StartOver:
-			b.currentHumanStateId = 0
+			b.currentHumanActionId = 0
 		case Continue:
-			b.currentHumanStateId++
+			b.currentHumanActionId++
 		case Repeat:
 			return
 		case Jump:
-			b.currentHumanStateId = b.currentJumpId
+			b.currentHumanActionId = b.currentJumpId
 		default:
-			b.currentHumanStateId++
+			b.currentHumanActionId++
 		}
 	case Pet:
 		switch b.currentControlUnit {
 		case StartOver:
-			b.currentPetStateId = 0
+			b.currentPetActionId = 0
 		case Continue:
-			b.currentPetStateId++
+			b.currentPetActionId++
 		case Repeat:
 			return
 		case Jump:
-			b.currentPetStateId = b.currentJumpId
+			b.currentPetActionId = b.currentJumpId
 		default:
-			b.currentPetStateId++
+			b.currentPetActionId++
 		}
 	}
 
@@ -740,7 +740,7 @@ func (b *BattleActionState) openSkillWindowWithMouse() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.HumanStates[b.currentHumanStateId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
@@ -748,7 +748,7 @@ func (b *BattleActionState) logH(message string) {
 }
 
 func (b *BattleActionState) logP(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.PetStates[b.currentPetStateId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
@@ -758,14 +758,14 @@ func (b *BattleActionState) logP(message string) {
 func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleActionState {
 	return BattleActionState{
 		hWnd: hWnd,
-		HumanStates: []HumanState{
+		HumanActions: []HumanAction{
 			{
 				Action:             HumanAttack,
 				SuccessControlUnit: Continue,
 				FailureControlUnit: Continue,
 			},
 		},
-		PetStates: []PetState{
+		PetActions: []PetAction{
 			{
 				Action:             PetAttack,
 				SuccessControlUnit: Continue,
@@ -785,95 +785,95 @@ func (b *BattleActionState) SetHWND(hWnd HWND) {
 	b.hWnd = hWnd
 }
 
-func (b *BattleActionState) AddHumanState(action humanAction) {
-	newHumanState := HumanState{
+func (b *BattleActionState) AddHumanAction(action humanAction) {
+	newHumanState := HumanAction{
 		Action: action,
 	}
-	b.HumanStates = append(b.HumanStates, newHumanState)
+	b.HumanActions = append(b.HumanActions, newHumanState)
 }
 
 func (b *BattleActionState) AddHumanSkillLevel(level Offset) {
-	b.HumanStates[len(b.HumanStates)-1].Level = level
+	b.HumanActions[len(b.HumanActions)-1].Level = level
 }
 
-func (b *BattleActionState) AddPetState(action petAction) {
-	newPetState := PetState{
+func (b *BattleActionState) AddPetAction(action petAction) {
+	newPetState := PetAction{
 		Action: action,
 	}
-	b.PetStates = append(b.PetStates, newPetState)
+	b.PetActions = append(b.PetActions, newPetState)
 }
 
 func (b *BattleActionState) AddSkillOffset(r Role, offset Offset) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].Offset = offset
+		b.HumanActions[len(b.HumanActions)-1].Offset = offset
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].Offset = offset
+		b.PetActions[len(b.PetActions)-1].Offset = offset
 	}
 }
 
 func (b *BattleActionState) AddThreshold(r Role, threshold Threshold) {
-	b.HumanStates[len(b.HumanStates)-1].Threshold = threshold
+	b.HumanActions[len(b.HumanActions)-1].Threshold = threshold
 }
 
 func (b *BattleActionState) AddParam(r Role, param string) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].Param = param
+		b.HumanActions[len(b.HumanActions)-1].Param = param
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].Param = param
+		b.PetActions[len(b.PetActions)-1].Param = param
 	}
 }
 
 func (b *BattleActionState) AddSuccessControlUnit(r Role, cu ControlUnit) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].SuccessControlUnit = cu
+		b.HumanActions[len(b.HumanActions)-1].SuccessControlUnit = cu
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].SuccessControlUnit = cu
+		b.PetActions[len(b.PetActions)-1].SuccessControlUnit = cu
 	}
 }
 func (b *BattleActionState) AddSuccessJumpId(r Role, jumpId int) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].SuccessJumpId = jumpId
+		b.HumanActions[len(b.HumanActions)-1].SuccessJumpId = jumpId
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].SuccessJumpId = jumpId
+		b.PetActions[len(b.PetActions)-1].SuccessJumpId = jumpId
 	}
 }
 
 func (b *BattleActionState) AddFailureControlUnit(r Role, cu ControlUnit) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].FailureControlUnit = cu
+		b.HumanActions[len(b.HumanActions)-1].FailureControlUnit = cu
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].FailureControlUnit = cu
+		b.PetActions[len(b.PetActions)-1].FailureControlUnit = cu
 	}
 }
 
 func (b *BattleActionState) AddFailureJumpId(r Role, jumpId int) {
 	switch r {
 	case Human:
-		b.HumanStates[len(b.HumanStates)-1].FailureJumpId = jumpId
+		b.HumanActions[len(b.HumanActions)-1].FailureJumpId = jumpId
 	case Pet:
-		b.PetStates[len(b.PetStates)-1].FailureJumpId = jumpId
+		b.PetActions[len(b.PetActions)-1].FailureJumpId = jumpId
 	}
 }
 
-func (b *BattleActionState) ClearHumanStates() {
-	b.HumanStates = b.HumanStates[:0]
+func (b *BattleActionState) ClearHumanActions() {
+	b.HumanActions = b.HumanActions[:0]
 }
 
-func (b *BattleActionState) ClearPetStates() {
-	b.PetStates = b.PetStates[:0]
+func (b *BattleActionState) ClearPetActions() {
+	b.PetActions = b.PetActions[:0]
 }
 
-func (b *BattleActionState) GetHumanStates() []HumanState {
-	return b.HumanStates
+func (b *BattleActionState) GetHumanActions() []HumanAction {
+	return b.HumanActions
 }
 
-func (b *BattleActionState) GetPetStates() []PetState {
-	return b.PetStates
+func (b *BattleActionState) GetPetActions() []PetAction {
+	return b.PetActions
 }
 
 func (b *BattleActionState) detectEnemies() {
@@ -910,32 +910,32 @@ func (b *BattleActionState) detectEnemies() {
 func (b *BattleActionState) endHumanHanging() {
 	if b.isHumanHanging {
 		b.isHumanHanging = false
-		cu := b.HumanStates[b.currentHumanStateId].SuccessControlUnit
-		jumpId := b.HumanStates[b.currentHumanStateId].SuccessJumpId
+		cu := b.HumanActions[b.currentHumanActionId].SuccessControlUnit
+		jumpId := b.HumanActions[b.currentHumanActionId].SuccessJumpId
 
 		switch cu {
 		case StartOver:
-			b.currentHumanStateId = 0
+			b.currentHumanActionId = 0
 		case Continue:
-			b.currentHumanStateId++
+			b.currentHumanActionId++
 		case Jump:
-			b.currentHumanStateId = jumpId
+			b.currentHumanActionId = jumpId
 		}
 	}
 }
 func (b *BattleActionState) endPetHanging() {
 	if b.isPetHanging {
 		b.isPetHanging = false
-		cu := b.PetStates[b.currentPetStateId].SuccessControlUnit
-		jumpId := b.PetStates[b.currentPetStateId].SuccessJumpId
+		cu := b.PetActions[b.currentPetActionId].SuccessControlUnit
+		jumpId := b.PetActions[b.currentPetActionId].SuccessJumpId
 
 		switch cu {
 		case StartOver:
-			b.currentPetStateId = 0
+			b.currentPetActionId = 0
 		case Continue:
-			b.currentPetStateId++
+			b.currentPetActionId++
 		case Jump:
-			b.currentPetStateId = jumpId
+			b.currentPetActionId = jumpId
 		}
 	}
 }
