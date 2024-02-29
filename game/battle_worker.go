@@ -68,7 +68,7 @@ func CreateBattleWorkers(games Games, logDir, manaChecker *string, sharedInvento
 			ActionState:           CreateNewBattleActionState(hWnd, logDir, manaChecker),
 			MovementState: BattleMovementState{
 				hWnd: hWnd,
-				Mode: NONE,
+				Mode: None,
 			},
 			workerTicker:                     newWorkerTicker,
 			inventoryCheckerTicker:           newInventoryCheckerTicker,
@@ -114,7 +114,7 @@ func (b *BattleWorker) Work() {
 						b.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if b.MovementState.Mode != NONE {
+					if b.MovementState.Mode != None {
 						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
 							b.StopTickers()
 							Beeper.Play()

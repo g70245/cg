@@ -792,6 +792,10 @@ func (b *BattleActionState) AddHumanState(action humanAction) {
 	b.HumanStates = append(b.HumanStates, newHumanState)
 }
 
+func (b *BattleActionState) AddHumanSkillLevel(level Offset) {
+	b.HumanStates[len(b.HumanStates)-1].Level = level
+}
+
 func (b *BattleActionState) AddPetState(action petAction) {
 	newPetState := PetState{
 		Action: action,
@@ -799,63 +803,61 @@ func (b *BattleActionState) AddPetState(action petAction) {
 	b.PetStates = append(b.PetStates, newPetState)
 }
 
-func (b *BattleActionState) AddHumanSkillOffset(offset Offset) {
-	b.HumanStates[len(b.HumanStates)-1].Offset = offset
+func (b *BattleActionState) AddSkillOffset(r Role, offset Offset) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].Offset = offset
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].Offset = offset
+	}
 }
 
-func (b *BattleActionState) AddHumanSkillLevel(level Offset) {
-	b.HumanStates[len(b.HumanStates)-1].Level = level
-}
-
-func (b *BattleActionState) AddHumanThreshold(threshold Threshold) {
+func (b *BattleActionState) AddThreshold(r Role, threshold Threshold) {
 	b.HumanStates[len(b.HumanStates)-1].Threshold = threshold
 }
 
-func (b *BattleActionState) AddHumanParam(param string) {
-	b.HumanStates[len(b.HumanStates)-1].Param = param
+func (b *BattleActionState) AddParam(r Role, param string) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].Param = param
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].Param = param
+	}
 }
 
-func (b *BattleActionState) AddHumanSuccessControlUnit(cu ControlUnit) {
-	b.HumanStates[len(b.HumanStates)-1].SuccessControlUnit = cu
+func (b *BattleActionState) AddSuccessControlUnit(r Role, cu ControlUnit) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].SuccessControlUnit = cu
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].SuccessControlUnit = cu
+	}
 }
-func (b *BattleActionState) AddHumanSuccessJumpId(jumpId int) {
-	b.HumanStates[len(b.HumanStates)-1].SuccessJumpId = jumpId
-}
-
-func (b *BattleActionState) AddHumanFailureControlUnit(cu ControlUnit) {
-	b.HumanStates[len(b.HumanStates)-1].FailureControlUnit = cu
-}
-
-func (b *BattleActionState) AddHumanFailureJumpId(jumpId int) {
-	b.HumanStates[len(b.HumanStates)-1].FailureJumpId = jumpId
-}
-
-func (b *BattleActionState) AddPetSkillOffset(offset Offset) {
-	b.PetStates[len(b.PetStates)-1].Offset = offset
+func (b *BattleActionState) AddSuccessJumpId(r Role, jumpId int) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].SuccessJumpId = jumpId
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].SuccessJumpId = jumpId
+	}
 }
 
-func (b *BattleActionState) AddPetThreshold(threshold Threshold) {
-	b.PetStates[len(b.PetStates)-1].Threshold = threshold
+func (b *BattleActionState) AddFailureControlUnit(r Role, cu ControlUnit) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].FailureControlUnit = cu
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].FailureControlUnit = cu
+	}
 }
 
-func (b *BattleActionState) AddPetParam(param string) {
-	b.PetStates[len(b.PetStates)-1].Param = param
-}
-
-func (b *BattleActionState) AddPetSuccessControlUnit(cu ControlUnit) {
-	b.PetStates[len(b.PetStates)-1].SuccessControlUnit = cu
-}
-
-func (b *BattleActionState) AddPetSuccessJumpId(jumpId int) {
-	b.PetStates[len(b.PetStates)-1].SuccessJumpId = jumpId
-}
-
-func (b *BattleActionState) AddPetFailureControlUnit(cu ControlUnit) {
-	b.PetStates[len(b.PetStates)-1].FailureControlUnit = cu
-}
-
-func (b *BattleActionState) AddPetFailueJumpId(jumpId int) {
-	b.PetStates[len(b.PetStates)-1].FailureJumpId = jumpId
+func (b *BattleActionState) AddFailureJumpId(r Role, jumpId int) {
+	switch r {
+	case Human:
+		b.HumanStates[len(b.HumanStates)-1].FailureJumpId = jumpId
+	case Pet:
+		b.PetStates[len(b.PetStates)-1].FailureJumpId = jumpId
+	}
 }
 
 func (b *BattleActionState) ClearHumanStates() {
