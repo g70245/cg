@@ -676,6 +676,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			actionStatesDialog.Show()
 		})
 
+		/* Pet States */
 		petStateSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearPetStates()
 			statesViewer.Objects = generateTags(*worker)
