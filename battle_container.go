@@ -30,7 +30,7 @@ type BattleGroups struct {
 	stopChans map[int]chan bool
 }
 
-func battleContainer(games Games) (*fyne.Container, BattleGroups) {
+func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 	id := 0
 	bgs := BattleGroups{make(map[int]chan bool)}
 

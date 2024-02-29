@@ -18,7 +18,7 @@ type ProductionWorkers struct {
 	stopChans  map[string]chan bool
 }
 
-func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
+func newProductionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 
 	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
 
@@ -35,7 +35,7 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 			for _, game := range games.GetSortedKeys() {
 				if slices.Contains(gamesCheckGroup.Selected, game) {
 					if !pw.doesExist(game) {
-						newContainer, newStopChan := newProductionContainer(game, games, nil)
+						newContainer, newStopChan := newProductionWorkerContainer(game, games, nil)
 						pw.containers[game] = newContainer
 						pw.stopChans[game] = newStopChan
 						productionsContainer.Add(newContainer)
@@ -63,7 +63,7 @@ func productionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 	return main, pw
 }
 
-func newProductionContainer(game string, games Games, destroy func()) (*fyne.Container, chan bool) {
+func newProductionWorkerContainer(game string, games Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
 	worker := NewProductionWorker(games.Peek(game), logDir, stopChan)
 
