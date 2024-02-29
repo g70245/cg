@@ -3,11 +3,11 @@ package game
 import "fmt"
 
 var (
-	ControlUnits controlUnits = []ControlUnit{ControlUnitStartOver, ControlUnitContinue, ControlUnitRepeat, ControlUnitJump}
-	Offsets      offsets      = []Offset{OffsetOne, OffsetTwo, OffsetThree, OffsetFour, OffsetFive, OffsetSix, OffsetSeven, OffsetEight, OffsetNine, OffsetTen}
-	Levels       levels       = []Level{LevelOne, LevelTwo, LevelThree, LevelFour, LevelFive, LevelSix, LevelSeven, LevelEight, LevelNine, LevelTen}
-	Ratios       ratios       = []ratio{RatioOneTenth, RatioTwoTenth, RatioThreeTenth, RatioFourTenth, RatioFiveTenth, RatioSixTenth, RatioSevenTenth, RatioEightTenth, RatioNineTenth}
-	Thresholds   thresholds   = []Threshold{ThresholdOne, ThresholdTwo, ThresholdThree, ThresholdFour, ThresholdFive, ThresholdSix, ThresholdSeven, ThresholdEight, ThresholdNine, ThresholdTen}
+	ControlUnits controlUnits = []ControlUnit{StartOver, Continue, Repeat, Jump}
+	Offsets      offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
+	Levels       offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
+	Ratios       ratios       = []ratio{OneTenth, TwoTenth, ThreeTenth, FourTenth, FiveTenth, SixTenth, SevenTenth, EightTenth, NineTenth}
+	Thresholds   thresholds   = []Threshold{OneFoe, TwoFoes, ThreeFoes, FourFoes, FiveFoes, SixFoes, SevenFoes, EightFoes, NineFoes, TenFoes}
 )
 
 type Role int
@@ -21,10 +21,10 @@ type ControlUnit string
 type controlUnits []ControlUnit
 
 const (
-	ControlUnitStartOver ControlUnit = "Start Over"
-	ControlUnitContinue  ControlUnit = "Continue"
-	ControlUnitRepeat    ControlUnit = "Repeat"
-	ControlUnitJump      ControlUnit = "Jump"
+	StartOver ControlUnit = "Start Over"
+	Continue  ControlUnit = "Continue"
+	Repeat    ControlUnit = "Repeat"
+	Jump      ControlUnit = "Jump"
 )
 
 type humanAction int
@@ -69,63 +69,47 @@ type Offset int
 type offsets []Offset
 
 const (
-	OffsetOne   Offset = 1
-	OffsetTwo   Offset = 2
-	OffsetThree Offset = 3
-	OffsetFour  Offset = 4
-	OffsetFive  Offset = 5
-	OffsetSix   Offset = 6
-	OffsetSeven Offset = 7
-	OffsetEight Offset = 8
-	OffsetNine  Offset = 9
-	OffsetTen   Offset = 10
-)
-
-type Level int
-type levels []Level
-
-const (
-	LevelOne   Level = 1
-	LevelTwo   Level = 2
-	LevelThree Level = 3
-	LevelFour  Level = 4
-	LevelFive  Level = 5
-	LevelSix   Level = 6
-	LevelSeven Level = 7
-	LevelEight Level = 8
-	LevelNine  Level = 9
-	LevelTen   Level = 10
+	One   Offset = 1
+	Two   Offset = 2
+	Three Offset = 3
+	Four  Offset = 4
+	Five  Offset = 5
+	Six   Offset = 6
+	Seven Offset = 7
+	Eight Offset = 8
+	Nine  Offset = 9
+	Ten   Offset = 10
 )
 
 type ratio float32
 type ratios []ratio
 
 const (
-	RatioOneTenth   ratio = 0.1
-	RatioTwoTenth   ratio = 0.2
-	RatioThreeTenth ratio = 0.3
-	RatioFourTenth  ratio = 0.4
-	RatioFiveTenth  ratio = 0.5
-	RatioSixTenth   ratio = 0.6
-	RatioSevenTenth ratio = 0.7
-	RatioEightTenth ratio = 0.8
-	RatioNineTenth  ratio = 0.9
+	OneTenth   ratio = 0.1
+	TwoTenth   ratio = 0.2
+	ThreeTenth ratio = 0.3
+	FourTenth  ratio = 0.4
+	FiveTenth  ratio = 0.5
+	SixTenth   ratio = 0.6
+	SevenTenth ratio = 0.7
+	EightTenth ratio = 0.8
+	NineTenth  ratio = 0.9
 )
 
 type Threshold string
 type thresholds []Threshold
 
 const (
-	ThresholdOne   Threshold = "1 foe"
-	ThresholdTwo   Threshold = "2 foes"
-	ThresholdThree Threshold = "3 foes"
-	ThresholdFour  Threshold = "4 foes"
-	ThresholdFive  Threshold = "5 foes"
-	ThresholdSix   Threshold = "6 foes"
-	ThresholdSeven Threshold = "7 foes"
-	ThresholdEight Threshold = "8 foes"
-	ThresholdNine  Threshold = "9 foes"
-	ThresholdTen   Threshold = "10 foes"
+	OneFoe    Threshold = "1 foe"
+	TwoFoes   Threshold = "2 foes"
+	ThreeFoes Threshold = "3 foes"
+	FourFoes  Threshold = "4 foes"
+	FiveFoes  Threshold = "5 foes"
+	SixFoes   Threshold = "6 foes"
+	SevenFoes Threshold = "7 foes"
+	EightFoes Threshold = "8 foes"
+	NineFoes  Threshold = "9 foes"
+	TenFoes   Threshold = "10 foes"
 )
 
 func (ha humanAction) String() string {
@@ -206,18 +190,10 @@ func (c controlUnits) GetOptions() []string {
 	return options
 }
 
-func (ids offsets) GetOptions() []string {
+func (o offsets) GetOptions() []string {
 	var options []string
-	for i := range ids {
-		options = append(options, fmt.Sprint(ids[i]))
-	}
-	return options
-}
-
-func (ls levels) GetOptions() []string {
-	var options []string
-	for i := range ls {
-		options = append(options, fmt.Sprint(ls[i]))
+	for i := range o {
+		options = append(options, fmt.Sprint(o[i]))
 	}
 	return options
 }
