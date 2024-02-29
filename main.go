@@ -106,8 +106,8 @@ type Robot struct {
 func generateRobotContainer() Robot {
 	games := game.NewGames()
 
-	autoBattleContainer, autoBattleGroups := battleContainer(games)
-	productionContainer, productionWorkers := productionContainer(games)
+	autoBattleContainer, autoBattleGroups := newBattleContainer(games)
+	productionContainer, productionWorkers := newProductionContainer(games)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Auto Battle", autoBattleContainer),

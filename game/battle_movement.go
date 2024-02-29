@@ -30,7 +30,7 @@ func (m BattleMovementModes) GetOptions() []string {
 }
 
 const (
-	NONE                     BattleMovementMode = "None"
+	None                     BattleMovementMode = "None"
 	DIAGONAL                 BattleMovementMode = "Diagonal"
 	BIASED_DIAGONAL          BattleMovementMode = "B. Diagonal"
 	REVERSED_DIAGONAL        BattleMovementMode = "Reversed Diagonal"
@@ -38,7 +38,7 @@ const (
 	HYBRID_DIAGONAL          BattleMovementMode = "Hybrid Diagonal"
 )
 
-var BATTLE_MOVEMENT_MODES BattleMovementModes = []BattleMovementMode{NONE, DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
+var BATTLE_MOVEMENT_MODES BattleMovementModes = []BattleMovementMode{None, DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
 
 type BattleMovementState struct {
 	hWnd   win.HWND
