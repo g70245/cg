@@ -23,7 +23,7 @@ const (
 
 type BattleWorker struct {
 	hWnd                  win.HWND
-	logDir                *string
+	gameDir               *string
 	manaChecker           *string
 	sharedInventoryStatus *bool
 	sharedStopChan        chan bool
@@ -47,7 +47,7 @@ type BattleWorker struct {
 
 type BattleWorkers []BattleWorker
 
-func CreateBattleWorkers(games Games, logDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) BattleWorkers {
+func CreateBattleWorkers(games Games, gameDir, manaChecker *string, sharedInventoryStatus *bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) BattleWorkers {
 	var workers []BattleWorker
 	for _, hWnd := range games.GetHWNDs() {
 		newWorkerTicker := time.NewTicker(time.Hour)
@@ -60,12 +60,12 @@ func CreateBattleWorkers(games Games, logDir, manaChecker *string, sharedInvento
 
 		workers = append(workers, BattleWorker{
 			hWnd:                  hWnd,
-			logDir:                logDir,
+			gameDir:               gameDir,
 			manaChecker:           manaChecker,
 			sharedInventoryStatus: sharedInventoryStatus,
 			sharedStopChan:        sharedStopChan,
 			sharedWaitGroup:       sharedWaitGroup,
-			ActionState:           CreateNewBattleActionState(hWnd, logDir, manaChecker),
+			ActionState:           CreateNewBattleActionState(hWnd, gameDir, manaChecker),
 			MovementState: BattleMovementState{
 				hWnd: hWnd,
 				Mode: None,
@@ -149,12 +149,12 @@ func (b *BattleWorker) Work() {
 				}
 			case <-b.teleportAndResourceCheckerTicker.C:
 				if b.TeleportAndResourceCheckerEnabled {
-					if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.logDir) {
+					if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.gameDir) {
 						log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
 						b.StopTickers()
 						Beeper.Play()
 					}
-					if b.isOutOfResource = isOutOfResource(*b.logDir); b.isOutOfResource {
+					if b.isOutOfResource = isOutOfResource(*b.gameDir); b.isOutOfResource {
 						log.Printf("Handle %d is out of resource\n", b.hWnd)
 						b.StopTickers()
 						Beeper.Play()

@@ -62,7 +62,7 @@ type BattleActionState struct {
 	isPetHanging           bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
-	LogDir      *string `json:"-"`
+	GameDir     *string `json:"-"`
 
 	enemies              []CheckTarget `json:"-"`
 	enemyDetectorCounter int           `json:"-"`
@@ -93,7 +93,7 @@ func (b *BattleActionState) executeActivity() {
 		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
-	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir); doesEncounterActivityMonsters {
+	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.GameDir); doesEncounterActivityMonsters {
 		b.logH("encounters the activity monster")
 		Beeper.Play()
 
@@ -755,7 +755,7 @@ func (b *BattleActionState) logP(message string) {
 	)
 }
 
-func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleActionState {
+func CreateNewBattleActionState(hWnd HWND, gameDir, manaChecker *string) BattleActionState {
 	return BattleActionState{
 		hWnd: hWnd,
 		HumanActions: []HumanAction{
@@ -772,7 +772,7 @@ func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleAc
 				FailureControlUnit: Continue,
 			},
 		},
-		LogDir:      logDir,
+		GameDir:     gameDir,
 		ManaChecker: manaChecker,
 	}
 }
