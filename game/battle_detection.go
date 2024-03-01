@@ -10,6 +10,7 @@ import (
 
 const (
 	DURATION_MONSTER_DETECING_CURSOR_MOV = 80 * time.Millisecond
+	DURATION_DID_MISS_SKILL_WAITING      = 80 * time.Millisecond
 	DURATION_BATTLE_RESULT_DISAPPEARING  = 2 * time.Second
 )
 
@@ -123,7 +124,9 @@ func (b *BattleActionState) isItemWindowStillOpened(x, y int32) bool {
 }
 
 func (b *BattleActionState) didHumanMissSkill(x, y int32) bool {
-	return GetColor(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y) == COLOR_BATTLE_COMMAND_ENABLE
+	MoveCursorToNowhere(b.hWnd)
+	time.Sleep(DURATION_DID_MISS_SKILL_WAITING)
+	return GetColor(b.hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_BOTTOM_SPACE
 }
 
 func (b *BattleActionState) didPetMissSkill() bool {

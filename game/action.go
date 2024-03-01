@@ -10,6 +10,7 @@ import (
 
 const (
 	DURATION_ACTION                    = 200 * time.Millisecond
+	DURATION_ACTION_SKILL              = 320 * time.Millisecond
 	DURATION_INVENTORY_CHECKER_WAITING = 400 * time.Millisecond
 )
 
@@ -41,7 +42,7 @@ func useHumanSkill(hWnd win.HWND, x, y int32, id, level int) {
 	LeftClick(hWnd, x, y+int32((id-1)*16))
 	time.Sleep(DURATION_ACTION)
 	LeftClick(hWnd, x, y+int32((level-1)*16))
-	time.Sleep(DURATION_ACTION)
+	time.Sleep(DURATION_ACTION_SKILL)
 }
 
 func usePetSkill(hWnd win.HWND, x, y int32, id int) {

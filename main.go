@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	window fyne.Window
-	logDir = new(string)
+	window  fyne.Window
+	gameDir = new(string)
 )
 
 func main() {
@@ -69,23 +69,23 @@ func main() {
 	})
 	alertDialogButton.Importance = widget.HighImportance
 
-	var logDialogButton *widget.Button
-	logDialogButton = widget.NewButtonWithIcon("Log Directory", theme.FolderIcon(), func() {
-		logDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
+	var gameDirDialogButton *widget.Button
+	gameDirDialogButton = widget.NewButtonWithIcon("Game Directory", theme.FolderIcon(), func() {
+		gameDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 			if lu != nil {
-				*logDir = lu.Path()
-				logDialogButton.SetIcon(theme.FolderOpenIcon())
+				*gameDir = lu.Path()
+				gameDirDialogButton.SetIcon(theme.FolderOpenIcon())
 			} else {
-				*logDir = ""
-				logDialogButton.SetIcon(theme.FolderIcon())
+				*gameDir = ""
+				gameDirDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
-		logDirDialog.SetLocation(listableURI)
-		logDirDialog.Show()
+		gameDirDialog.SetLocation(listableURI)
+		gameDirDialog.Show()
 	})
-	logDialogButton.Importance = widget.HighImportance
+	gameDirDialogButton.Importance = widget.HighImportance
 
-	menu := container.NewHBox(refreshButton, alertDialogButton, logDialogButton)
+	menu := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton)
 	content = container.NewBorder(menu, nil, nil, nil, robot.main)
 
 	/* shortcuts */

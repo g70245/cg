@@ -25,7 +25,7 @@ const (
 type ProductionWorker struct {
 	hWnd     win.HWND
 	name     string
-	logDir   *string
+	gameDir  *string
 	stopChan chan bool
 
 	GatheringMode bool
@@ -37,7 +37,7 @@ type ProductionWorker struct {
 	audibleCueTicker       *time.Ticker
 }
 
-func NewProductionWorker(hWnd win.HWND, logDir *string, stopChan chan bool) ProductionWorker {
+func NewProductionWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) ProductionWorker {
 	newWorkerTicker := time.NewTicker(time.Hour)
 	newLogCheckerTicker := time.NewTicker(time.Hour)
 	newInventoryCheckerTicker := time.NewTicker(time.Hour)
@@ -51,7 +51,7 @@ func NewProductionWorker(hWnd win.HWND, logDir *string, stopChan chan bool) Prod
 	return ProductionWorker{
 		hWnd:                   hWnd,
 		name:                   NO_WORKER_NAME,
-		logDir:                 logDir,
+		gameDir:                gameDir,
 		stopChan:               stopChan,
 		workerTicker:           newWorkerTicker,
 		logCheckerTicker:       newLogCheckerTicker,
@@ -83,7 +83,7 @@ func (p *ProductionWorker) Work() {
 					p.tidyInventory()
 				}
 			case <-p.logCheckerTicker.C:
-				if isProductionStatusOK(p.name, *p.logDir, DURATION_PRODUCTION_CHECKER_LOG) {
+				if isProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
 					p.StopTickers()
 					Beeper.Play()

@@ -40,9 +40,9 @@ func (p *ProductionWorker) isProducingSuccessful(x, y int32) bool {
 	return GetColor(p.hWnd, x-166, y+180) == COLOR_PR_PRODUCE_BUTTON
 }
 
-func isProductionStatusOK(name, dir string, before time.Duration) bool {
-	if dir == "" {
+func isProductionStatusOK(name, gameDir string, before time.Duration) bool {
+	if gameDir == "" {
 		return false
 	}
-	return checkWord(dir, 10, before, append(LOG_PRODUCTION_FAILURE, name))
+	return checkWord(gameDir, 10, before, append(LOG_PRODUCTION_FAILURE, name))
 }

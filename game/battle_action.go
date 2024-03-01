@@ -62,7 +62,7 @@ type BattleActionState struct {
 	isPetHanging           bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
-	LogDir      *string `json:"-"`
+	GameDir     *string `json:"-"`
 
 	enemies              []CheckTarget `json:"-"`
 	enemyDetectorCounter int           `json:"-"`
@@ -93,7 +93,7 @@ func (b *BattleActionState) executeActivity() {
 		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
-	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.LogDir); doesEncounterActivityMonsters {
+	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.GameDir); doesEncounterActivityMonsters {
 		b.logH("encounters the activity monster")
 		Beeper.Play()
 
@@ -122,9 +122,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanSkill:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				useHumanSkill(b.hWnd, x, y, id, level)
+				useHumanSkill(b.hWnd, x, y, offset, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else if b.isHumanActionSuccessful() {
@@ -151,9 +151,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				useHumanSkill(b.hWnd, x, y, id, level)
+				useHumanSkill(b.hWnd, x, y, offset, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else if b.isHumanActionSuccessful() {
@@ -255,9 +255,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanRide:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				useHumanSkill(b.hWnd, x, y, id, level)
+				useHumanSkill(b.hWnd, x, y, offset, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else {
@@ -287,9 +287,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					useHumanSkill(b.hWnd, x, y, id, level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
 					} else {
@@ -312,9 +312,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					useHumanSkill(b.hWnd, x, y, id, level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
 					} else if b.aim(target, b.isHumanActionSuccessful) {
@@ -338,9 +338,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if target, ok := b.searchTShapeHealthLowerThan(float32(ratio)); ok {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					useHumanSkill(b.hWnd, x, y, id, level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
 					} else if b.aim(target, b.isHumanActionSuccessful) {
@@ -365,9 +365,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			if count >= 4 {
 				openWindow(b.hWnd, KEY_SKILL)
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.HumanActions[b.currentHumanActionId].Offset)
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					useHumanSkill(b.hWnd, x, y, id, level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
 					if b.didHumanMissSkill(x, y) {
 						b.logH("missed the skill button or is out of mana")
 					} else if b.aim(&PLAYER_L_3_H, b.isHumanActionSuccessful) {
@@ -397,9 +397,9 @@ func (b *BattleActionState) executeHumanStateMachine() {
 		case HumanTrainSkill:
 			openWindow(b.hWnd, KEY_SKILL)
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.HumanActions[b.currentHumanActionId].Offset)
+				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
 				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				useHumanSkill(b.hWnd, x, y, id, level)
+				useHumanSkill(b.hWnd, x, y, offset, level)
 				if b.didHumanMissSkill(x, y) {
 					b.logH("missed the skill button or is out of mana")
 				} else if b.isHumanActionSuccessful() {
@@ -460,8 +460,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetSkill:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetActions[b.currentPetActionId].Offset)
-				usePetSkill(b.hWnd, x, y, id)
+				offset := int(b.PetActions[b.currentPetActionId].Offset)
+				usePetSkill(b.hWnd, x, y, offset)
 				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
 				} else if b.attack(b.isPetActionSuccessful) {
@@ -482,8 +482,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetDefend:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetActions[b.currentPetActionId].Offset)
-				usePetSkill(b.hWnd, x, y, id)
+				offset := int(b.PetActions[b.currentPetActionId].Offset)
+				usePetSkill(b.hWnd, x, y, offset)
 				if b.didPetMissSkill() || b.didOnRideMissSkill() {
 					b.logP("missed the skill button or is out of mana")
 				} else {
@@ -506,8 +506,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 				b.openPetSkillWindow()
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.PetActions[b.currentPetActionId].Offset)
-					usePetSkill(b.hWnd, x, y, id)
+					offset := int(b.PetActions[b.currentPetActionId].Offset)
+					usePetSkill(b.hWnd, x, y, offset)
 					if b.didPetMissSkill() || b.didOnRideMissSkill() {
 						b.logP("missed the skill button or is out of mana")
 					} else {
@@ -531,8 +531,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetActions[b.currentPetActionId].Offset)
-				usePetSkill(b.hWnd, x, y, id)
+				offset := int(b.PetActions[b.currentPetActionId].Offset)
+				usePetSkill(b.hWnd, x, y, offset)
 				b.logP("tries to get on ride")
 				b.currentControlUnit = Repeat
 			} else {
@@ -548,8 +548,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
-				id := int(b.PetActions[b.currentPetActionId].Offset)
-				usePetSkill(b.hWnd, x, y, id)
+				offset := int(b.PetActions[b.currentPetActionId].Offset)
+				usePetSkill(b.hWnd, x, y, offset)
 				b.logP("tries to get off ride")
 				b.currentControlUnit = Repeat
 			} else {
@@ -563,8 +563,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
 				b.openPetSkillWindow()
 				if x, y, ok := b.getSkillWindowPos(); ok {
-					id := int(b.PetActions[b.currentPetActionId].Offset)
-					usePetSkill(b.hWnd, x, y, id)
+					offset := int(b.PetActions[b.currentPetActionId].Offset)
+					usePetSkill(b.hWnd, x, y, offset)
 					if b.aim(target, b.isPetActionSuccessful) {
 						b.logP("healed an ally")
 						b.setSuccessState(Pet)
@@ -614,7 +614,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 func (b *BattleActionState) reset() {
 	b.currentHumanActionId = 0
 	b.currentPetActionId = 0
-	b.currentControlUnit = ""
+	b.currentControlUnit = Undefined
 	b.currentJumpId = 0
 	b.enemyDetectorCounter = 0
 }
@@ -671,7 +671,7 @@ func (b *BattleActionState) updateCurrentActionId(r Role) {
 		}
 	}
 
-	b.currentControlUnit = ""
+	b.currentControlUnit = Undefined
 	b.currentJumpId = 0
 }
 
@@ -740,7 +740,7 @@ func (b *BattleActionState) openSkillWindowWithMouse() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentHumanActionId, strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
@@ -748,14 +748,14 @@ func (b *BattleActionState) logH(message string) {
 }
 
 func (b *BattleActionState) logP(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentPetActionId, strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
 	)
 }
 
-func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleActionState {
+func CreateNewBattleActionState(hWnd HWND, gameDir, manaChecker *string) BattleActionState {
 	return BattleActionState{
 		hWnd: hWnd,
 		HumanActions: []HumanAction{
@@ -772,7 +772,7 @@ func CreateNewBattleActionState(hWnd HWND, logDir, manaChecker *string) BattleAc
 				FailureControlUnit: Continue,
 			},
 		},
-		LogDir:      logDir,
+		GameDir:     gameDir,
 		ManaChecker: manaChecker,
 	}
 }

@@ -2,6 +2,7 @@ package game
 
 import (
 	. "cg/internal"
+	"fmt"
 
 	"strconv"
 	"strings"
@@ -205,30 +206,31 @@ const (
 	DURATION_LOG_OUT_OF_RESOURCE = 30 * time.Second
 )
 
-func doesEncounterActivityMonsters(dir string) bool {
-	if dir == "" {
+func doesEncounterActivityMonsters(gameDir string) bool {
+	if gameDir == "" {
 		return false
 	}
 
-	return checkWord(dir, 5, DURATION_LOG_ACTIVITY, LOG_ACTIVITY)
+	return checkWord(gameDir, 5, DURATION_LOG_ACTIVITY, LOG_ACTIVITY)
 }
 
-func isTeleported(dir string) bool {
-	if dir == "" {
+func isTeleported(gameDir string) bool {
+	if gameDir == "" {
 		return false
 	}
-	return checkWord(dir, 5, DURATION_LOG_TELEPORTING, LOG_TELEPORTING)
+	return checkWord(gameDir, 5, DURATION_LOG_TELEPORTING, LOG_TELEPORTING)
 }
 
-func isOutOfResource(dir string) bool {
-	if dir == "" {
+func isOutOfResource(gameDir string) bool {
+	if gameDir == "" {
 		return false
 	}
-	return checkWord(dir, 5, 30*time.Second, LOG_OUT_OF_RESOURCE)
+	return checkWord(gameDir, 5, 30*time.Second, LOG_OUT_OF_RESOURCE)
 }
 
-func checkWord(dir string, lineCount int, before time.Duration, words []string) bool {
-	lines := GetLastLinesOfLog(dir, lineCount)
+func checkWord(gameDir string, lineCount int, before time.Duration, words []string) bool {
+	logDir := fmt.Sprintf("%s/Log", gameDir)
+	lines := GetLastLinesOfLog(logDir, lineCount)
 	now := time.Now()
 	for i := range lines {
 		h, hErr := strconv.Atoi(lines[i][1:3])
