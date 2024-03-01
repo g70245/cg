@@ -21,6 +21,7 @@ type ControlUnit string
 type controlUnits []ControlUnit
 
 const (
+	Undefined ControlUnit = "Undefined"
 	StartOver ControlUnit = "Start Over"
 	Continue  ControlUnit = "Continue"
 	Repeat    ControlUnit = "Repeat"

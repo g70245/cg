@@ -614,7 +614,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 func (b *BattleActionState) reset() {
 	b.currentHumanActionId = 0
 	b.currentPetActionId = 0
-	b.currentControlUnit = ""
+	b.currentControlUnit = Undefined
 	b.currentJumpId = 0
 	b.enemyDetectorCounter = 0
 }
@@ -671,7 +671,7 @@ func (b *BattleActionState) updateCurrentActionId(r Role) {
 		}
 	}
 
-	b.currentControlUnit = ""
+	b.currentControlUnit = Undefined
 	b.currentJumpId = 0
 }
 
@@ -740,7 +740,7 @@ func (b *BattleActionState) openSkillWindowWithMouse() {
 }
 
 func (b *BattleActionState) logH(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentHumanActionId, strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
@@ -748,7 +748,7 @@ func (b *BattleActionState) logH(message string) {
 }
 
 func (b *BattleActionState) logP(message string) {
-	header := fmt.Sprintf("[%s][%s]", fmt.Sprint(b.hWnd), strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentHumanActionId, strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
