@@ -290,7 +290,6 @@ func (b *BattleActionState) getSelfTarget(isHuman bool) (*CheckTarget, bool) {
 		if !b.doesPlayerTargetExist(targets[i]) {
 			continue
 		}
-
 		x := targets[i].x + 8
 		for x <= targets[i].x+30 {
 			y := targets[i].y - 10
