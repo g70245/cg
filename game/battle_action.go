@@ -499,7 +499,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetHealSelf:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(false || b.isOnRide()); ok {
+			if self, ok := b.getSelfTarget(b.isOnRide()); ok {
 				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
 				if !b.isHealthLowerThan(float32(ratio), self) {
 					b.logP("is a healthy boy")

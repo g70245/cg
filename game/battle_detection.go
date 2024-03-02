@@ -6,6 +6,8 @@ import (
 	"slices"
 
 	"time"
+
+	"github.com/g70245/win"
 )
 
 const (
@@ -286,6 +288,8 @@ func (b *BattleActionState) getSelfTarget(isHuman bool) (*CheckTarget, bool) {
 		targets = allPets
 	}
 
+	nameColors := []win.COLORREF{COLOR_BATTLE_NAME_1, COLOR_BATTLE_NAME_2, COLOR_BATTLE_NAME_3, COLOR_BATTLE_NAME_4, COLOR_BATTLE_NAME_5}
+
 	for i := range targets {
 		if !b.doesPlayerTargetExist(targets[i]) {
 			continue
@@ -294,7 +298,7 @@ func (b *BattleActionState) getSelfTarget(isHuman bool) (*CheckTarget, bool) {
 		for x <= targets[i].x+30 {
 			y := targets[i].y - 10
 			for y >= targets[i].y-26 {
-				if GetColor(b.hWnd, x, y) == COLOR_BATTLE_NAME {
+				if slices.Contains(nameColors, GetColor(b.hWnd, x, y)) {
 					return &targets[i], true
 				}
 				y--
