@@ -230,7 +230,7 @@ func isOutOfResource(gameDir string) bool {
 
 func checkWord(gameDir string, lineCount int, before time.Duration, words []string) bool {
 	logDir := fmt.Sprintf("%s/Log", gameDir)
-	lines := GetLastLinesOfLog(logDir, lineCount)
+	lines := GetLastLines(logDir, lineCount)
 	now := time.Now()
 	for i := range lines {
 		h, hErr := strconv.Atoi(lines[i][1:3])

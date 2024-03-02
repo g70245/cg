@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DURATION_BATTLE_ACTION_LOOP_WAITING = 200 * time.Millisecond
+	DURATION_BATTLE_ACTION_WAITING_LOOP = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 )
@@ -72,12 +72,17 @@ func (b *BattleActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
 
 	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
+		b.wait()
 		b.executeActivity()
 		b.detectEnemies()
 		b.checkHumanMana()
 		b.executeHumanStateMachine()
+		b.wait()
+		b.executeHumanStateMachine()
+		b.wait()
 		b.executePetStateMachiine()
-		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
+		b.wait()
+		b.executePetStateMachiine()
 	}
 
 	b.reset()
@@ -85,12 +90,9 @@ func (b *BattleActionState) Act() {
 }
 
 func (b *BattleActionState) executeActivity() {
+
 	if !b.ActivityCheckerEnabled {
 		return
-	}
-
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && (!b.isHumanStageStable() && !b.isPetStageStable()) {
-		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
 	}
 
 	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.GameDir); doesEncounterActivityMonsters {
@@ -98,7 +100,7 @@ func (b *BattleActionState) executeActivity() {
 		Beeper.Play()
 
 		for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
-			time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
+			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 		}
 	}
 }
@@ -878,11 +880,6 @@ func (b *BattleActionState) GetPetActions() []PetAction {
 
 func (b *BattleActionState) detectEnemies() {
 
-	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !b.isHumanStageStable() && !b.isPetStageStable() {
-		time.Sleep(DURATION_BATTLE_ACTION_LOOP_WAITING)
-	}
-
-	// initial state: enemyDetectorCounter=0
 	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (b.enemyDetectorCounter != 0 && len(b.enemies) == 1) {
 		return
 	}
@@ -941,6 +938,7 @@ func (b *BattleActionState) endPetHanging() {
 }
 
 func (b *BattleActionState) checkHumanMana() {
+
 	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled {
 		return
 	}
@@ -951,6 +949,13 @@ func (b *BattleActionState) checkHumanMana() {
 		if b.isOutOfMana = b.isAnyPlayerOutOfMana(); b.isOutOfMana {
 			b.logH("someone is out of mana")
 		}
+	}
+}
+
+func (b *BattleActionState) wait() {
+
+	for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled && !b.isHumanStageStable() && !b.isPetStageStable() {
+		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 }
 
