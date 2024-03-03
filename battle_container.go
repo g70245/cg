@@ -112,6 +112,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		}
 		manaCheckerSelectorDialog.Hide()
 	})
+	manaCheckerSelector.Required = true
 	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
 	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", manaChecker), func() {
 		manaCheckerSelectorDialog.Show()
