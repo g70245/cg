@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	NO_MANA_CHECKER = "none"
+	NO_MANA_CHECKER = "None"
 )
 
 const (
