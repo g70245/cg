@@ -306,7 +306,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 			} else {
 				b.logH("cannot find self")
-				b.setFailureState(Human)
 			}
 		case HumanHealOne:
 			closeAllWindows(b.hWnd)
@@ -524,7 +523,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				}
 			} else {
 				b.logP("cannot find self")
-				b.setFailureState(Pet)
 			}
 		case PetRide:
 			if b.isOnRide() {
