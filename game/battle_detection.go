@@ -280,30 +280,34 @@ func (b *BattleActionState) searchTShapeHealthLowerThan(ratio float32) (*CheckTa
 	return nil, false
 }
 
-func (b *BattleActionState) getSelfTarget(isHuman bool) (*CheckTarget, bool) {
+func (b *BattleActionState) getSelfTarget(isFirst bool) (*CheckTarget, bool) {
 	MoveCursorToNowhere(b.hWnd)
 
-	targets := allHumans
-	if !isHuman {
-		targets = allPets
+	var targetRows [][]CheckTarget
+	if isFirst {
+		targetRows = append(targetRows, allHumans, allPets)
+	} else {
+		targetRows = append(targetRows, allPets, allHumans)
 	}
 
-	nameColors := []win.COLORREF{COLOR_BATTLE_NAME_1, COLOR_BATTLE_NAME_2, COLOR_BATTLE_NAME_3, COLOR_BATTLE_NAME_4, COLOR_BATTLE_NAME_5}
+	nameColors := []win.COLORREF{COLOR_BATTLE_SELF_NAME_1, COLOR_BATTLE_SELF_NAME_2, COLOR_BATTLE_SELF_NAME_3, COLOR_BATTLE_SELF_NAME_4, COLOR_BATTLE_SELF_NAME_5}
 
-	for i := range targets {
-		if !b.doesPlayerTargetExist(targets[i]) {
-			continue
-		}
-		x := targets[i].x + 8
-		for x <= targets[i].x+30 {
-			y := targets[i].y - 10
-			for y >= targets[i].y-26 {
-				if slices.Contains(nameColors, GetColor(b.hWnd, x, y)) {
-					return &targets[i], true
-				}
-				y--
+	for i := range targetRows {
+		for j := range targetRows[i] {
+			if !b.doesPlayerTargetExist(targetRows[i][j]) {
+				continue
 			}
-			x++
+			x := targetRows[i][j].x + 8
+			for x <= targetRows[i][j].x+30 {
+				y := targetRows[i][j].y - 10
+				for y >= targetRows[i][j].y-26 {
+					if slices.Contains(nameColors, GetColor(b.hWnd, x, y)) {
+						return &targetRows[i][j], true
+					}
+					y--
+				}
+				x++
+			}
 		}
 	}
 	return nil, false

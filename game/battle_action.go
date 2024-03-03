@@ -594,7 +594,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 		case PetCatch:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(true); ok {
+			if self, ok := b.getSelfTarget(b.isOnRide()); ok {
 				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
 				b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self)
 				if b.isOutOfHealth {
