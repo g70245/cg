@@ -94,7 +94,6 @@ func (b *BattleWorker) Work() {
 	b.teleportAndResourceCheckerTicker.Reset(DURATION_BATTLE_CHECKER_LOG)
 
 	go func() {
-		defer b.ActionState.Act()
 		defer b.StopTickers()
 
 		b.reset()
@@ -172,6 +171,7 @@ func (b *BattleWorker) StopTickers() {
 	b.workerTicker.Stop()
 	b.inventoryCheckerTicker.Stop()
 	b.teleportAndResourceCheckerTicker.Stop()
+	b.ActionState.Act()
 }
 
 func (b *BattleWorker) Stop() {
