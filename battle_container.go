@@ -253,6 +253,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			}
 			movementModeDialog.Hide()
 		})
+		movementModeSelector.Required = true
 		movementModeDialog = dialog.NewCustomWithoutButtons("Select a move way", movementModeSelector, window)
 		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
