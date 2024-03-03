@@ -109,6 +109,7 @@ func (b *BattleActionState) executeHumanStateMachine() {
 
 	for b.currentHumanActionId < len(b.HumanActions) && getScene(b.hWnd) == BATTLE_SCENE && b.isHumanStageStable() && b.Enabled {
 
+		b.resetCurrentControlUnit()
 		b.endPetHanging()
 
 		switch b.HumanActions[b.currentHumanActionId].Action {
@@ -440,6 +441,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 
 	for b.currentPetActionId < len(b.PetActions) && getScene(b.hWnd) == BATTLE_SCENE && b.isPetStageStable() && b.Enabled {
 
+		b.resetCurrentControlUnit()
 		b.endHumanHanging()
 
 		switch b.PetActions[b.currentPetActionId].Action {
@@ -616,9 +618,12 @@ func (b *BattleActionState) executePetStateMachiine() {
 func (b *BattleActionState) reset() {
 	b.currentHumanActionId = 0
 	b.currentPetActionId = 0
+	b.enemyDetectorCounter = 0
+}
+
+func (b *BattleActionState) resetCurrentControlUnit() {
 	b.currentControlUnit = Undefined
 	b.currentJumpId = 0
-	b.enemyDetectorCounter = 0
 }
 
 func (b *BattleActionState) setSuccessState(r Role) {
