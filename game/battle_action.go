@@ -78,8 +78,6 @@ func (b *BattleActionState) Act() {
 		b.checkHumanMana()
 		b.executeHumanStateMachine()
 		b.wait()
-		b.executeHumanStateMachine()
-		b.wait()
 		b.executePetStateMachiine()
 		b.wait()
 		b.executePetStateMachiine()
