@@ -196,6 +196,7 @@ func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granula
 var (
 	LOG_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	LOG_OUT_OF_RESOURCE    = []string{"道具已經用完了"}
+	LOG_VERIFICATION       = []string{"驗證系統"}
 	LOG_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王"}
 	LOG_PRODUCTION_FAILURE = []string{}
 )
@@ -204,6 +205,7 @@ const (
 	DURATION_LOG_ACTIVITY        = 5 * time.Second
 	DURATION_LOG_TELEPORTING     = 30 * time.Second
 	DURATION_LOG_OUT_OF_RESOURCE = 30 * time.Second
+	DURATION_LOG_VERIFICATION    = 5 * time.Second
 )
 
 func doesEncounterActivityMonsters(gameDir string) bool {
@@ -225,7 +227,14 @@ func isOutOfResource(gameDir string) bool {
 	if gameDir == "" {
 		return false
 	}
-	return checkWord(gameDir, 5, 30*time.Second, LOG_OUT_OF_RESOURCE)
+	return checkWord(gameDir, 5, DURATION_LOG_OUT_OF_RESOURCE, LOG_OUT_OF_RESOURCE)
+}
+
+func isVerificationTriggered(gameDir string) bool {
+	if gameDir == "" {
+		return false
+	}
+	return checkWord(gameDir, 5, DURATION_LOG_VERIFICATION, LOG_VERIFICATION)
 }
 
 func checkWord(gameDir string, lineCount int, before time.Duration, words []string) bool {
