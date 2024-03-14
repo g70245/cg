@@ -244,7 +244,6 @@ func (b *BattleActionState) executeHumanStateMachine() {
 						}
 					} else {
 						b.logH("cannot find a potion")
-						b.setFailureState(Human)
 					}
 				} else {
 					b.logH("cannot find the position of window")
