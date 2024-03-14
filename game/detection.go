@@ -233,6 +233,10 @@ func checkWord(gameDir string, lineCount int, before time.Duration, words []stri
 	lines := GetLastLines(logDir, lineCount)
 	now := time.Now()
 	for i := range lines {
+		if len(lines[i]) < 9 {
+			continue
+		}
+
 		h, hErr := strconv.Atoi(lines[i][1:3])
 		m, mErrr := strconv.Atoi(lines[i][4:6])
 		s, sErr := strconv.Atoi(lines[i][7:9])
