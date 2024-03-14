@@ -880,7 +880,7 @@ func (b *BattleActionState) GetPetActions() []PetAction {
 
 func (b *BattleActionState) detectEnemies() {
 
-	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (b.enemyDetectorCounter != 0 && len(b.enemies) == 1) {
+	if getScene(b.hWnd) != BATTLE_SCENE || !b.Enabled || (b.enemyDetectorCounter != 0) {
 		return
 	}
 
