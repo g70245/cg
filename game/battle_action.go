@@ -19,6 +19,8 @@ const (
 	DURATION_BATTLE_ACTION_WAITING_LOOP = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
+
+	ENEMY_COUNTER_LIMITATION = 2
 )
 
 type HumanAction struct {
@@ -730,10 +732,14 @@ func (b *BattleActionState) recall() {
 }
 
 func (b *BattleActionState) openPetSkillWindow() {
-	closeAllWindows(b.hWnd)
-	RightClick(b.hWnd, GAME_WIDTH/2, 28)
-	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
-	resetAllWindows(b.hWnd)
+	if b.isPetSkillWindowOpened() {
+		resetAllWindows(b.hWnd)
+	} else {
+		closeAllWindows(b.hWnd)
+		RightClick(b.hWnd, GAME_WIDTH/2, 28)
+		time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
+		resetAllWindows(b.hWnd)
+	}
 }
 
 func (b *BattleActionState) openSkillWindowWithMouse() {
@@ -889,7 +895,7 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= 3 {
+	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= ENEMY_COUNTER_LIMITATION {
 		b.enemies = allMonsters
 	}
 
