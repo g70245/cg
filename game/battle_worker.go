@@ -175,6 +175,8 @@ func (b *BattleWorker) StopTickers() {
 	b.workerTicker.Stop()
 	b.inventoryCheckerTicker.Stop()
 	b.teleportAndResourceCheckerTicker.Stop()
+
+	time.Sleep(DURATION_BATTLE_WORKER)
 	b.ActionState.Act()
 }
 
