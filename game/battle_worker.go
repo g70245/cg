@@ -158,6 +158,10 @@ func (b *BattleWorker) Work() {
 						b.StopTickers()
 						Beeper.Play()
 					}
+					if isVerificationTriggered(*b.gameDir) {
+						log.Printf("Handle %d triggered the verification\n", b.hWnd)
+						Beeper.Play()
+					}
 				}
 			case <-b.sharedStopChan:
 				log.Printf("Handle %d Auto Battle ended at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
@@ -171,6 +175,8 @@ func (b *BattleWorker) StopTickers() {
 	b.workerTicker.Stop()
 	b.inventoryCheckerTicker.Stop()
 	b.teleportAndResourceCheckerTicker.Stop()
+
+	time.Sleep(DURATION_BATTLE_WORKER)
 	b.ActionState.Act()
 }
 
