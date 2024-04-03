@@ -23,6 +23,7 @@ const (
 
 var (
 	window fyne.Window
+	r      robot
 )
 
 type robot struct {
@@ -31,8 +32,6 @@ type robot struct {
 	games   game.Games
 	close   func()
 }
-
-var r robot
 
 func main() {
 	cg := app.New()
