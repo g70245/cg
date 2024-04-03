@@ -67,13 +67,12 @@ func (gs Games) Add(k string, v win.HWND) {
 }
 
 func (gs Games) AddGames(addGames Games) {
-	if gs == nil {
-		gs = make(Games)
-	}
 
-	for _, v := range gs {
+	for k, v := range gs {
 		if key := addGames.FindKey(v); key != "" {
 			addGames.RemoveKey(key)
+		} else {
+			gs.RemoveKey(k)
 		}
 	}
 
