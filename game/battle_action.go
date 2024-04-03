@@ -396,22 +396,27 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.setSuccessState(Human)
 			}
 		case HumanTrainSkill:
-			openWindow(b.hWnd, KEY_SKILL)
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				useHumanSkill(b.hWnd, x, y, offset, level)
-				if b.didHumanMissSkill(x, y) {
-					b.logH("missed the skill button or is out of mana")
-				} else if b.isHumanActionSuccessful() {
-					b.logH("is training")
-					b.setSuccessState(Human)
-				} else if b.aim(&PLAYER_L_3_P, b.isHumanActionSuccessful) {
-					b.logH("is training")
-					b.setSuccessState(Human)
+			if self, ok := b.getSelfTarget(false); ok {
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
+					if b.didHumanMissSkill(x, y) {
+						b.logH("missed the skill button or is out of mana")
+					} else if b.isHumanActionSuccessful() {
+						b.logH("is training")
+						b.setSuccessState(Human)
+					} else if b.aim(self, b.isHumanActionSuccessful) {
+						b.logH("is training")
+						b.setSuccessState(Human)
+					}
+				} else {
+					b.logH("cannot find the position of window")
+					b.setFailureState(Human)
 				}
 			} else {
-				b.logH("cannot find the position of window")
+				b.logH("cannot find self")
 				b.setFailureState(Human)
 			}
 		case HumanCatch:
