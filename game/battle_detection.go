@@ -60,6 +60,7 @@ var (
 )
 
 func (b *BattleActionState) isBattleCommandEnable(checkTarget CheckTarget) bool {
+	MoveCursorToNowhere(b.hWnd)
 	return GetColor(b.hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
@@ -199,6 +200,8 @@ var allPets = []CheckTarget{
 }
 
 func (b *BattleActionState) isAnyPlayerOutOfMana() bool {
+	MoveCursorToNowhere(b.hWnd)
+
 	for _, h := range allHumans {
 		oy := h.y + 3
 		manaPoint := h.x + 2
@@ -211,6 +214,7 @@ func (b *BattleActionState) isAnyPlayerOutOfMana() bool {
 }
 
 func (b *BattleActionState) isHealthLowerThan(ratio float32, checkTarget *CheckTarget) bool {
+
 	healthPoint := int32(ratio*30) + checkTarget.x
 	oy := checkTarget.y + 3
 	return GetColor(b.hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
@@ -244,6 +248,8 @@ func (b *BattleActionState) countHealthLowerThan(ratio float32) (count int) {
 }
 
 func (b *BattleActionState) searchTShapeHealthLowerThan(ratio float32) (*CheckTarget, bool) {
+	MoveCursorToNowhere(b.hWnd)
+
 	detectedTargets := make([][]int, 2)
 	for i := range detectedTargets {
 		detectedTargets[i] = make([]int, 5)
