@@ -39,7 +39,7 @@ func main() {
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 
-	r := robot{
+	r = robot{
 		games:   game.NewGames(),
 		gameDir: new(string),
 	}
