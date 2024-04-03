@@ -22,35 +22,39 @@ func (gs Games) New(selected []string) Games {
 	return newGames
 }
 
-func (gs Games) Take(game string) win.HWND {
-	target := gs[game]
-	delete(gs, game)
+func (gs Games) Take(key string) win.HWND {
+	target := gs[key]
+	delete(gs, key)
 	return target
 }
 
-func (gs Games) Peek(game string) win.HWND {
-	target := gs[game]
+func (gs Games) Peek(key string) win.HWND {
+	target := gs[key]
 	return target
 }
 
-func (gs Games) Remove(games []string) {
-	for _, game := range games {
+func (gs Games) RemoveKeys(keys []string) {
+	for _, game := range keys {
 		delete(gs, game)
 	}
 }
 
-func (gs Games) RemoveValue(hWnd win.HWND) {
+func (gs Games) RemoveKey(key string) {
+	delete(gs, key)
+}
+
+func (gs Games) RemoveValue(value win.HWND) {
 	for k, v := range gs {
-		if v == hWnd {
+		if v == value {
 			delete(gs, k)
 			break
 		}
 	}
 }
 
-func (gs Games) FindKey(hWnd win.HWND) (key string) {
+func (gs Games) FindKey(value win.HWND) (key string) {
 	for k, v := range gs {
-		if v == hWnd {
+		if v == value {
 			key = k
 			break
 		}
@@ -62,15 +66,25 @@ func (gs Games) Add(k string, v win.HWND) {
 	gs[k] = v
 }
 
-func (gs Games) AddGames(games map[string]win.HWND) {
-	for k, v := range games {
+func (gs Games) AddGames(addGames Games) {
+	if gs == nil {
+		gs = make(Games)
+	}
+
+	for _, v := range gs {
+		if key := addGames.FindKey(v); key != "" {
+			addGames.RemoveKey(key)
+		}
+	}
+
+	for k, v := range addGames {
 		gs[k] = v
 	}
 }
 
 func (gs Games) GetSortedKeys() []string {
 	keys := maps.Keys(gs)
-	sort.Sort(sort.StringSlice(keys))
+	sort.Strings(keys)
 	return keys
 }
 
@@ -78,7 +92,7 @@ func (gs Games) GetHWNDs() []win.HWND {
 	hWnds := make([]win.HWND, 0)
 
 	keys := maps.Keys(gs)
-	sort.Sort(sort.StringSlice(keys))
+	sort.Strings(keys)
 	for _, key := range keys {
 		hWnds = append(hWnds, gs.Peek(key))
 	}

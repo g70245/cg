@@ -22,26 +22,38 @@ const (
 )
 
 var (
-	window  fyne.Window
-	gameDir = new(string)
+	window fyne.Window
 )
+
+type robot struct {
+	main    *fyne.Container
+	gameDir *string
+	games   game.Games
+	close   func()
+}
+
+var r robot
 
 func main() {
 	cg := app.New()
 	window = cg.NewWindow(APP_NAME)
 	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 
-	var content *fyne.Container
+	r = robot{
+		games:   game.NewGames(),
+		gameDir: new(string),
+	}
+	r.generateRobotContainer()
 
-	robot := generateRobotContainer()
+	var content *fyne.Container
 	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
 		refreshDialog := dialog.NewConfirm("Refresh games", "Do you really want to refresh?", func(isRefreshing bool) {
 			if isRefreshing {
-				content.Remove(robot.main)
-				robot.close()
+				content.Remove(r.main)
+				r.close()
 
-				robot = generateRobotContainer()
-				content.Add(robot.main)
+				r.refresh()
+				content.Add(r.main)
 				window.SetContent(window.Content())
 				window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 			}
@@ -73,10 +85,10 @@ func main() {
 	gameDirDialogButton = widget.NewButtonWithIcon("Game Directory", theme.FolderIcon(), func() {
 		gameDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 			if lu != nil {
-				*gameDir = lu.Path()
+				*r.gameDir = lu.Path()
 				gameDirDialogButton.SetIcon(theme.FolderOpenIcon())
 			} else {
-				*gameDir = ""
+				*r.gameDir = ""
 				gameDirDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
@@ -86,7 +98,7 @@ func main() {
 	gameDirDialogButton.Importance = widget.HighImportance
 
 	menu := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton)
-	content = container.NewBorder(menu, nil, nil, nil, robot.main)
+	content = container.NewBorder(menu, nil, nil, nil, r.main)
 
 	/* shortcuts */
 	muteShortcut := &desktop.CustomShortcut{KeyName: fyne.Key0, Modifier: fyne.KeyModifierControl}
@@ -98,16 +110,15 @@ func main() {
 	window.ShowAndRun()
 }
 
-type Robot struct {
-	main  *fyne.Container
-	close func()
+func (r *robot) refresh() {
+	r.games.AddGames(game.NewGames())
+	r.generateRobotContainer()
 }
 
-func generateRobotContainer() Robot {
-	games := game.NewGames()
+func (r *robot) generateRobotContainer() {
 
-	autoBattleContainer, autoBattleGroups := newBattleContainer(games)
-	productionContainer, productionWorkers := newProductionContainer(games)
+	autoBattleContainer, autoBattleGroups := newBattleContainer(r.games)
+	productionContainer, productionWorkers := newProductionContainer(r.games)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Auto Battle", autoBattleContainer),
@@ -116,10 +127,11 @@ func generateRobotContainer() Robot {
 
 	tabs.SetTabLocation(container.TabLocationTop)
 	main := container.NewStack(tabs)
-	robot := Robot{main, func() {
+
+	r.main = main
+	r.close = func() {
 		main.RemoveAll()
 		autoBattleGroups.stopAll()
 		productionWorkers.stopAll()
-	}}
-	return robot
+	}
 }
