@@ -96,7 +96,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 	manaChecker := NO_MANA_CHECKER
 	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games, gameDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
+	workers := CreateBattleWorkers(games, r.gameDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
 
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
@@ -841,7 +841,7 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 							if json.Unmarshal(buffer, &actionState) == nil {
 								actionState.SetHWND(worker.ActionState.GetHWND())
 								worker.ActionState = actionState
-								worker.ActionState.GameDir = gameDir
+								worker.ActionState.GameDir = r.gameDir
 								worker.ActionState.ManaChecker = &manaChecker
 								actionsViewer.Objects = generateTags(*worker)
 								actionsViewer.Refresh()
@@ -1081,7 +1081,7 @@ func notifyBeeperConfig(title string) {
 }
 
 func notifyLogConfig(title string) {
-	if *gameDir == "" {
+	if *r.gameDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the log directory!!!", window).Show()
@@ -1090,7 +1090,7 @@ func notifyLogConfig(title string) {
 }
 
 func notifyBeeperAndLogConfig(title string) {
-	if !Beeper.IsReady() || *gameDir == "" {
+	if !Beeper.IsReady() || *r.gameDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()
