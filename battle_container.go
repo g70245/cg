@@ -32,7 +32,7 @@ type BattleGroups struct {
 
 func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 	id := 0
-	bgs := BattleGroups{make(map[int]chan bool)}
+	battleGroups := BattleGroups{make(map[int]chan bool)}
 
 	groupTabs := container.NewAppTabs()
 	groupTabs.SetTabLocation(container.TabLocationBottom)
@@ -56,10 +56,10 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 			var newTabItem *container.TabItem
 			newGroupContainer, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), games, func(id int) func() {
 				return func() {
-					delete(bgs.stopChans, id)
+					delete(battleGroups.stopChans, id)
 
 					groupTabs.Remove(newTabItem)
-					if len(bgs.stopChans) == 0 {
+					if len(battleGroups.stopChans) == 0 {
 						groupTabs.Hide()
 					}
 
@@ -67,7 +67,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 					window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
 				}
 			}(id))
-			bgs.stopChans[id] = stopChan
+			battleGroups.stopChans[id] = stopChan
 
 			var newGroupName string
 			if groupNameEntry.Text != "" {
@@ -87,155 +87,64 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 	})
 
 	menu := container.NewVBox(newGroupButton)
-	main := container.NewBorder(menu, nil, nil, nil, groupTabs)
+	newBattleContainer := container.NewBorder(menu, nil, nil, nil, groupTabs)
 
-	return main, bgs
+	return newBattleContainer, battleGroups
 }
 
 func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
 	manaChecker := NO_MANA_CHECKER
-	sharedInventoryStatus := new(bool)
 	sharedStopChan = make(chan bool, len(games))
-	workers := CreateBattleWorkers(games, r.gameDir, &manaChecker, sharedInventoryStatus, sharedStopChan, new(sync.WaitGroup))
+	workers := CreateBattleWorkers(games, r.gameDir, &manaChecker, new(bool), sharedStopChan, new(sync.WaitGroup))
 
-	var manaCheckerSelectorDialog *dialog.CustomDialog
-	var manaCheckerSelectorButton *widget.Button
-	manaCheckerOptions := []string{NO_MANA_CHECKER}
-	manaCheckerOptions = append(manaCheckerOptions, games.GetSortedKeys()...)
-	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
-		if game, ok := allGames[s]; ok {
-			manaChecker = fmt.Sprint(game)
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", s))
-		} else {
-			manaChecker = NO_MANA_CHECKER
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", manaChecker))
-		}
-		manaCheckerSelectorDialog.Hide()
+	gameWidget, actionViewers := generateGameWidget(gameWidgeOptions{
+		games:       games,
+		allGames:    allGames,
+		manaChecker: &manaChecker,
+		workers:     workers,
 	})
-	manaCheckerSelector.Required = true
-	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
-	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", manaChecker), func() {
-		manaCheckerSelectorDialog.Show()
-
-		notifyBeeperConfig("About Mana Checker")
+	menuWidget := generateMenuWidget(menuWidgetOptions{
+		games:          games,
+		allGames:       allGames,
+		manaChecker:    &manaChecker,
+		workers:        workers,
+		sharedStopChan: sharedStopChan,
+		actionViewers:  actionViewers,
+		destroy:        destroy,
 	})
-	manaCheckerSelectorButton.Importance = widget.HighImportance
 
-	var switchButton *widget.Button
-	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
-		switch switchButton.Icon {
-		case theme.MediaPlayIcon():
-			for i := range workers {
-				workers[i].Work()
-			}
-			turn(theme.MediaStopIcon(), switchButton)
-		case theme.MediaStopIcon():
-			for i := range workers {
-				workers[i].Stop()
-			}
-			turn(theme.MediaPlayIcon(), switchButton)
-		}
-	})
-	switchButton.Importance = widget.WarningImportance
+	autoBattleWidget = container.NewVBox(widget.NewSeparator(), menuWidget, widget.NewSeparator(), gameWidget)
+	return autoBattleWidget, sharedStopChan
+}
 
-	deleteButton := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
-			if isDeleting {
-				for i := range workers {
-					workers[i].Stop()
-				}
+type gameWidgeOptions struct {
+	games       Games
+	allGames    Games
+	manaChecker *string
+	workers     BattleWorkers
+}
 
-				close(sharedStopChan)
-				destroy()
-			}
-		}, window)
-		deleteDialog.SetConfirmImportance(widget.DangerImportance)
-		deleteDialog.Show()
-	})
-	deleteButton.Importance = widget.DangerImportance
+func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, actionViewers []*fyne.Container) {
+	gameWidget = container.NewVBox()
+	actionViewers = []*fyne.Container{}
 
-	var teleportAndResourceCheckerButton *widget.Button
-	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
-		switch teleportAndResourceCheckerButton.Icon {
-		case theme.CheckButtonCheckedIcon():
-			for i := range workers {
-				workers[i].StopTeleportAndResourceChecker()
-			}
-			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
-		case theme.CheckButtonIcon():
-			for i := range workers {
-				workers[i].StartTeleportAndResourceChecker()
-			}
-			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
-
-			notifyBeeperAndLogConfig("About Teleport & Resource Checker")
-		}
-	})
-	teleportAndResourceCheckerButton.Importance = widget.HighImportance
-	var activitiesCheckerButton *widget.Button
-	activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
-		switch activitiesCheckerButton.Icon {
-		case theme.CheckButtonCheckedIcon():
-			for i := range workers {
-				workers[i].ActivityCheckerEnabled = false
-			}
-			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
-		case theme.CheckButtonIcon():
-			for i := range workers {
-				workers[i].ActivityCheckerEnabled = true
-			}
-			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
-
-			notifyBeeperAndLogConfig("About Activities Checker")
-		}
-	})
-	activitiesCheckerButton.Importance = widget.HighImportance
-	logCheckersButton := widget.NewButtonWithIcon("Log Checkers", theme.MenuIcon(), func() {
-		dialog.NewCustom("Log Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton), window).Show()
-	})
-	logCheckersButton.Importance = widget.HighImportance
-
-	var inventoryCheckerButton *widget.Button
-	inventoryCheckerButton = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
-		switch inventoryCheckerButton.Icon {
-		case theme.CheckButtonCheckedIcon():
-			for i := range workers {
-				workers[i].StopInventoryChecker()
-			}
-			turn(theme.CheckButtonIcon(), inventoryCheckerButton)
-		case theme.CheckButtonIcon():
-			for i := range workers {
-				workers[i].StartInventoryChecker()
-			}
-			turn(theme.CheckButtonCheckedIcon(), inventoryCheckerButton)
-
-			notifyBeeperConfig("About Inventory Checker")
-		}
-	})
-	inventoryCheckerButton.Importance = widget.HighImportance
-
-	mainButtons := container.NewGridWithColumns(5, manaCheckerSelectorButton, logCheckersButton, inventoryCheckerButton, deleteButton, switchButton)
-	mainWidget := container.NewVBox(mainButtons)
-
-	/* Configuration Widgets */
-	configContainer := container.NewVBox()
-	for i := range workers {
+	for i := range options.workers {
 		workerMenuContainer := container.NewGridWithColumns(6)
-		worker := &workers[i]
+		worker := &options.workers[i]
 
 		var aliasButton *widget.Button
-		aliasButton = widget.NewButtonWithIcon(allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
+		aliasButton = widget.NewButtonWithIcon(options.allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
 			aliasEntry := widget.NewEntry()
 			aliasEntry.SetPlaceHolder("Enter alias")
 
 			aliasDialog := dialog.NewCustom("Enter alias", "Ok", aliasEntry, window)
 			aliasDialog.SetOnClosed(func() {
-				if _, ok := allGames[aliasEntry.Text]; aliasEntry.Text == "" || ok {
+				if _, ok := options.allGames[aliasEntry.Text]; aliasEntry.Text == "" || ok {
 					return
 				}
 
-				allGames.RemoveValue(worker.GetHandle())
-				allGames.Add(aliasEntry.Text, worker.GetHandle())
+				options.allGames.RemoveValue(worker.GetHandle())
+				options.allGames.Add(aliasEntry.Text, worker.GetHandle())
 				aliasButton.SetText(aliasEntry.Text)
 			})
 			aliasDialog.Show()
@@ -264,12 +173,12 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		selector.Horizontal = true
 		selector.Required = true
 		selectorDialogEnableChan := make(chan bool)
-		getNewSelectorDialog := SelectorDialoger(selector)
+		getNewSelectorDialog := selectorDialoger(selector)
 
-		var actionsViewer *fyne.Container
+		var actionViewer *fyne.Container
 		onClosed := func() {
-			actionsViewer.Objects = generateTags(*worker)
-			actionsViewer.Refresh()
+			actionViewer.Objects = generateTags(*worker)
+			actionViewer.Refresh()
 			selectorDialogEnableChan <- true
 		}
 
@@ -333,8 +242,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 			}
 		}
 		controlUnitOnClosed := func() {
-			actionsViewer.Objects = generateTags(*worker)
-			actionsViewer.Refresh()
+			actionViewer.Objects = generateTags(*worker)
+			actionViewer.Refresh()
 			selectorDialogEnableChan <- true
 		}
 		successControlUnitDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
@@ -411,8 +320,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		/* Human Actions */
 		humanActionSelector := widget.NewButtonWithIcon("Man Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanActions()
-			actionsViewer.Objects = generateTags(*worker)
-			actionsViewer.Refresh()
+			actionViewer.Objects = generateTags(*worker)
+			actionViewer.Refresh()
 
 			var attackButton *widget.Button
 			var defendButton *widget.Button
@@ -466,8 +375,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 			catchButton = widget.NewButton(HumanCatch.String(), func() {
 				worker.ActionState.AddHumanAction(HumanCatch)
-				actionsViewer.Objects = generateTags(*worker)
-				actionsViewer.Refresh()
+				actionViewer.Objects = generateTags(*worker)
+				actionViewer.Refresh()
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(Human),
@@ -524,8 +433,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 			hangButton = widget.NewButton(HumanHang.String(), func() {
 				worker.ActionState.AddHumanAction(HumanHang)
-				actionsViewer.Objects = generateTags(*worker)
-				actionsViewer.Refresh()
+				actionViewer.Objects = generateTags(*worker)
+				actionViewer.Refresh()
 			})
 			hangButton.Importance = widget.SuccessImportance
 
@@ -679,8 +588,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		/* Pet Actions */
 		petActionSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearPetActions()
-			actionsViewer.Objects = generateTags(*worker)
-			actionsViewer.Refresh()
+			actionViewer.Objects = generateTags(*worker)
+			actionViewer.Refresh()
 
 			var petAttackButton *widget.Button
 			var petHangButton *widget.Button
@@ -706,8 +615,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 			petHangButton = widget.NewButton(PetHang.String(), func() {
 				worker.ActionState.AddPetAction(PetHang)
-				actionsViewer.Objects = generateTags(*worker)
-				actionsViewer.Refresh()
+				actionViewer.Objects = generateTags(*worker)
+				actionViewer.Refresh()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
@@ -797,8 +706,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 
 			petCatchButton = widget.NewButton(PetCatch.String(), func() {
 				worker.ActionState.AddPetAction(PetCatch)
-				actionsViewer.Objects = generateTags(*worker)
-				actionsViewer.Refresh()
+				actionViewer.Objects = generateTags(*worker)
+				actionViewer.Refresh()
 
 				notifyLogConfig("About Catch")
 
@@ -842,9 +751,9 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 								actionState.SetHWND(worker.ActionState.GetHWND())
 								worker.ActionState = actionState
 								worker.ActionState.GameDir = r.gameDir
-								worker.ActionState.ManaChecker = &manaChecker
-								actionsViewer.Objects = generateTags(*worker)
-								actionsViewer.Refresh()
+								worker.ActionState.ManaChecker = options.manaChecker
+								actionViewer.Objects = generateTags(*worker)
+								actionViewer.Refresh()
 							}
 						}
 					}
@@ -883,17 +792,178 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 		workerMenuContainer.Add(loadSettingButton)
 		workerMenuContainer.Add(saveSettingButton)
 
-		actionsViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
+		actionViewer = container.NewAdaptiveGrid(6, generateTags(*worker)...)
+		actionViewers = append(actionViewers, actionViewer)
 
-		workerContainer := container.NewVBox(workerMenuContainer, actionsViewer)
-		configContainer.Add(workerContainer)
+		workerContainer := container.NewVBox(workerMenuContainer, actionViewer)
+		gameWidget.Add(workerContainer)
 	}
 
-	autoBattleWidget = container.NewVBox(widget.NewSeparator(), mainWidget, widget.NewSeparator(), configContainer)
-	return autoBattleWidget, sharedStopChan
+	return
 }
 
-func SelectorDialoger(selector *widget.RadioGroup) func(dialog *dialog.CustomDialog, options []string, onChanged func(r Role) func(s string)) func(r Role) func() {
+type menuWidgetOptions struct {
+	games          Games
+	allGames       Games
+	manaChecker    *string
+	workers        BattleWorkers
+	sharedStopChan chan bool
+	actionViewers  []*fyne.Container
+	destroy        func()
+}
+
+func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) {
+	var manaCheckerSelectorDialog *dialog.CustomDialog
+	var manaCheckerSelectorButton *widget.Button
+	manaCheckerOptions := []string{NO_MANA_CHECKER}
+	manaCheckerOptions = append(manaCheckerOptions, options.games.GetSortedKeys()...)
+	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
+		if hWnd, ok := options.allGames[s]; ok {
+			*options.manaChecker = fmt.Sprint(hWnd)
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", s))
+		} else {
+			*options.manaChecker = NO_MANA_CHECKER
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", *options.manaChecker))
+		}
+		manaCheckerSelectorDialog.Hide()
+	})
+	manaCheckerSelector.Required = true
+	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
+	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", *options.manaChecker), func() {
+		manaCheckerSelectorDialog.Show()
+
+		notifyBeeperConfig("About Mana Checker")
+	})
+	manaCheckerSelectorButton.Importance = widget.HighImportance
+
+	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
+		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+			if uc != nil {
+				var actionState BattleActionState
+				file, openErr := os.Open(uc.URI().Path())
+
+				if openErr == nil {
+					defer file.Close()
+					if buffer, readErr := io.ReadAll(file); readErr == nil {
+						if json.Unmarshal(buffer, &actionState) == nil {
+							for i := range options.workers {
+								actionState.SetHWND(options.workers[i].ActionState.GetHWND())
+								options.workers[i].ActionState = actionState
+								options.workers[i].ActionState.GameDir = r.gameDir
+								options.workers[i].ActionState.ManaChecker = options.manaChecker
+								options.actionViewers[i].Objects = generateTags(options.workers[i])
+								options.actionViewers[i].Refresh()
+							}
+						}
+					}
+				}
+			}
+		}, window)
+
+		listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
+		fileOpenDialog.SetLocation(listableURI)
+		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
+		fileOpenDialog.Show()
+	})
+	loadSettingButton.Importance = widget.HighImportance
+
+	deleteButton := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
+			if isDeleting {
+				for i := range options.workers {
+					options.workers[i].Stop()
+				}
+
+				close(options.sharedStopChan)
+				options.destroy()
+			}
+		}, window)
+		deleteDialog.SetConfirmImportance(widget.DangerImportance)
+		deleteDialog.Show()
+	})
+	deleteButton.Importance = widget.DangerImportance
+
+	var switchButton *widget.Button
+	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
+		switch switchButton.Icon {
+		case theme.MediaPlayIcon():
+			for i := range options.workers {
+				options.workers[i].Work()
+			}
+			turn(theme.MediaStopIcon(), switchButton)
+		case theme.MediaStopIcon():
+			for i := range options.workers {
+				options.workers[i].Stop()
+			}
+			turn(theme.MediaPlayIcon(), switchButton)
+		}
+	})
+	switchButton.Importance = widget.WarningImportance
+
+	var teleportAndResourceCheckerButton *widget.Button
+	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+		switch teleportAndResourceCheckerButton.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range options.workers {
+				options.workers[i].StopTeleportAndResourceChecker()
+			}
+			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
+		case theme.CheckButtonIcon():
+			for i := range options.workers {
+				options.workers[i].StartTeleportAndResourceChecker()
+			}
+			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
+
+			notifyBeeperAndLogConfig("About Teleport & Resource Checker")
+		}
+	})
+	teleportAndResourceCheckerButton.Importance = widget.HighImportance
+	var activitiesCheckerButton *widget.Button
+	activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
+		switch activitiesCheckerButton.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range options.workers {
+				options.workers[i].ActivityCheckerEnabled = false
+			}
+			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
+		case theme.CheckButtonIcon():
+			for i := range options.workers {
+				options.workers[i].ActivityCheckerEnabled = true
+			}
+			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
+
+			notifyBeeperAndLogConfig("About Activities Checker")
+		}
+	})
+	activitiesCheckerButton.Importance = widget.HighImportance
+	var inventoryCheckerButton *widget.Button
+	inventoryCheckerButton = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
+		switch inventoryCheckerButton.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range options.workers {
+				options.workers[i].StopInventoryChecker()
+			}
+			turn(theme.CheckButtonIcon(), inventoryCheckerButton)
+		case theme.CheckButtonIcon():
+			for i := range options.workers {
+				options.workers[i].StartInventoryChecker()
+			}
+			turn(theme.CheckButtonCheckedIcon(), inventoryCheckerButton)
+
+			notifyBeeperConfig("About Inventory Checker")
+		}
+	})
+	inventoryCheckerButton.Importance = widget.HighImportance
+	checkersButton := widget.NewButtonWithIcon("Checkers", theme.MenuIcon(), func() {
+		dialog.NewCustom("Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window).Show()
+	})
+	checkersButton.Importance = widget.HighImportance
+
+	menuWidget = container.NewGridWithColumns(5, manaCheckerSelectorButton, checkersButton, loadSettingButton, deleteButton, switchButton)
+	return
+}
+
+func selectorDialoger(selector *widget.RadioGroup) func(dialog *dialog.CustomDialog, options []string, onChanged func(r Role) func(s string)) func(r Role) func() {
 	return func(dialog *dialog.CustomDialog, options []string, onChanged func(r Role) func(s string)) func(r Role) func() {
 		return func(r Role) func() {
 			return func() {
