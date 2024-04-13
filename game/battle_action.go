@@ -955,6 +955,8 @@ func (b *BattleActionState) checkHumanMana() {
 	}
 
 	if b.isManaChecker() {
+		b.logH("checks human mana")
+
 		closeAllWindows(b.hWnd)
 		clearChat(b.hWnd)
 		if b.isOutOfMana = b.isAnyPlayerOutOfMana(); b.isOutOfMana {
