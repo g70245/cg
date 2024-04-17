@@ -13,6 +13,7 @@ import (
 const (
 	DURATION_MONSTER_DETECING_CURSOR_MOV = 80 * time.Millisecond
 	DURATION_DID_MISS_SKILL_WAITING      = 80 * time.Millisecond
+	DRUATION_IS_ON_RIDE                  = 80 * time.Millisecond
 	DURATION_BATTLE_RESULT_DISAPPEARING  = 2 * time.Second
 )
 
@@ -142,6 +143,7 @@ func (b *BattleActionState) didOnRideMissSkill() bool {
 
 func (b *BattleActionState) isOnRide() bool {
 	MoveCursorToNowhere(b.hWnd)
+	time.Sleep(DRUATION_IS_ON_RIDE)
 
 	return GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_DISABLE &&
 		(GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_DISABLE ||
