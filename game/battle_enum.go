@@ -56,8 +56,9 @@ type petAction int
 const (
 	PetAttack petAction = iota
 	PetEscape
-	PetSkill
 	PetDefend
+	PetProtect
+	PetSkill
 	PetHealSelf
 	PetHealOne
 	PetRide
