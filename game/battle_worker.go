@@ -17,6 +17,7 @@ const (
 
 const (
 	DURATION_BATTLE_WORKER            = 400 * time.Millisecond
+	DURATION_BATTLE_LAST_ACTION       = 1000 * time.Millisecond
 	DURATION_BATTLE_CHECKER_LOG       = 300 * time.Millisecond
 	DURATION_BATTLE_CHECKER_INVENTORY = 60 * time.Second
 )
@@ -114,7 +115,7 @@ func (b *BattleWorker) Work() {
 					}
 				case NORMAL_SCENE:
 					if b.MovementState.Mode != None {
-						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
+						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana || *b.sharedInventoryStatus {
 							b.StopTickers()
 							Beeper.Play()
 							break
@@ -135,13 +136,13 @@ func (b *BattleWorker) Work() {
 					if b.ActivityCheckerEnabled {
 						if b.isInventoryFullForActivity() {
 							log.Printf("Handle %d inventory is full\n", b.hWnd)
-							b.setInventoryStatus(true)
+							b.setSharedInventoryStatus(true)
 							b.StopTickers()
 							Beeper.Play()
 						}
 					} else if isInventoryFull(b.hWnd) {
 						log.Printf("Handle %d inventory is full\n", b.hWnd)
-						b.setInventoryStatus(true)
+						b.setSharedInventoryStatus(true)
 						b.StopTickers()
 						Beeper.Play()
 					}
@@ -176,7 +177,7 @@ func (b *BattleWorker) StopTickers() {
 	b.inventoryCheckerTicker.Stop()
 	b.teleportAndResourceCheckerTicker.Stop()
 
-	time.Sleep(DURATION_BATTLE_WORKER)
+	time.Sleep(DURATION_BATTLE_LAST_ACTION)
 	b.ActionState.Act()
 }
 
@@ -188,7 +189,7 @@ func (b *BattleWorker) Stop() {
 
 func (b *BattleWorker) reset() {
 	b.currentMapName = getMapName(b.hWnd)
-	b.setInventoryStatus(false)
+	b.setSharedInventoryStatus(false)
 
 	b.ActionState.Enabled = true
 	b.ActionState.isOutOfHealth = false
@@ -217,8 +218,11 @@ func (b *BattleWorker) StartTeleportAndResourceChecker() {
 	b.currentMapName = getMapName(b.hWnd)
 }
 
-func (b *BattleWorker) setInventoryStatus(isFull bool) {
-	*b.sharedInventoryStatus = isFull
+func (b *BattleWorker) setSharedInventoryStatus(isFull bool) {
+	if b.isGrouping() {
+		*b.sharedInventoryStatus = isFull
+	}
+
 }
 
 func (b *BattleWorker) isGrouping() bool {
