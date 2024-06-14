@@ -463,7 +463,30 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				b.setFailureState(Pet)
 			}
+		case PetEscape:
+			if !b.isOnRide() {
+				b.logP("cannot escape while off ride")
+				break
+			}
 
+			b.escape()
+			b.logP("escaped")
+			b.setFailureState(Pet)
+		case PetDefend:
+			b.openPetSkillWindow()
+			if x, y, ok := b.getSkillWindowPos(); ok {
+				offset := int(b.PetActions[b.currentPetActionId].Offset)
+				usePetSkill(b.hWnd, x, y, offset)
+				if b.didPetMissSkill() || b.didOnRideMissSkill() {
+					b.logP("missed the skill button or is out of mana")
+				} else {
+					b.logP("defended")
+					b.setSuccessState(Pet)
+				}
+			} else {
+				b.logP("cannot find the position of window")
+				b.setFailureState(Pet)
+			}
 		case PetSkill:
 			b.openPetSkillWindow()
 			if x, y, ok := b.getSkillWindowPos(); ok {
@@ -477,25 +500,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				} else {
 					b.logP("missed a hit")
 					b.setFailureState(Pet)
-				}
-			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
-			}
-		case PetHang:
-			b.logP("is hanging")
-			b.isPetHanging = true
-			b.currentControlUnit = Repeat
-		case PetDefend:
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.PetActions[b.currentPetActionId].Offset)
-				usePetSkill(b.hWnd, x, y, offset)
-				if b.didPetMissSkill() || b.didOnRideMissSkill() {
-					b.logP("missed the skill button or is out of mana")
-				} else {
-					b.logP("defended")
-					b.setSuccessState(Pet)
 				}
 			} else {
 				b.logP("cannot find the position of window")
@@ -527,6 +531,30 @@ func (b *BattleActionState) executePetStateMachiine() {
 				}
 			} else {
 				b.logP("cannot find self")
+			}
+		case PetHealOne:
+			closeAllWindows(b.hWnd)
+			clearChat(b.hWnd)
+			ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
+			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
+				b.openPetSkillWindow()
+				if x, y, ok := b.getSkillWindowPos(); ok {
+					offset := int(b.PetActions[b.currentPetActionId].Offset)
+					usePetSkill(b.hWnd, x, y, offset)
+					if b.aim(target, b.isPetActionSuccessful) {
+						b.logP("healed an ally")
+						b.setSuccessState(Pet)
+					} else {
+						b.logP("cannot target")
+						b.setFailureState(Pet)
+					}
+				} else {
+					b.logP("cannot find the position of window")
+					b.setFailureState(Pet)
+				}
+
+			} else {
+				b.logH("found all good")
 			}
 		case PetRide:
 			if b.isOnRide() {
@@ -562,39 +590,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 				b.logP("cannot find the position of window")
 				b.setFailureState(Pet)
 			}
-		case PetHealOne:
-			closeAllWindows(b.hWnd)
-			clearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
-			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
-				b.openPetSkillWindow()
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.PetActions[b.currentPetActionId].Offset)
-					usePetSkill(b.hWnd, x, y, offset)
-					if b.aim(target, b.isPetActionSuccessful) {
-						b.logP("healed an ally")
-						b.setSuccessState(Pet)
-					} else {
-						b.logP("cannot target")
-						b.setFailureState(Pet)
-					}
-				} else {
-					b.logP("cannot find the position of window")
-					b.setFailureState(Pet)
-				}
-
-			} else {
-				b.logH("found all good")
-			}
-		case PetEscape:
-			if !b.isOnRide() {
-				b.logP("cannot escape while off ride")
-				break
-			}
-
-			b.escape()
-			b.logP("escaped")
-			b.setFailureState(Pet)
 		case PetCatch:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
@@ -605,6 +600,10 @@ func (b *BattleActionState) executePetStateMachiine() {
 					b.logP("is out of health")
 				}
 			}
+		case PetHang:
+			b.logP("is hanging")
+			b.isPetHanging = true
+			b.currentControlUnit = Repeat
 		}
 
 		b.updateCurrentActionId(Pet)

@@ -17,6 +17,7 @@ const (
 
 const (
 	DURATION_BATTLE_WORKER            = 400 * time.Millisecond
+	DURATION_BATTLE_LAST_ACTION       = 1000 * time.Millisecond
 	DURATION_BATTLE_CHECKER_LOG       = 300 * time.Millisecond
 	DURATION_BATTLE_CHECKER_INVENTORY = 60 * time.Second
 )
@@ -113,55 +114,58 @@ func (b *BattleWorker) Work() {
 						b.ActionState.Act()
 					}
 				case NORMAL_SCENE:
-					if b.MovementState.Mode != None {
-						if b.isOutOfResource || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
-							b.StopTickers()
-							Beeper.Play()
-							break
-						}
+					if b.MovementState.Mode == None {
+						break
+					}
 
-						if b.isGrouping() {
-							b.sharedWaitGroup.Wait()
-							b.MovementState.Move()
-						} else {
-							b.MovementState.Move()
-						}
+					if b.isOutOfResource || *b.sharedInventoryStatus || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
+						b.StopTickers()
+						Beeper.Play()
+						break
+					}
+					if b.isGrouping() {
+						b.sharedWaitGroup.Wait()
+						b.MovementState.Move()
+					} else {
+						b.MovementState.Move()
 					}
 				default:
 					// do nothing
 				}
 			case <-b.inventoryCheckerTicker.C:
-				if b.InventoryCheckerEnabled {
-					if b.ActivityCheckerEnabled {
-						if b.isInventoryFullForActivity() {
-							log.Printf("Handle %d inventory is full\n", b.hWnd)
-							b.setInventoryStatus(true)
-							b.StopTickers()
-							Beeper.Play()
-						}
-					} else if isInventoryFull(b.hWnd) {
-						log.Printf("Handle %d inventory is full\n", b.hWnd)
-						b.setInventoryStatus(true)
-						b.StopTickers()
-						Beeper.Play()
-					}
+				if !b.InventoryCheckerEnabled {
+					break
+				}
+
+				if b.ActivityCheckerEnabled && b.isInventoryFullForActivity() {
+					log.Printf("Handle %d inventory is full\n", b.hWnd)
+					b.setSharedInventoryStatus(true)
+					b.StopTickers()
+					Beeper.Play()
+				} else if isInventoryFull(b.hWnd) {
+					log.Printf("Handle %d inventory is full\n", b.hWnd)
+					b.setSharedInventoryStatus(true)
+					b.StopTickers()
+					Beeper.Play()
 				}
 			case <-b.teleportAndResourceCheckerTicker.C:
-				if b.TeleportAndResourceCheckerEnabled {
-					if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.gameDir) {
-						log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
-						b.StopTickers()
-						Beeper.Play()
-					}
-					if b.isOutOfResource = isOutOfResource(*b.gameDir); b.isOutOfResource {
-						log.Printf("Handle %d is out of resource\n", b.hWnd)
-						b.StopTickers()
-						Beeper.Play()
-					}
-					if isVerificationTriggered(*b.gameDir) {
-						log.Printf("Handle %d triggered the verification\n", b.hWnd)
-						Beeper.Play()
-					}
+				if !b.TeleportAndResourceCheckerEnabled {
+					break
+				}
+
+				if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.gameDir) {
+					log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
+					b.StopTickers()
+					Beeper.Play()
+				}
+				if b.isOutOfResource = isOutOfResource(*b.gameDir); b.isOutOfResource {
+					log.Printf("Handle %d is out of resource\n", b.hWnd)
+					b.StopTickers()
+					Beeper.Play()
+				}
+				if isVerificationTriggered(*b.gameDir) {
+					log.Printf("Handle %d triggered the verification\n", b.hWnd)
+					Beeper.Play()
 				}
 			case <-b.sharedStopChan:
 				log.Printf("Handle %d Auto Battle ended at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
@@ -176,7 +180,7 @@ func (b *BattleWorker) StopTickers() {
 	b.inventoryCheckerTicker.Stop()
 	b.teleportAndResourceCheckerTicker.Stop()
 
-	time.Sleep(DURATION_BATTLE_WORKER)
+	time.Sleep(DURATION_BATTLE_LAST_ACTION)
 	b.ActionState.Act()
 }
 
@@ -188,7 +192,7 @@ func (b *BattleWorker) Stop() {
 
 func (b *BattleWorker) reset() {
 	b.currentMapName = getMapName(b.hWnd)
-	b.setInventoryStatus(false)
+	b.setSharedInventoryStatus(false)
 
 	b.ActionState.Enabled = true
 	b.ActionState.isOutOfHealth = false
@@ -217,8 +221,10 @@ func (b *BattleWorker) StartTeleportAndResourceChecker() {
 	b.currentMapName = getMapName(b.hWnd)
 }
 
-func (b *BattleWorker) setInventoryStatus(isFull bool) {
-	*b.sharedInventoryStatus = isFull
+func (b *BattleWorker) setSharedInventoryStatus(isFull bool) {
+	if b.isGrouping() {
+		*b.sharedInventoryStatus = isFull
+	}
 }
 
 func (b *BattleWorker) isGrouping() bool {
