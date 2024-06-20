@@ -202,7 +202,7 @@ var (
 )
 
 const (
-	DURATION_LOG_ACTIVITY        = 5 * time.Second
+	DURATION_LOG_ACTIVITY        = 16 * time.Second
 	DURATION_LOG_TELEPORTING     = 30 * time.Second
 	DURATION_LOG_OUT_OF_RESOURCE = 30 * time.Second
 	DURATION_LOG_VERIFICATION    = 5 * time.Second
