@@ -424,7 +424,8 @@ func (b *BattleActionState) executeHumanStateMachine() {
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(true); ok {
 				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-				if b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self); b.isOutOfHealth {
+				if b.isHealthLowerThan(float32(ratio), self) {
+					b.isOutOfHealth = true
 					b.logH("is out of health")
 				}
 			}
@@ -595,8 +596,8 @@ func (b *BattleActionState) executePetStateMachiine() {
 			clearChat(b.hWnd)
 			if self, ok := b.getSelfTarget(b.isOnRide()); ok {
 				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
-				b.isOutOfHealth = b.isHealthLowerThan(float32(ratio), self)
-				if b.isOutOfHealth {
+				if b.isHealthLowerThan(float32(ratio), self) {
+					b.isOutOfHealth = true
 					b.logP("is out of health")
 				}
 			}
