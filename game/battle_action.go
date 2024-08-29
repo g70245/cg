@@ -900,7 +900,7 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= ENEMY_COUNTER_LIMITATION {
+	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= ENEMY_COUNTER_LIMITATION || len(b.enemies) == 0 {
 		b.enemies = allMonsters
 	}
 
