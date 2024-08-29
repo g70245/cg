@@ -197,7 +197,7 @@ var (
 	LOG_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	LOG_OUT_OF_RESOURCE    = []string{"道具已經用完了"}
 	LOG_VERIFICATION       = []string{"驗證系統"}
-	LOG_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王"}
+	LOG_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王", "釣魚途中"}
 	LOG_PRODUCTION_FAILURE = []string{}
 )
 
