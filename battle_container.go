@@ -35,7 +35,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 	battleGroups := BattleGroups{make(map[int]chan bool)}
 
 	groupTabs := container.NewAppTabs()
-	groupTabs.SetTabLocation(container.TabLocationBottom)
+	groupTabs.SetTabLocation(container.TabLocationTop)
 	groupTabs.Hide()
 
 	newGroupButton := widget.NewButtonWithIcon("New Group", theme.ContentAddIcon(), func() {
@@ -86,8 +86,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 		gamesSelectorDialog.Show()
 	})
 
-	menu := container.NewVBox(newGroupButton)
-	newBattleContainer := container.NewBorder(menu, nil, nil, nil, groupTabs)
+	newBattleContainer := container.NewBorder(nil, nil, newGroupButton, nil, groupTabs)
 
 	return newBattleContainer, battleGroups
 }
