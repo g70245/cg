@@ -59,7 +59,8 @@ func newProductionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 		notifyBeeperAndLogConfig("About Production")
 	})
 
-	main := container.NewVBox(newProductionButton, productionsContainer)
+	main := container.NewBorder(nil, newProductionButton, nil, nil, productionsContainer)
+
 	return main, pw
 }
 
