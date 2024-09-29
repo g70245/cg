@@ -121,7 +121,7 @@ func (r *robot) generateRobotContainer() {
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Battle", autoBattleContainer),
-		container.NewTabItem("Goods", productionContainer),
+		container.NewTabItem("Produce", productionContainer),
 	)
 
 	tabs.SetTabLocation(container.TabLocationLeading)
