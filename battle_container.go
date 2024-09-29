@@ -77,6 +77,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 			}
 			newTabItem = container.NewTabItem(newGroupName, newGroupContainer)
 			groupTabs.Append(newTabItem)
+			groupTabs.Select(newTabItem)
 			groupTabs.Show()
 
 			window.SetContent(window.Content())
