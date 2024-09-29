@@ -120,11 +120,11 @@ func (r *robot) generateRobotContainer() {
 	productionContainer, productionWorkers := newProductionContainer(r.games)
 
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Auto Battle", autoBattleContainer),
-		container.NewTabItem("Production", productionContainer),
+		container.NewTabItem("Battle", autoBattleContainer),
+		container.NewTabItem("Goods", productionContainer),
 	)
 
-	tabs.SetTabLocation(container.TabLocationTop)
+	tabs.SetTabLocation(container.TabLocationLeading)
 	main := container.NewStack(tabs)
 
 	r.main = main

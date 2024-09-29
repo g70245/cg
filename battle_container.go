@@ -86,7 +86,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 		gamesSelectorDialog.Show()
 	})
 
-	newBattleContainer := container.NewBorder(nil, nil, newGroupButton, nil, groupTabs)
+	newBattleContainer := container.NewBorder(nil, newGroupButton, nil, nil, groupTabs)
 
 	return newBattleContainer, battleGroups
 }
