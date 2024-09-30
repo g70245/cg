@@ -124,7 +124,7 @@ func (r *robot) generateRobotContainer() {
 		container.NewTabItem("Produce", productionContainer),
 	)
 
-	tabs.SetTabLocation(container.TabLocationLeading)
+	tabs.SetTabLocation(container.TabLocationBottom)
 	main := container.NewStack(tabs)
 
 	r.main = main
