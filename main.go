@@ -17,7 +17,7 @@ import (
 const (
 	APP_NAME     = "CG"
 	APP_WIDTH    = 960
-	APP_HEIGHT   = 420
+	APP_HEIGHT   = 320 //420
 	DEFAULT_ROOT = `D:\CG`
 )
 
