@@ -40,6 +40,7 @@ const (
 	HumanPotion
 	HumanSkill
 	HumanThresholdSkill
+	HumanBloodMagic
 	HumanHealSelf
 	HumanHealOne
 	HumanHealTShaped
@@ -134,6 +135,8 @@ func (ha humanAction) String() string {
 		return "*Skill"
 	case HumanThresholdSkill:
 		return "*Threshold Skill"
+	case HumanBloodMagic:
+		return "*Blood Magic"
 	case HumanHealSelf:
 		return "*Heal Self"
 	case HumanHealOne:

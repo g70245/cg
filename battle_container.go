@@ -341,6 +341,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var healOneButton *widget.Button
 			var healTShapeButton *widget.Button
 			var healMultiButton *widget.Button
+			var bloodMagicButton *widget.Button
 
 			attackButton = widget.NewButton(HumanAttack.String(), func() {
 				worker.ActionState.AddHumanAction(HumanAttack)
@@ -560,6 +561,20 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			healMultiButton.Importance = widget.HighImportance
 
+			bloodMagicButton = widget.NewButton(HumanBloodMagic.String(), func() {
+				worker.ActionState.AddHumanAction(HumanBloodMagic)
+
+				dialogs := []func(){
+					offsetSelectorDialog(Human),
+					levelSelectorDialog(Human),
+					healingRatioSelectorDialog(Human),
+					successControlUnitSelectorDialog(Human),
+					failureControlUnitSelectorDialog(Human),
+				}
+				activateDialogs(dialogs, selectorDialogEnableChan)
+			})
+			bloodMagicButton.Importance = widget.HighImportance
+
 			actionsContainer := container.NewGridWithColumns(4,
 				attackButton,
 				defendButton,
@@ -571,6 +586,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				recallButton,
 				rideButton,
 				potionButton,
+				bloodMagicButton,
 				healSelfButton,
 				healOneButton,
 				healTShapeButton,

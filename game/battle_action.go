@@ -276,6 +276,42 @@ func (b *BattleActionState) executeHumanStateMachine() {
 				b.logH("cannot find the position of window")
 				b.setFailureState(Human)
 			}
+		case HumanBloodMagic:
+			closeAllWindows(b.hWnd)
+			clearChat(b.hWnd)
+			if self, ok := b.getSelfTarget(true); ok {
+				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
+
+				if !b.isHealthLowerThan(float32(ratio), self) {
+					b.logH("is a healthy boy")
+					break
+				}
+
+				openWindow(b.hWnd, KEY_SKILL)
+				if x, y, ok := b.getSkillWindowPos(); ok {
+					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
+					level := int(b.HumanActions[b.currentHumanActionId].Level)
+					useHumanSkill(b.hWnd, x, y, offset, level)
+					if b.didHumanMissSkill(x, y) {
+						b.logH("missed the skill button or is out of mana")
+					} else if b.isHumanActionSuccessful() {
+						b.logH("used a skill")
+						b.setSuccessState(Human)
+					} else if b.attack(b.isHumanActionSuccessful) {
+						b.logH("used a skill")
+						b.setSuccessState(Human)
+					} else {
+						b.logH("missed a hit")
+						b.setFailureState(Human)
+					}
+				} else {
+					b.logH("cannot find the position of window")
+					b.setFailureState(Human)
+				}
+
+			} else {
+				b.logH("cannot find self")
+			}
 		case HumanHealSelf:
 			closeAllWindows(b.hWnd)
 			clearChat(b.hWnd)
