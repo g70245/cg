@@ -43,3 +43,8 @@ go run .
 
 # If you prefer to build the executable first and then run it, use the following commands:
 go build .
+```
+
+## Example
+![alt text](https://github.com/g70245/cg/blob/main/example.png?raw=true)  
+*Example interface showing the bot in action, demonstrating customizable settings and monitoring features.*
