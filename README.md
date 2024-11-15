@@ -2,7 +2,6 @@
 
 A versatile automation tool developed using **Golang**, **Fyne**, and **Win32 API** to manage multiple game instances with advanced features and human-like behavior simulation.
 
----
 
 ## Features  
 
@@ -25,7 +24,6 @@ Optimize your gameplay with semi-automatic item production. The bot automaticall
 ### 5. Unlimited Simultaneous Control  
 Take advantage of your computer's capabilities to the fullest. There's no limit to the number of games you can control simultaneously, allowing you to fully utilize your system resources.  
 
----
 
 ## Getting Started  
 
