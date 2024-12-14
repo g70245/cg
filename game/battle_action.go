@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -66,8 +65,7 @@ type BattleActionState struct {
 	ManaChecker *string `json:"-"`
 	GameDir     *string `json:"-"`
 
-	enemies              []CheckTarget `json:"-"`
-	enemyDetectorCounter int           `json:"-"`
+	enemies []CheckTarget `json:"-"`
 }
 
 func (b *BattleActionState) Act() {
@@ -656,7 +654,6 @@ func (b *BattleActionState) executePetStateMachiine() {
 func (b *BattleActionState) reset() {
 	b.currentHumanActionId = 0
 	b.currentPetActionId = 0
-	b.enemyDetectorCounter = 0
 }
 
 func (b *BattleActionState) resetCurrentControlUnit() {
@@ -936,17 +933,7 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	if b.enemyDetectorCounter == 0 || b.enemyDetectorCounter >= ENEMY_COUNTER_LIMITATION || len(b.enemies) == 0 {
-		b.enemies = allMonsters
-	}
-
-	newEnemies := b.getEnemies(b.enemies)
-	if reflect.DeepEqual(b.enemies, newEnemies) {
-		b.enemyDetectorCounter++
-	} else {
-		b.enemyDetectorCounter = 1
-	}
-	b.enemies = newEnemies
+	b.enemies = b.getEnemies(allMonsters)
 
 	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(b.hWnd), len(b.enemies))
 }
