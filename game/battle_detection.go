@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DURATION_MONSTER_DETECING_CURSOR_MOV = 60 * time.Millisecond
+	DURATION_MONSTER_DETECING_CURSOR_MOV = 80 * time.Millisecond
 	DURATION_DID_MISS_SKILL_WAITING      = 80 * time.Millisecond
 	DRUATION_IS_ON_RIDE                  = 80 * time.Millisecond
 	DURATION_BATTLE_RESULT_DISAPPEARING  = 2 * time.Second
