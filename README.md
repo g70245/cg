@@ -41,6 +41,9 @@ go run .
 
 # If you prefer to build the executable first and then run it, use the following commands:
 go build .
+
+# If you want to package the application for Windows using the fyne tool, use the following command:
+fyne package -os windows -icon C:\path\to\your\icon.png
 ```
 
 ## Example
