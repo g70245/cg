@@ -19,7 +19,7 @@ const (
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 
-	TRAINING_COUNTER_LIMITATION = 6
+	TRAINING_COUNTER_THRESHOLD = 8
 )
 
 type HumanAction struct {
@@ -935,11 +935,11 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	if b.trainingCounter < TRAINING_COUNTER_LIMITATION {
+	if b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
 		b.enemies = b.getEnemies(allMonsters)
 	}
 
-	if len(b.enemies) == 1 && b.trainingCounter < TRAINING_COUNTER_LIMITATION {
+	if len(b.enemies) == 1 && b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
 		b.trainingCounter++
 	}
 
