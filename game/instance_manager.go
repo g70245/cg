@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "cg/internal"
+	"cg/internal"
 	"sort"
 
 	"github.com/g70245/win"
@@ -11,7 +11,7 @@ import (
 type Games map[string]win.HWND
 
 func NewGames() Games {
-	return FindWindows()
+	return internal.FindWindows()
 }
 
 func (gs Games) New(selected []string) Games {

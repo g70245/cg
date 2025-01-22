@@ -1,8 +1,8 @@
-package main
+package containers
 
 import (
 	"cg/game"
-	. "cg/utils"
+	"cg/utils"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -14,13 +14,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-const (
-	APP_NAME     = "CG"
-	APP_WIDTH    = 960
-	APP_HEIGHT   = 320 //420
-	DEFAULT_ROOT = `D:\CG`
-)
-
 var (
 	window fyne.Window
 	r      robot
@@ -29,18 +22,22 @@ var (
 type robot struct {
 	main    *fyne.Container
 	gameDir *string
+	width   float32
+	height  float32
 	games   game.Games
 	close   func()
 }
 
-func main() {
+func App(title, gameDir string, width, height float32) {
 	cg := app.New()
-	window = cg.NewWindow(APP_NAME)
-	window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+	window = cg.NewWindow(title)
+	window.Resize(fyne.NewSize(width, height))
 
 	r = robot{
 		games:   game.NewGames(),
 		gameDir: new(string),
+		width:   width,
+		height:  height,
 	}
 	r.generateRobotContainer()
 
@@ -54,7 +51,7 @@ func main() {
 				r.refresh()
 				content.Add(r.main)
 				window.SetContent(window.Content())
-				window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+				window.Resize(fyne.NewSize(width, height))
 			}
 		}, window)
 		refreshDialog.SetConfirmImportance(widget.DangerImportance)
@@ -62,15 +59,15 @@ func main() {
 	})
 	refreshButton.Importance = widget.DangerImportance
 
-	listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT))
+	listableURI, _ := storage.ListerForURI(storage.NewFileURI(gameDir))
 	var alertDialogButton *widget.Button
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
 		alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if uc != nil {
-				Beeper.Init(uc.URI().Path())
+				utils.Beeper.Init(uc.URI().Path())
 				alertDialogButton.SetIcon(theme.MediaMusicIcon())
 			} else {
-				Beeper.Close()
+				utils.Beeper.Close()
 				alertDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
@@ -102,7 +99,7 @@ func main() {
 	/* shortcuts */
 	muteShortcut := &desktop.CustomShortcut{KeyName: fyne.Key0, Modifier: fyne.KeyModifierControl}
 	window.Canvas().AddShortcut(muteShortcut, func(shortcut fyne.Shortcut) {
-		Beeper.Stop()
+		utils.Beeper.Stop()
 	})
 
 	window.SetContent(content)
