@@ -19,7 +19,7 @@ const (
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
 
-	ENEMY_COUNTER_LIMITATION = 2
+	TRAINING_COUNTER_THRESHOLD = 8
 )
 
 type HumanAction struct {
@@ -65,7 +65,8 @@ type BattleActionState struct {
 	ManaChecker *string `json:"-"`
 	GameDir     *string `json:"-"`
 
-	enemies []CheckTarget `json:"-"`
+	enemies         []CheckTarget `json:"-"`
+	trainingCounter int           `json:"-"`
 }
 
 func (b *BattleActionState) Act() {
@@ -654,6 +655,7 @@ func (b *BattleActionState) executePetStateMachiine() {
 func (b *BattleActionState) reset() {
 	b.currentHumanActionId = 0
 	b.currentPetActionId = 0
+	b.trainingCounter = 0
 }
 
 func (b *BattleActionState) resetCurrentControlUnit() {
@@ -933,7 +935,13 @@ func (b *BattleActionState) detectEnemies() {
 	}
 	closeAllWindows(b.hWnd)
 
-	b.enemies = b.getEnemies(allMonsters)
+	if b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
+		b.enemies = b.getEnemies(allMonsters)
+	}
+
+	if len(b.enemies) == 1 && b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
+		b.trainingCounter++
+	}
 
 	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(b.hWnd), len(b.enemies))
 }

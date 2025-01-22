@@ -1,8 +1,8 @@
-package main
+package containers
 
 import (
 	. "cg/game"
-	. "cg/utils"
+	"cg/utils"
 	"encoding/json"
 	"errors"
 	"image/color"
@@ -64,7 +64,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 					}
 
 					window.SetContent(window.Content())
-					window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+					window.Resize(fyne.NewSize(r.width, r.height))
 				}
 			}(id))
 			battleGroups.stopChans[id] = stopChan
@@ -81,7 +81,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 			groupTabs.Show()
 
 			window.SetContent(window.Content())
-			window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+			window.Resize(fyne.NewSize(r.width, r.height))
 			id++
 		})
 		gamesSelectorDialog.Show()
@@ -776,7 +776,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}, window)
 
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
 			fileOpenDialog.SetLocation(listableURI)
 			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
 			fileOpenDialog.Show()
@@ -793,7 +793,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 					}
 				}
 			}, window)
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
 			fileSaveDialog.SetFileName("default.ac")
 			fileSaveDialog.SetLocation(listableURI)
 			fileSaveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
@@ -876,7 +876,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 		}, window)
 
-		listableURI, _ := storage.ListerForURI(storage.NewFileURI(DEFAULT_ROOT + `\actions`))
+		listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
 		fileOpenDialog.SetLocation(listableURI)
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
 		fileOpenDialog.Show()
@@ -1158,7 +1158,7 @@ func (bgs *BattleGroups) stopAll() {
 }
 
 func notifyBeeperConfig(title string) {
-	if !Beeper.IsReady() {
+	if !utils.Beeper.IsReady() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music!!!", window).Show()
@@ -1176,7 +1176,7 @@ func notifyLogConfig(title string) {
 }
 
 func notifyBeeperAndLogConfig(title string) {
-	if !Beeper.IsReady() || *r.gameDir == "" {
+	if !utils.Beeper.IsReady() || *r.gameDir == "" {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()

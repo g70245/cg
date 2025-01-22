@@ -1,7 +1,7 @@
-package main
+package containers
 
 import (
-	. "cg/game"
+	"cg/game"
 
 	"fmt"
 
@@ -18,7 +18,7 @@ type ProductionWorkers struct {
 	stopChans  map[string]chan bool
 }
 
-func newProductionContainer(games Games) (*fyne.Container, ProductionWorkers) {
+func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorkers) {
 
 	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
 
@@ -52,7 +52,7 @@ func newProductionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 			}
 
 			window.SetContent(window.Content())
-			window.Resize(fyne.NewSize(APP_WIDTH, APP_HEIGHT))
+			window.Resize(fyne.NewSize(r.width, r.height))
 		})
 		gamesSelectorDialog.Show()
 
@@ -64,20 +64,20 @@ func newProductionContainer(games Games) (*fyne.Container, ProductionWorkers) {
 	return main, pw
 }
 
-func newProductionWorkerContainer(game string, games Games, destroy func()) (*fyne.Container, chan bool) {
+func newProductionWorkerContainer(gameKey string, games game.Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
-	worker := NewProductionWorker(games.Peek(game), r.gameDir, stopChan)
+	worker := game.NewProductionWorker(games.Peek(gameKey), r.gameDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
 	nicknameEntry.SetPlaceHolder("Enter nickname")
-	nicknameButton = widget.NewButtonWithIcon(game, theme.AccountIcon(), func() {
+	nicknameButton = widget.NewButtonWithIcon(gameKey, theme.AccountIcon(), func() {
 		nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
 		nicknameDialog.SetOnClosed(func() {
 			worker.SetName(nicknameEntry.Text)
 
 			if nicknameEntry.Text != "" {
-				nicknameButton.SetText(fmt.Sprintf("%s(%s)", game, nicknameEntry.Text))
+				nicknameButton.SetText(fmt.Sprintf("%s(%s)", gameKey, nicknameEntry.Text))
 			}
 		})
 		nicknameDialog.Show()
