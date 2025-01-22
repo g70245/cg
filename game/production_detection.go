@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "cg/internal"
+	"cg/internal"
 	"time"
 )
 
@@ -18,7 +18,7 @@ func (p *ProductionWorker) isSlotFree(px, py int32) bool {
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if GetColor(p.hWnd, x, y) != COLOR_PR_INVENTORY_SLOT_EMPTY {
+			if internal.GetColor(p.hWnd, x, y) != COLOR_PR_INVENTORY_SLOT_EMPTY {
 				return false
 			}
 			y += 5
@@ -29,13 +29,13 @@ func (p *ProductionWorker) isSlotFree(px, py int32) bool {
 }
 
 func (p *ProductionWorker) canProduce(x, y int32) bool {
-	return GetColor(p.hWnd, x-270, y+180) == COLOR_PR_PRODUCE_BUTTON
+	return internal.GetColor(p.hWnd, x-270, y+180) == COLOR_PR_PRODUCE_BUTTON
 }
 
 func (p *ProductionWorker) isProducing(x, y int32) bool {
-	return GetColor(p.hWnd, x-110, y+10) != COLOR_PR_NOT_PRODUCING
+	return internal.GetColor(p.hWnd, x-110, y+10) != COLOR_PR_NOT_PRODUCING
 }
 
 func (p *ProductionWorker) isProducingSuccessful(x, y int32) bool {
-	return GetColor(p.hWnd, x-166, y+180) == COLOR_PR_PRODUCE_BUTTON
+	return internal.GetColor(p.hWnd, x-166, y+180) == COLOR_PR_PRODUCE_BUTTON
 }

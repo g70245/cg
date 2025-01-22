@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "cg/internal"
+	"cg/internal"
 
 	"time"
 
@@ -44,21 +44,21 @@ var (
 )
 
 func getScene(hWnd win.HWND) CheckTarget {
-	if GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
+	if internal.GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
 		return NORMAL_SCENE
-	} else if GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
+	} else if internal.GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
 		return BATTLE_SCENE
 	}
 	return NOWHERE_SCENE
 }
 
 func getItemWindowPos(hWnd win.HWND) (int32, int32, bool) {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := NORMAL_WINDOW_ITEM_MONEY_PIVOT.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.x+34 {
 		y := NORMAL_WINDOW_ITEM_MONEY_PIVOT.y
 		for y <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.y+54 {
-			if GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
+			if internal.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x, y + 20, true
 			}
 			y += 1
@@ -69,7 +69,7 @@ func getItemWindowPos(hWnd win.HWND) (int32, int32, bool) {
 }
 
 func isAnyInventorySlotFree(hWnd win.HWND, px, py int32) bool {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 	var i, j int32
@@ -86,7 +86,7 @@ func isAnyInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 }
 
 func areMoreThanTwoInventorySlotsFree(hWnd win.HWND, px, py int32) bool {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 
@@ -109,7 +109,7 @@ func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if GetColor(hWnd, x, y) != COLOR_NS_INVENTORY_SLOT_EMPTY {
+			if internal.GetColor(hWnd, x, y) != COLOR_NS_INVENTORY_SLOT_EMPTY {
 				return false
 			}
 			y += 5
@@ -120,7 +120,7 @@ func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 }
 
 func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -144,7 +144,7 @@ func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int
 // }
 
 // func getItemPosWithThreads(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
-// 	MoveCursorToNowhere(hWnd)
+// 	internal.MoveCursorToNowhere(hWnd)
 
 // 	x := px
 // 	y := py
@@ -177,7 +177,7 @@ func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granula
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			currentColor := GetColor(hWnd, x, y)
+			currentColor := internal.GetColor(hWnd, x, y)
 			if currentColor == color {
 				return x, y, true
 			} else if currentColor == COLOR_ITEM_CAN_NOT_BE_USED {
@@ -197,7 +197,7 @@ func isInventoryFull(hWnd win.HWND) bool {
 	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
 	closeAllWindows(hWnd)
 
-	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	internal.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
 	openInventory(hWnd)
 
@@ -218,7 +218,7 @@ func isInventoryFullWithoutClosingAllWindows(hWnd win.HWND) bool {
 }
 
 func getMapName(hWnd win.HWND) string {
-	return ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
+	return internal.ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
 }
 
 type GamePos struct {
@@ -226,7 +226,7 @@ type GamePos struct {
 }
 
 func getCurrentGamePos(hWnd win.HWND) GamePos {
-	fx := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_X, 32)
-	fy := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
+	fx := internal.ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_X, 32)
+	fy := internal.ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
 	return GamePos{float64(fx / 64), float64(fy / 64)}
 }

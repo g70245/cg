@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "cg/utils"
+	"cg/utils"
 	"sync"
 
 	"fmt"
@@ -120,7 +120,7 @@ func (b *BattleWorker) Work() {
 
 					if b.isOutOfResource || *b.sharedInventoryStatus || b.ActionState.isOutOfHealth || b.ActionState.isOutOfMana {
 						b.StopTickers()
-						Beeper.Play()
+						utils.Beeper.Play()
 						break
 					}
 					if b.isGrouping() {
@@ -141,12 +141,12 @@ func (b *BattleWorker) Work() {
 					log.Printf("Handle %d inventory is full\n", b.hWnd)
 					b.setSharedInventoryStatus(true)
 					b.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				} else if isInventoryFull(b.hWnd) {
 					log.Printf("Handle %d inventory is full\n", b.hWnd)
 					b.setSharedInventoryStatus(true)
 					b.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 			case <-b.teleportAndResourceCheckerTicker.C:
 				if !b.TeleportAndResourceCheckerEnabled {
@@ -156,16 +156,16 @@ func (b *BattleWorker) Work() {
 				if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || IsTeleported(*b.gameDir) {
 					log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
 					b.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 				if b.isOutOfResource = IsOutOfResource(*b.gameDir); b.isOutOfResource {
 					log.Printf("Handle %d is out of resource\n", b.hWnd)
 					b.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 				if IsVerificationTriggered(*b.gameDir) {
 					log.Printf("Handle %d triggered the verification\n", b.hWnd)
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 			case <-b.sharedStopChan:
 				log.Printf("Handle %d Auto Battle ended at (%.f, %.f)\n", b.hWnd, b.MovementState.origin.x, b.MovementState.origin.y)
@@ -187,7 +187,7 @@ func (b *BattleWorker) StopTickers() {
 func (b *BattleWorker) Stop() {
 	b.ActionState.Enabled = false
 	b.sharedStopChan <- true
-	Beeper.Stop()
+	utils.Beeper.Stop()
 }
 
 func (b *BattleWorker) reset() {
