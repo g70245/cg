@@ -1,7 +1,7 @@
 package game
 
 import (
-	. "cg/internal"
+	"cg/internal"
 	"fmt"
 
 	"log"
@@ -66,7 +66,7 @@ func (state *BattleMovementState) Move() {
 
 	log.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
 
-	LeftClick(state.hWnd, x, y)
+	internal.LeftClick(state.hWnd, x, y)
 }
 
 func diagonal(radius float64, state *BattleMovementState, isReverse bool, isBiasable bool) (x, y int32) {

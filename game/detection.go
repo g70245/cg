@@ -1,11 +1,8 @@
 package game
 
 import (
-	. "cg/internal"
-	"fmt"
+	"cg/internal"
 
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/g70245/win"
@@ -47,21 +44,21 @@ var (
 )
 
 func getScene(hWnd win.HWND) CheckTarget {
-	if GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
+	if internal.GetColor(hWnd, NORMAL_SCENE.x, NORMAL_SCENE.y) == NORMAL_SCENE.color {
 		return NORMAL_SCENE
-	} else if GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
+	} else if internal.GetColor(hWnd, BATTLE_SCENE.x, BATTLE_SCENE.y) == BATTLE_SCENE.color {
 		return BATTLE_SCENE
 	}
 	return NOWHERE_SCENE
 }
 
 func getItemWindowPos(hWnd win.HWND) (int32, int32, bool) {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := NORMAL_WINDOW_ITEM_MONEY_PIVOT.x
 	for x <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.x+34 {
 		y := NORMAL_WINDOW_ITEM_MONEY_PIVOT.y
 		for y <= NORMAL_WINDOW_ITEM_MONEY_PIVOT.y+54 {
-			if GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
+			if internal.GetColor(hWnd, x, y) == NORMAL_WINDOW_ITEM_MONEY_PIVOT.color {
 				return x, y + 20, true
 			}
 			y += 1
@@ -72,7 +69,7 @@ func getItemWindowPos(hWnd win.HWND) (int32, int32, bool) {
 }
 
 func isAnyInventorySlotFree(hWnd win.HWND, px, py int32) bool {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 	var i, j int32
@@ -89,7 +86,7 @@ func isAnyInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 }
 
 func areMoreThanTwoInventorySlotsFree(hWnd win.HWND, px, py int32) bool {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 	x := px
 	y := py
 
@@ -112,7 +109,7 @@ func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			if GetColor(hWnd, x, y) != COLOR_NS_INVENTORY_SLOT_EMPTY {
+			if internal.GetColor(hWnd, x, y) != COLOR_NS_INVENTORY_SLOT_EMPTY {
 				return false
 			}
 			y += 5
@@ -123,7 +120,7 @@ func isInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 }
 
 func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
-	MoveCursorToNowhere(hWnd)
+	internal.MoveCursorToNowhere(hWnd)
 
 	x := px
 	y := py
@@ -147,7 +144,7 @@ func getItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int
 // }
 
 // func getItemPosWithThreads(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
-// 	MoveCursorToNowhere(hWnd)
+// 	internal.MoveCursorToNowhere(hWnd)
 
 // 	x := px
 // 	y := py
@@ -180,7 +177,7 @@ func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granula
 	for x < px+30 {
 		y := py
 		for y < py+30 {
-			currentColor := GetColor(hWnd, x, y)
+			currentColor := internal.GetColor(hWnd, x, y)
 			if currentColor == color {
 				return x, y, true
 			} else if currentColor == COLOR_ITEM_CAN_NOT_BE_USED {
@@ -193,76 +190,6 @@ func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granula
 	return 0, 0, false
 }
 
-var (
-	LOG_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
-	LOG_OUT_OF_RESOURCE    = []string{"道具已經用完了"}
-	LOG_VERIFICATION       = []string{"驗證系統"}
-	LOG_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王", "釣魚途中"}
-	LOG_PRODUCTION_FAILURE = []string{}
-)
-
-const (
-	DURATION_LOG_ACTIVITY        = 16 * time.Second
-	DURATION_LOG_TELEPORTING     = 30 * time.Second
-	DURATION_LOG_OUT_OF_RESOURCE = 30 * time.Second
-	DURATION_LOG_VERIFICATION    = 5 * time.Second
-)
-
-func doesEncounterActivityMonsters(gameDir string) bool {
-	if gameDir == "" {
-		return false
-	}
-
-	return checkWord(gameDir, 5, DURATION_LOG_ACTIVITY, LOG_ACTIVITY)
-}
-
-func isTeleported(gameDir string) bool {
-	if gameDir == "" {
-		return false
-	}
-	return checkWord(gameDir, 5, DURATION_LOG_TELEPORTING, LOG_TELEPORTING)
-}
-
-func isOutOfResource(gameDir string) bool {
-	if gameDir == "" {
-		return false
-	}
-	return checkWord(gameDir, 5, DURATION_LOG_OUT_OF_RESOURCE, LOG_OUT_OF_RESOURCE)
-}
-
-func isVerificationTriggered(gameDir string) bool {
-	if gameDir == "" {
-		return false
-	}
-	return checkWord(gameDir, 5, DURATION_LOG_VERIFICATION, LOG_VERIFICATION)
-}
-
-func checkWord(gameDir string, lineCount int, before time.Duration, words []string) bool {
-	logDir := fmt.Sprintf("%s/Log", gameDir)
-	lines := GetLastLines(logDir, lineCount)
-	now := time.Now()
-	for i := range lines {
-		if len(lines[i]) < 9 {
-			continue
-		}
-
-		h, hErr := strconv.Atoi(lines[i][1:3])
-		m, mErrr := strconv.Atoi(lines[i][4:6])
-		s, sErr := strconv.Atoi(lines[i][7:9])
-		if hErr != nil || mErrr != nil || sErr != nil {
-			continue
-		}
-
-		logTime := time.Date(now.Year(), now.Month(), now.Day(), h, m, s, 0, time.Local)
-		for j := range words {
-			if !logTime.Before(now.Add(-before)) && strings.Contains(lines[i], words[j]) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func isInventoryFull(hWnd win.HWND) bool {
 	defer closeAllWindows(hWnd)
 	defer time.Sleep(DURATION_INVENTORY_CHECKER_WAITING)
@@ -270,7 +197,7 @@ func isInventoryFull(hWnd win.HWND) bool {
 	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
 	closeAllWindows(hWnd)
 
-	LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	internal.LeftClick(hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
 	openInventory(hWnd)
 
@@ -291,7 +218,7 @@ func isInventoryFullWithoutClosingAllWindows(hWnd win.HWND) bool {
 }
 
 func getMapName(hWnd win.HWND) string {
-	return ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
+	return internal.ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
 }
 
 type GamePos struct {
@@ -299,7 +226,7 @@ type GamePos struct {
 }
 
 func getCurrentGamePos(hWnd win.HWND) GamePos {
-	fx := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_X, 32)
-	fy := ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
+	fx := internal.ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_X, 32)
+	fy := internal.ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
 	return GamePos{float64(fx / 64), float64(fy / 64)}
 }

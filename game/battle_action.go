@@ -1,8 +1,8 @@
 package game
 
 import (
-	. "cg/internal"
-	. "cg/utils"
+	"cg/internal"
+	"cg/utils"
 
 	"fmt"
 	"log"
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/g70245/win"
+	"github.com/g70245/win"
 )
 
 const (
@@ -46,7 +46,7 @@ type PetAction struct {
 }
 
 type BattleActionState struct {
-	hWnd HWND `json:"-"`
+	hWnd win.HWND `json:"-"`
 
 	HumanActions         []HumanAction
 	PetActions           []PetAction
@@ -94,9 +94,9 @@ func (b *BattleActionState) executeActivity() {
 		return
 	}
 
-	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.GameDir); doesEncounterActivityMonsters {
+	if DoesEncounterActivityMonsters(*b.GameDir) {
 		b.logH("encounters the activity monster")
-		Beeper.Play()
+		utils.Beeper.Play()
 
 		for getScene(b.hWnd) == BATTLE_SCENE && b.Enabled {
 			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
@@ -725,7 +725,7 @@ func (b BattleActionState) isManaChecker() bool {
 
 func (b *BattleActionState) enableBattleCommandAttack() {
 	if !b.isBattleCommandEnable(BATTLE_COMMAND_ATTACK) {
-		LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
+		internal.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.x, BATTLE_COMMAND_ATTACK.y)
 		time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 	}
 }
@@ -736,7 +736,7 @@ func (b *BattleActionState) attack(stateChecker func() bool) bool {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
 	for _, target := range targets {
-		LeftClick(b.hWnd, target.x, target.y)
+		internal.LeftClick(b.hWnd, target.x, target.y)
 		time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
 		if stateChecker() {
 			return true
@@ -746,28 +746,28 @@ func (b *BattleActionState) attack(stateChecker func() bool) bool {
 }
 
 func (b *BattleActionState) aim(target *CheckTarget, stateChecker func() bool) bool {
-	LeftClick(b.hWnd, target.x+15, target.y-22)
+	internal.LeftClick(b.hWnd, target.x+15, target.y-22)
 	time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
 	return stateChecker()
 }
 
 func (b *BattleActionState) defend() {
-	LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
+	internal.LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.x, BATTLE_COMMAND_DEFENCE.y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
 func (b *BattleActionState) escape() {
-	LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
+	internal.LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
 func (b *BattleActionState) move() {
-	LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
+	internal.LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.x, BATTLE_COMMAND_MOVE.y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
 func (b *BattleActionState) recall() {
-	LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
+	internal.LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
@@ -776,14 +776,14 @@ func (b *BattleActionState) openPetSkillWindow() {
 		resetAllWindows(b.hWnd)
 	} else {
 		closeAllWindows(b.hWnd)
-		RightClick(b.hWnd, GAME_WIDTH/2, 28)
+		internal.RightClick(b.hWnd, GAME_WIDTH/2, 28)
 		time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 		resetAllWindows(b.hWnd)
 	}
 }
 
 func (b *BattleActionState) openSkillWindowWithMouse() {
-	LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
+	internal.LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.x, BATTLE_COMMAND_SKILL.y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
@@ -803,7 +803,7 @@ func (b *BattleActionState) logP(message string) {
 	)
 }
 
-func CreateNewBattleActionState(hWnd HWND, gameDir, manaChecker *string) BattleActionState {
+func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) BattleActionState {
 	return BattleActionState{
 		hWnd: hWnd,
 		HumanActions: []HumanAction{
@@ -825,11 +825,11 @@ func CreateNewBattleActionState(hWnd HWND, gameDir, manaChecker *string) BattleA
 	}
 }
 
-func (b *BattleActionState) GetHWND() HWND {
+func (b *BattleActionState) GetHWND() win.HWND {
 	return b.hWnd
 }
 
-func (b *BattleActionState) SetHWND(hWnd HWND) {
+func (b *BattleActionState) SetHWND(hWnd win.HWND) {
 	b.hWnd = hWnd
 }
 
@@ -1003,7 +1003,7 @@ func (b *BattleActionState) wait() {
 	}
 }
 
-func TestAction(hWnd HWND) (x int32, y int32, successful bool) {
+func TestAction(hWnd win.HWND) (x int32, y int32, successful bool) {
 	closeAllWindows(hWnd)
 	clearChat(hWnd)
 	openWindow(hWnd, KEY_INVENTORY)

@@ -1,8 +1,8 @@
 package game
 
 import (
-	. "cg/internal"
-	. "cg/utils"
+	"cg/internal"
+	"cg/utils"
 	"log"
 	"time"
 
@@ -83,21 +83,21 @@ func (p *ProductionWorker) Work() {
 					p.tidyInventory()
 				}
 			case <-p.logCheckerTicker.C:
-				if isProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
+				if IsProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
 					p.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 			case <-p.inventoryCheckerTicker.C:
 				if isInventoryFullWithoutClosingAllWindows(p.hWnd) {
 					log.Printf("Production %d inventory is full\n", p.hWnd)
 					p.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 			case <-p.audibleCueTicker.C:
 				if p.ManualMode {
 					p.StopTickers()
-					Beeper.Play()
+					utils.Beeper.Play()
 				}
 			case <-p.stopChan:
 				log.Printf("Handle %d Production ended\n", p.hWnd)
@@ -117,12 +117,12 @@ func (p *ProductionWorker) StopTickers() {
 func (p *ProductionWorker) Stop() {
 	p.stopChan <- true
 	p.ManualMode = true
-	Beeper.Stop()
+	utils.Beeper.Stop()
 }
 
 func (p *ProductionWorker) Reset() {
 	p.ManualMode = false
-	Beeper.Stop()
+	utils.Beeper.Stop()
 }
 
 func (p *ProductionWorker) prepareMaterials() {
@@ -152,7 +152,7 @@ func (p *ProductionWorker) prepareMaterials() {
 				return
 			}
 
-			DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
+			internal.DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
 			time.Sleep(DURATION_UNPACKING)
 
 			if isInventorySlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
@@ -179,11 +179,11 @@ func (p *ProductionWorker) produce() {
 		return
 	}
 
-	LeftClick(p.hWnd, px-270, py+180)
+	internal.LeftClick(p.hWnd, px-270, py+180)
 
 	var i int32
 	for i = 0; i < 5; i++ {
-		DoubleClickRepeatedly(p.hWnd, px+i*ITEM_COL_LEN+10, py+10)
+		internal.DoubleClickRepeatedly(p.hWnd, px+i*ITEM_COL_LEN+10, py+10)
 		if p.canProduce(px, py) {
 			break
 		}
@@ -195,7 +195,7 @@ func (p *ProductionWorker) produce() {
 		return
 	}
 
-	LeftClick(p.hWnd, px-270, py+180)
+	internal.LeftClick(p.hWnd, px-270, py+180)
 	if !p.isProducing(px, py) {
 		log.Printf("Production %d missed the producing button\n", p.hWnd)
 		p.ManualMode = true
@@ -226,12 +226,12 @@ func (p *ProductionWorker) tidyInventory() {
 	for j = 1; j <= 2; j++ {
 		var i int32
 		for i = 4; i > 0; i-- {
-			MoveCursorToNowhere(p.hWnd)
+			internal.MoveCursorToNowhere(p.hWnd)
 			if p.isSlotFree(px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN) {
 				continue
 			}
-			LeftClick(p.hWnd, px+i*50, py+j*50)
-			LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
+			internal.LeftClick(p.hWnd, px+i*50, py+j*50)
+			internal.LeftClick(p.hWnd, px+(i-1)*50, py+j*50)
 			time.Sleep(DURATION_TIDYING_UP)
 		}
 	}
