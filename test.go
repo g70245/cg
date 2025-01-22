@@ -32,8 +32,8 @@ func printCursorPosColor(hWnd win.HWND) {
 func printColorsOfCheckTargets(hWnd win.HWND, checkTargets []CheckTarget) {
 	for _, target := range checkTargets {
 		log.Print(target, " ")
-		log.Println(GetColor(hWnd, target.GetX(), target.GetY()))
-		// MoveCursorWithDuration(hWnd, target.GetX(), target.GetY(), 100*time.Millisecond)
+		log.Println(GetColor(hWnd, target.X, target.Y))
+		// MoveCursorWithDuration(hWnd, target.X(), target.GetY(), 100*time.Millisecond)
 		time.Sleep(300 * time.Millisecond)
 	}
 }

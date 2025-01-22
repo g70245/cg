@@ -1,6 +1,7 @@
-package game
+package production
 
 import (
+	"cg/game"
 	"cg/internal"
 	"cg/utils"
 	"log"
@@ -22,7 +23,7 @@ const (
 	DURATION_PRODUCTION_CHECKER_AUDIBLE_CUE = 4 * time.Second
 )
 
-type ProductionWorker struct {
+type Worker struct {
 	hWnd     win.HWND
 	name     string
 	gameDir  *string
@@ -37,7 +38,7 @@ type ProductionWorker struct {
 	audibleCueTicker       *time.Ticker
 }
 
-func NewProductionWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) ProductionWorker {
+func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Worker {
 	newWorkerTicker := time.NewTicker(time.Hour)
 	newLogCheckerTicker := time.NewTicker(time.Hour)
 	newInventoryCheckerTicker := time.NewTicker(time.Hour)
@@ -48,7 +49,7 @@ func NewProductionWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Pro
 	newInventoryCheckerTicker.Stop()
 	newAudibleCueTicker.Stop()
 
-	return ProductionWorker{
+	return Worker{
 		hWnd:                   hWnd,
 		name:                   NO_WORKER_NAME,
 		gameDir:                gameDir,
@@ -60,7 +61,7 @@ func NewProductionWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Pro
 	}
 }
 
-func (p *ProductionWorker) Work() {
+func (p *Worker) Work() {
 
 	p.workerTicker.Reset(DURATION_PRODUCTION_WORKER)
 	p.logCheckerTicker.Reset(DURATION_PRODUCTION_CHECKER_LOG)
@@ -83,13 +84,13 @@ func (p *ProductionWorker) Work() {
 					p.tidyInventory()
 				}
 			case <-p.logCheckerTicker.C:
-				if IsProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
+				if game.IsProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
 					p.StopTickers()
 					utils.Beeper.Play()
 				}
 			case <-p.inventoryCheckerTicker.C:
-				if isInventoryFullWithoutClosingAllWindows(p.hWnd) {
+				if game.IsInventoryFullWithoutClosingAllWindows(p.hWnd) {
 					log.Printf("Production %d inventory is full\n", p.hWnd)
 					p.StopTickers()
 					utils.Beeper.Play()
@@ -107,25 +108,25 @@ func (p *ProductionWorker) Work() {
 	}()
 }
 
-func (p *ProductionWorker) StopTickers() {
+func (p *Worker) StopTickers() {
 	p.workerTicker.Stop()
 	p.logCheckerTicker.Stop()
 	p.inventoryCheckerTicker.Stop()
 	p.audibleCueTicker.Stop()
 }
 
-func (p *ProductionWorker) Stop() {
+func (p *Worker) Stop() {
 	p.stopChan <- true
 	p.ManualMode = true
 	utils.Beeper.Stop()
 }
 
-func (p *ProductionWorker) Reset() {
+func (p *Worker) Reset() {
 	p.ManualMode = false
 	utils.Beeper.Stop()
 }
 
-func (p *ProductionWorker) prepareMaterials() {
+func (p *Worker) prepareMaterials() {
 
 	if p.ManualMode {
 		return
@@ -133,10 +134,10 @@ func (p *ProductionWorker) prepareMaterials() {
 
 	log.Printf("Production %d is preparing\n", p.hWnd)
 
-	defer switchWindow(p.hWnd, KEY_INVENTORY)
-	switchWindow(p.hWnd, KEY_INVENTORY)
+	defer game.SwitchWindow(p.hWnd, game.KEY_INVENTORY)
+	game.SwitchWindow(p.hWnd, game.KEY_INVENTORY)
 
-	nx, ny, ok := getItemWindowPos(p.hWnd)
+	nx, ny, ok := game.GetItemWindowPos(p.hWnd)
 	if !ok {
 		log.Printf("Production %d cannot find the position of item window\n", p.hWnd)
 		p.ManualMode = true
@@ -145,17 +146,17 @@ func (p *ProductionWorker) prepareMaterials() {
 
 	var i int32
 	for i = 0; i < 5; i++ {
-		if isInventorySlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
-			if isInventorySlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN) {
+		if game.IsInventorySlotFree(p.hWnd, nx+i*game.ITEM_COL_LEN, ny) {
+			if game.IsInventorySlotFree(p.hWnd, nx+i*game.ITEM_COL_LEN, ny+3*game.ITEM_COL_LEN) {
 				log.Printf("Production %d have no materials\n", p.hWnd)
 				p.ManualMode = true
 				return
 			}
 
-			internal.DoubleClick(p.hWnd, nx+i*ITEM_COL_LEN, ny+3*ITEM_COL_LEN)
+			internal.DoubleClick(p.hWnd, nx+i*game.ITEM_COL_LEN, ny+3*game.ITEM_COL_LEN)
 			time.Sleep(DURATION_UNPACKING)
 
-			if isInventorySlotFree(p.hWnd, nx+i*ITEM_COL_LEN, ny) {
+			if game.IsInventorySlotFree(p.hWnd, nx+i*game.ITEM_COL_LEN, ny) {
 				log.Printf("Production %d cannot unpack material\n", p.hWnd)
 				p.ManualMode = true
 				return
@@ -164,7 +165,7 @@ func (p *ProductionWorker) prepareMaterials() {
 	}
 }
 
-func (p *ProductionWorker) produce() {
+func (p *Worker) produce() {
 
 	if p.ManualMode {
 		return
@@ -183,7 +184,7 @@ func (p *ProductionWorker) produce() {
 
 	var i int32
 	for i = 0; i < 5; i++ {
-		internal.DoubleClickRepeatedly(p.hWnd, px+i*ITEM_COL_LEN+10, py+10)
+		internal.DoubleClickRepeatedly(p.hWnd, px+i*game.ITEM_COL_LEN+10, py+10)
 		if p.canProduce(px, py) {
 			break
 		}
@@ -207,7 +208,7 @@ func (p *ProductionWorker) produce() {
 	}
 }
 
-func (p *ProductionWorker) tidyInventory() {
+func (p *Worker) tidyInventory() {
 
 	if p.ManualMode {
 		return
@@ -227,7 +228,7 @@ func (p *ProductionWorker) tidyInventory() {
 		var i int32
 		for i = 4; i > 0; i-- {
 			internal.MoveCursorToNowhere(p.hWnd)
-			if p.isSlotFree(px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN) {
+			if p.isSlotFree(px+i*game.ITEM_COL_LEN, py+j*game.ITEM_COL_LEN) {
 				continue
 			}
 			internal.LeftClick(p.hWnd, px+i*50, py+j*50)
@@ -237,6 +238,6 @@ func (p *ProductionWorker) tidyInventory() {
 	}
 }
 
-func (p *ProductionWorker) SetName(name string) {
+func (p *Worker) SetName(name string) {
 	p.name = name
 }

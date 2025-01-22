@@ -2,6 +2,7 @@ package containers
 
 import (
 	"cg/game"
+	"cg/game/production"
 
 	"fmt"
 
@@ -66,7 +67,7 @@ func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorker
 
 func newProductionWorkerContainer(gameKey string, games game.Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
-	worker := game.NewProductionWorker(games.Peek(gameKey), r.gameDir, stopChan)
+	worker := production.NewWorker(games.Peek(gameKey), r.gameDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
