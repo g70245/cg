@@ -62,38 +62,38 @@ var (
 
 func (b *BattleActionState) isBattleCommandEnable(checkTarget CheckTarget) bool {
 	internal.MoveCursorToNowhere(b.hWnd)
-	return internal.GetColor(b.hWnd, checkTarget.x, checkTarget.y) == COLOR_BATTLE_COMMAND_ENABLE
+	return internal.GetColor(b.hWnd, checkTarget.X, checkTarget.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func (b *BattleActionState) isHumanStageStable() bool {
-	return internal.GetColor(b.hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) == BATTLE_STAGE_HUMAN.color
+	return internal.GetColor(b.hWnd, BATTLE_STAGE_HUMAN.X, BATTLE_STAGE_HUMAN.Y) == BATTLE_STAGE_HUMAN.Color
 }
 
 func (b *BattleActionState) isPetStageStable() bool {
-	return internal.GetColor(b.hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) == BATTLE_STAGE_PET.color
+	return internal.GetColor(b.hWnd, BATTLE_STAGE_PET.X, BATTLE_STAGE_PET.Y) == BATTLE_STAGE_PET.Color
 }
 
 func (b *BattleActionState) isPetSkillWindowOpened() bool {
-	return internal.GetColor(b.hWnd, BATTLE_COMMAND_ESCAPE.x, BATTLE_COMMAND_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
+	return internal.GetColor(b.hWnd, BATTLE_COMMAND_ESCAPE.X, BATTLE_COMMAND_ESCAPE.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func (b *BattleActionState) isHumanActionSuccessful() bool {
 	internal.MoveCursorToNowhere(b.hWnd)
-	return internal.GetColor(b.hWnd, BATTLE_STAGE_HUMAN.x, BATTLE_STAGE_HUMAN.y) != BATTLE_STAGE_HUMAN.color
+	return internal.GetColor(b.hWnd, BATTLE_STAGE_HUMAN.X, BATTLE_STAGE_HUMAN.Y) != BATTLE_STAGE_HUMAN.Color
 }
 
 func (b *BattleActionState) isPetActionSuccessful() bool {
 	internal.MoveCursorToNowhere(b.hWnd)
-	return internal.GetColor(b.hWnd, BATTLE_STAGE_PET.x, BATTLE_STAGE_PET.y) != BATTLE_STAGE_PET.color
+	return internal.GetColor(b.hWnd, BATTLE_STAGE_PET.X, BATTLE_STAGE_PET.Y) != BATTLE_STAGE_PET.Color
 }
 
 func (b *BattleActionState) getSkillWindowPos() (int32, int32, bool) {
 	internal.MoveCursorToNowhere(b.hWnd)
-	x := BATTLE_WINDOW_SKILL_FIRST.x
+	x := BATTLE_WINDOW_SKILL_FIRST.X
 	for x <= 164 {
-		y := BATTLE_WINDOW_SKILL_FIRST.y
+		y := BATTLE_WINDOW_SKILL_FIRST.Y
 		for y <= 232 {
-			if internal.GetColor(b.hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.color {
+			if internal.GetColor(b.hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.Color {
 				return x, y, true
 			}
 			y += 2
@@ -105,11 +105,11 @@ func (b *BattleActionState) getSkillWindowPos() (int32, int32, bool) {
 
 func (b *BattleActionState) getItemWindowPos() (int32, int32, bool) {
 	internal.MoveCursorToNowhere(b.hWnd)
-	x := BATTLE_WINDOW_ITEM_MONEY_PIVOT.x
-	for x <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.x+50 {
-		y := BATTLE_WINDOW_ITEM_MONEY_PIVOT.y
-		for y <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.y+50 {
-			if internal.GetColor(b.hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color {
+	x := BATTLE_WINDOW_ITEM_MONEY_PIVOT.X
+	for x <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.X+50 {
+		y := BATTLE_WINDOW_ITEM_MONEY_PIVOT.Y
+		for y <= BATTLE_WINDOW_ITEM_MONEY_PIVOT.Y+50 {
+			if internal.GetColor(b.hWnd, x, y) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.Color {
 				return x - 78, y + 20, true
 			}
 			y += 2
@@ -120,11 +120,11 @@ func (b *BattleActionState) getItemWindowPos() (int32, int32, bool) {
 }
 
 func (b *BattleActionState) isInventoryWindowStuck() bool {
-	return internal.GetColor(b.hWnd, BATTLE_COMMAND_ITEM.x, BATTLE_COMMAND_ITEM.y) == COLOR_BATTLE_COMMAND_ENABLE
+	return internal.GetColor(b.hWnd, BATTLE_COMMAND_ITEM.X, BATTLE_COMMAND_ITEM.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func (b *BattleActionState) isItemWindowStillOpened(x, y int32) bool {
-	return internal.GetColor(b.hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.color
+	return internal.GetColor(b.hWnd, x+78, y-20) == BATTLE_WINDOW_ITEM_MONEY_PIVOT.Color
 }
 
 func (b *BattleActionState) didHumanMissSkill(x, y int32) bool {
@@ -134,42 +134,26 @@ func (b *BattleActionState) didHumanMissSkill(x, y int32) bool {
 }
 
 func (b *BattleActionState) didPetMissSkill() bool {
-	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_ENABLE
+	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.X, BATTLE_COMMAND_PET_SKILL_ESCAPE.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func (b *BattleActionState) didOnRideMissSkill() bool {
-	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE
+	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.X, BATTLE_COMMAND_PET_SKILL_RIDING.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
 func (b *BattleActionState) isOnRide() bool {
 	internal.MoveCursorToNowhere(b.hWnd)
 	time.Sleep(DRUATION_IS_ON_RIDE)
 
-	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.x, BATTLE_COMMAND_PET_SKILL_ESCAPE.y) == COLOR_BATTLE_COMMAND_DISABLE &&
-		(internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_DISABLE ||
-			internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.x, BATTLE_COMMAND_PET_SKILL_RIDING.y) == COLOR_BATTLE_COMMAND_ENABLE)
+	return internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_ESCAPE.X, BATTLE_COMMAND_PET_SKILL_ESCAPE.Y) == COLOR_BATTLE_COMMAND_DISABLE &&
+		(internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.X, BATTLE_COMMAND_PET_SKILL_RIDING.Y) == COLOR_BATTLE_COMMAND_DISABLE ||
+			internal.GetColor(b.hWnd, BATTLE_COMMAND_PET_SKILL_RIDING.X, BATTLE_COMMAND_PET_SKILL_RIDING.Y) == COLOR_BATTLE_COMMAND_ENABLE)
 }
 
 func (b *BattleActionState) canRecall() bool {
 	internal.MoveCursorToNowhere(b.hWnd)
 
-	return internal.GetColor(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.x, BATTLE_WINDOW_PET_RECALL_BUTTON.y) == COLOR_BATTLE_RECALL_BUTTON
-}
-
-func (p *ProductionWorker) getItemWindowPos() (int32, int32, bool) {
-	internal.MoveCursorToNowhere(p.hWnd)
-	x := PRODUCTION_WINDOW_ITEM_PIVOT.x
-	for x <= PRODUCTION_WINDOW_ITEM_PIVOT.x+54 {
-		y := PRODUCTION_WINDOW_ITEM_PIVOT.y
-		for y <= PRODUCTION_WINDOW_ITEM_PIVOT.y+34 {
-			if internal.GetColor(p.hWnd, x, y) == PRODUCTION_WINDOW_ITEM_PIVOT.color {
-				return x - 4*50 - 30, y + 28, true
-			}
-			y += 1
-		}
-		x += 1
-	}
-	return 0, 0, false
+	return internal.GetColor(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
 var allPlayers = []CheckTarget{
@@ -205,10 +189,10 @@ func (b *BattleActionState) isAnyPlayerOutOfMana() bool {
 	internal.MoveCursorToNowhere(b.hWnd)
 
 	for _, h := range allHumans {
-		oy := h.y + 3
-		manaPoint := h.x + 2
+		oy := h.Y + 3
+		manaPoint := h.X + 2
 		if internal.GetColor(b.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER &&
-			internal.GetColor(b.hWnd, h.x, h.y) == COLOR_BATTLE_BLOOD_UPPER {
+			internal.GetColor(b.hWnd, h.X, h.Y) == COLOR_BATTLE_BLOOD_UPPER {
 			return true
 		}
 	}
@@ -217,10 +201,10 @@ func (b *BattleActionState) isAnyPlayerOutOfMana() bool {
 
 func (b *BattleActionState) isHealthLowerThan(ratio float32, checkTarget *CheckTarget) bool {
 
-	healthPoint := int32(ratio*30) + checkTarget.x
-	oy := checkTarget.y + 3
-	return internal.GetColor(b.hWnd, healthPoint, checkTarget.y) != COLOR_BATTLE_BLOOD_UPPER &&
-		internal.GetColor(b.hWnd, checkTarget.x, oy) == COLOR_BATTLE_MANA_UPPER
+	healthPoint := int32(ratio*30) + checkTarget.X
+	oy := checkTarget.Y + 3
+	return internal.GetColor(b.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
+		internal.GetColor(b.hWnd, checkTarget.X, oy) == COLOR_BATTLE_MANA_UPPER
 }
 
 func (b *BattleActionState) searchHealthLowerThan(ratio float32) (*CheckTarget, bool) {
@@ -305,10 +289,10 @@ func (b *BattleActionState) getSelfTarget(isFirst bool) (*CheckTarget, bool) {
 			if !b.doesPlayerTargetExist(targetRows[i][j]) {
 				continue
 			}
-			x := targetRows[i][j].x + 8
-			for x <= targetRows[i][j].x+30 {
-				y := targetRows[i][j].y - 10
-				for y >= targetRows[i][j].y-26 {
+			x := targetRows[i][j].X + 8
+			for x <= targetRows[i][j].X+30 {
+				y := targetRows[i][j].Y - 10
+				for y >= targetRows[i][j].Y-26 {
 					if slices.Contains(nameColors, internal.GetColor(b.hWnd, x, y)) {
 						return &targetRows[i][j], true
 					}
@@ -322,7 +306,7 @@ func (b *BattleActionState) getSelfTarget(isFirst bool) (*CheckTarget, bool) {
 }
 
 func (b *BattleActionState) doesPlayerTargetExist(target CheckTarget) bool {
-	return internal.GetColor(b.hWnd, target.x, target.y) == COLOR_BATTLE_BLOOD_UPPER
+	return internal.GetColor(b.hWnd, target.X, target.Y) == COLOR_BATTLE_BLOOD_UPPER
 }
 
 var allMonsters = []CheckTarget{
@@ -342,8 +326,8 @@ func (b *BattleActionState) getEnemies(checkTargets []CheckTarget) []CheckTarget
 	targets := []CheckTarget{}
 
 	for i := range checkTargets {
-		internal.MoveCursorWithDuration(b.hWnd, checkTargets[i].x, checkTargets[i].y, DURATION_MONSTER_DETECING_CURSOR_MOV)
-		if internal.GetColor(b.hWnd, MENU_CONTACT.x, MENU_CONTACT.y) == COLOR_MENU_HIDDEN {
+		internal.MoveCursorWithDuration(b.hWnd, checkTargets[i].X, checkTargets[i].Y, DURATION_MONSTER_DETECING_CURSOR_MOV)
+		if internal.GetColor(b.hWnd, MENU_CONTACT.X, MENU_CONTACT.Y) == COLOR_MENU_HIDDEN {
 			targets = append(targets, checkTargets[i])
 		}
 	}
@@ -351,16 +335,16 @@ func (b *BattleActionState) getEnemies(checkTargets []CheckTarget) []CheckTarget
 }
 
 func (bw *BattleWorker) isInventoryFullForActivity() bool {
-	defer closeAllWindows(bw.hWnd)
+	defer CloseAllWindows(bw.hWnd)
 	defer time.Sleep(DURATION_INVENTORY_CHECKER_WAITING)
 
 	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
-	closeAllWindows(bw.hWnd)
+	CloseAllWindows(bw.hWnd)
 	internal.LeftClick(bw.hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
 
-	openInventory(bw.hWnd)
+	OpenInventory(bw.hWnd)
 
-	if px, py, ok := getItemWindowPos(bw.hWnd); ok {
+	if px, py, ok := GetItemWindowPos(bw.hWnd); ok {
 		return !areMoreThanTwoInventorySlotsFree(bw.hWnd, px, py)
 	}
 	return false

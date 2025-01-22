@@ -88,7 +88,7 @@ func (w BattleWorker) GetHandleString() string {
 }
 
 func (b *BattleWorker) Work() {
-	closeAllWindows(b.hWnd)
+	CloseAllWindows(b.hWnd)
 
 	b.workerTicker.Reset(DURATION_BATTLE_WORKER)
 	b.inventoryCheckerTicker.Reset(DURATION_BATTLE_CHECKER_INVENTORY)
