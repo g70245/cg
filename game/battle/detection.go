@@ -1,6 +1,7 @@
-package game
+package battle
 
 import (
+	"cg/game"
 	"cg/internal"
 	"math/rand"
 	"slices"
@@ -18,49 +19,49 @@ const (
 )
 
 var (
-	MON_POS_T_1 = CheckTarget{26, 238, COLOR_ANY}
-	MON_POS_T_2 = CheckTarget{92, 204, COLOR_ANY}
-	MON_POS_T_3 = CheckTarget{162, 171, COLOR_ANY}
-	MON_POS_T_4 = CheckTarget{225, 133, COLOR_ANY}
-	MON_POS_T_5 = CheckTarget{282, 94, COLOR_ANY}
-	MON_POS_B_1 = CheckTarget{93, 289, COLOR_ANY}
-	MON_POS_B_2 = CheckTarget{156, 254, COLOR_ANY}
-	MON_POS_B_3 = CheckTarget{216, 218, COLOR_ANY}
-	MON_POS_B_4 = CheckTarget{284, 187, COLOR_ANY}
-	MON_POS_B_5 = CheckTarget{343, 148, COLOR_ANY}
+	MON_POS_T_1 = game.CheckTarget{26, 238, game.COLOR_ANY}
+	MON_POS_T_2 = game.CheckTarget{92, 204, game.COLOR_ANY}
+	MON_POS_T_3 = game.CheckTarget{162, 171, game.COLOR_ANY}
+	MON_POS_T_4 = game.CheckTarget{225, 133, game.COLOR_ANY}
+	MON_POS_T_5 = game.CheckTarget{282, 94, game.COLOR_ANY}
+	MON_POS_B_1 = game.CheckTarget{93, 289, game.COLOR_ANY}
+	MON_POS_B_2 = game.CheckTarget{156, 254, game.COLOR_ANY}
+	MON_POS_B_3 = game.CheckTarget{216, 218, game.COLOR_ANY}
+	MON_POS_B_4 = game.CheckTarget{284, 187, game.COLOR_ANY}
+	MON_POS_B_5 = game.CheckTarget{343, 148, game.COLOR_ANY}
 
-	PLAYER_L_1_H = CheckTarget{329, 431, COLOR_ANY}
-	PLAYER_L_2_H = CheckTarget{394, 396, COLOR_ANY}
-	PLAYER_L_3_H = CheckTarget{460, 361, COLOR_ANY}
-	PLAYER_L_4_H = CheckTarget{524, 326, COLOR_ANY}
-	PLAYER_L_5_H = CheckTarget{589, 291, COLOR_ANY}
-	PLAYER_L_1_P = CheckTarget{269, 386, COLOR_ANY}
-	PLAYER_L_2_P = CheckTarget{333, 350, COLOR_ANY}
-	PLAYER_L_3_P = CheckTarget{397, 314, COLOR_ANY}
-	PLAYER_L_4_P = CheckTarget{460, 277, COLOR_ANY}
-	PLAYER_L_5_P = CheckTarget{524, 241, COLOR_ANY}
+	PLAYER_L_1_H = game.CheckTarget{329, 431, game.COLOR_ANY}
+	PLAYER_L_2_H = game.CheckTarget{394, 396, game.COLOR_ANY}
+	PLAYER_L_3_H = game.CheckTarget{460, 361, game.COLOR_ANY}
+	PLAYER_L_4_H = game.CheckTarget{524, 326, game.COLOR_ANY}
+	PLAYER_L_5_H = game.CheckTarget{589, 291, game.COLOR_ANY}
+	PLAYER_L_1_P = game.CheckTarget{269, 386, game.COLOR_ANY}
+	PLAYER_L_2_P = game.CheckTarget{333, 350, game.COLOR_ANY}
+	PLAYER_L_3_P = game.CheckTarget{397, 314, game.COLOR_ANY}
+	PLAYER_L_4_P = game.CheckTarget{460, 277, game.COLOR_ANY}
+	PLAYER_L_5_P = game.CheckTarget{524, 241, game.COLOR_ANY}
 
-	BATTLE_COMMAND_ATTACK  = CheckTarget{386, 28, COLOR_ANY}
-	BATTLE_COMMAND_DEFENCE = CheckTarget{386, 54, COLOR_ANY}
-	BATTLE_COMMAND_SKILL   = CheckTarget{450, 28, COLOR_ANY}
-	BATTLE_COMMAND_ITEM    = CheckTarget{450, 54, COLOR_ANY}
-	BATTLE_COMMAND_PET     = CheckTarget{524, 28, COLOR_ANY}
-	BATTLE_COMMAND_MOVE    = CheckTarget{524, 54, COLOR_ANY}
-	BATTLE_COMMAND_ESCAPE  = CheckTarget{594, 54, COLOR_ANY}
+	BATTLE_COMMAND_ATTACK  = game.CheckTarget{386, 28, game.COLOR_ANY}
+	BATTLE_COMMAND_DEFENCE = game.CheckTarget{386, 54, game.COLOR_ANY}
+	BATTLE_COMMAND_SKILL   = game.CheckTarget{450, 28, game.COLOR_ANY}
+	BATTLE_COMMAND_ITEM    = game.CheckTarget{450, 54, game.COLOR_ANY}
+	BATTLE_COMMAND_PET     = game.CheckTarget{524, 28, game.COLOR_ANY}
+	BATTLE_COMMAND_MOVE    = game.CheckTarget{524, 54, game.COLOR_ANY}
+	BATTLE_COMMAND_ESCAPE  = game.CheckTarget{594, 54, game.COLOR_ANY}
 
-	BATTLE_COMMAND_PET_SKILL_RIDING = CheckTarget{524, 54, COLOR_ANY}
-	BATTLE_COMMAND_PET_SKILL_ESCAPE = CheckTarget{594, 54, COLOR_ANY}
+	BATTLE_COMMAND_PET_SKILL_RIDING = game.CheckTarget{524, 54, game.COLOR_ANY}
+	BATTLE_COMMAND_PET_SKILL_ESCAPE = game.CheckTarget{594, 54, game.COLOR_ANY}
 
-	BATTLE_STAGE_HUMAN = CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
-	BATTLE_STAGE_PET   = CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
+	BATTLE_STAGE_HUMAN = game.CheckTarget{594, 28, COLOR_BATTLE_STAGE_HUMAN}
+	BATTLE_STAGE_PET   = game.CheckTarget{594, 28, COLOR_BATTLE_STAGE_PET}
 
-	BATTLE_WINDOW_SKILL_FIRST       = CheckTarget{154, 132, COLOR_WINDOW_SKILL_UNSELECTED}
-	BATTLE_WINDOW_PET_RECALL_BUTTON = CheckTarget{384, 280, COLOR_ANY}
+	BATTLE_WINDOW_SKILL_FIRST       = game.CheckTarget{154, 132, game.COLOR_WINDOW_SKILL_UNSELECTED}
+	BATTLE_WINDOW_PET_RECALL_BUTTON = game.CheckTarget{384, 280, game.COLOR_ANY}
 
-	BATTLE_WINDOW_ITEM_MONEY_PIVOT = CheckTarget{196, 114, COLOR_BS_INVENTORY_PIVOT}
+	BATTLE_WINDOW_ITEM_MONEY_PIVOT = game.CheckTarget{196, 114, COLOR_BS_INVENTORY_PIVOT}
 )
 
-func (b *BattleActionState) isBattleCommandEnable(checkTarget CheckTarget) bool {
+func (b *BattleActionState) isBattleCommandEnable(checkTarget game.CheckTarget) bool {
 	internal.MoveCursorToNowhere(b.hWnd)
 	return internal.GetColor(b.hWnd, checkTarget.X, checkTarget.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
@@ -130,7 +131,7 @@ func (b *BattleActionState) isItemWindowStillOpened(x, y int32) bool {
 func (b *BattleActionState) didHumanMissSkill(x, y int32) bool {
 	internal.MoveCursorToNowhere(b.hWnd)
 	time.Sleep(DURATION_DID_MISS_SKILL_WAITING)
-	return internal.GetColor(b.hWnd, x, y+16*10) == COLOR_WINDOW_SKILL_BOTTOM_SPACE
+	return internal.GetColor(b.hWnd, x, y+16*10) == game.COLOR_WINDOW_SKILL_BOTTOM_SPACE
 }
 
 func (b *BattleActionState) didPetMissSkill() bool {
@@ -156,7 +157,7 @@ func (b *BattleActionState) canRecall() bool {
 	return internal.GetColor(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
-var allPlayers = []CheckTarget{
+var allPlayers = []game.CheckTarget{
 	PLAYER_L_1_P,
 	PLAYER_L_2_P,
 	PLAYER_L_3_P,
@@ -169,7 +170,7 @@ var allPlayers = []CheckTarget{
 	PLAYER_L_5_H,
 }
 
-var allHumans = []CheckTarget{
+var allHumans = []game.CheckTarget{
 	PLAYER_L_1_H,
 	PLAYER_L_2_H,
 	PLAYER_L_3_H,
@@ -177,7 +178,7 @@ var allHumans = []CheckTarget{
 	PLAYER_L_5_H,
 }
 
-var allPets = []CheckTarget{
+var allPets = []game.CheckTarget{
 	PLAYER_L_1_P,
 	PLAYER_L_2_P,
 	PLAYER_L_3_P,
@@ -199,7 +200,7 @@ func (b *BattleActionState) isAnyPlayerOutOfMana() bool {
 	return false
 }
 
-func (b *BattleActionState) isHealthLowerThan(ratio float32, checkTarget *CheckTarget) bool {
+func (b *BattleActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTarget) bool {
 
 	healthPoint := int32(ratio*30) + checkTarget.X
 	oy := checkTarget.Y + 3
@@ -207,7 +208,7 @@ func (b *BattleActionState) isHealthLowerThan(ratio float32, checkTarget *CheckT
 		internal.GetColor(b.hWnd, checkTarget.X, oy) == COLOR_BATTLE_MANA_UPPER
 }
 
-func (b *BattleActionState) searchHealthLowerThan(ratio float32) (*CheckTarget, bool) {
+func (b *BattleActionState) searchHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(b.hWnd)
 
 	copiedAllTargets := slices.Clone(allPlayers)
@@ -233,7 +234,7 @@ func (b *BattleActionState) countHealthLowerThan(ratio float32) (count int) {
 	return
 }
 
-func (b *BattleActionState) searchTShapeHealthLowerThan(ratio float32) (*CheckTarget, bool) {
+func (b *BattleActionState) searchTShapeHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(b.hWnd)
 
 	detectedTargets := make([][]int, 2)
@@ -272,10 +273,10 @@ func (b *BattleActionState) searchTShapeHealthLowerThan(ratio float32) (*CheckTa
 	return nil, false
 }
 
-func (b *BattleActionState) getSelfTarget(isFirst bool) (*CheckTarget, bool) {
+func (b *BattleActionState) getSelfTarget(isFirst bool) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(b.hWnd)
 
-	var targetRows [][]CheckTarget
+	var targetRows [][]game.CheckTarget
 	if isFirst {
 		targetRows = append(targetRows, allHumans, allPets)
 	} else {
@@ -305,11 +306,11 @@ func (b *BattleActionState) getSelfTarget(isFirst bool) (*CheckTarget, bool) {
 	return nil, false
 }
 
-func (b *BattleActionState) doesPlayerTargetExist(target CheckTarget) bool {
+func (b *BattleActionState) doesPlayerTargetExist(target game.CheckTarget) bool {
 	return internal.GetColor(b.hWnd, target.X, target.Y) == COLOR_BATTLE_BLOOD_UPPER
 }
 
-var allMonsters = []CheckTarget{
+var allMonsters = []game.CheckTarget{
 	MON_POS_T_1,
 	MON_POS_T_2,
 	MON_POS_T_3,
@@ -322,30 +323,47 @@ var allMonsters = []CheckTarget{
 	MON_POS_B_5,
 }
 
-func (b *BattleActionState) getEnemies(checkTargets []CheckTarget) []CheckTarget {
-	targets := []CheckTarget{}
+func (b *BattleActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTarget {
+	targets := []game.CheckTarget{}
 
 	for i := range checkTargets {
 		internal.MoveCursorWithDuration(b.hWnd, checkTargets[i].X, checkTargets[i].Y, DURATION_MONSTER_DETECING_CURSOR_MOV)
-		if internal.GetColor(b.hWnd, MENU_CONTACT.X, MENU_CONTACT.Y) == COLOR_MENU_HIDDEN {
+		if internal.GetColor(b.hWnd, game.MENU_CONTACT.X, game.MENU_CONTACT.Y) == game.COLOR_MENU_HIDDEN {
 			targets = append(targets, checkTargets[i])
 		}
 	}
 	return targets
 }
 
-func (bw *BattleWorker) isInventoryFullForActivity() bool {
-	defer CloseAllWindows(bw.hWnd)
-	defer time.Sleep(DURATION_INVENTORY_CHECKER_WAITING)
+func isInventoryFullForActivity(hWnd win.HWND) bool {
+	defer game.CloseAllWindows(hWnd)
+	defer time.Sleep(game.DURATION_INVENTORY_CHECKER_WAITING)
 
 	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
-	CloseAllWindows(bw.hWnd)
-	internal.LeftClick(bw.hWnd, GAME_WIDTH/2, GAME_HEIGHT/2)
+	game.CloseAllWindows(hWnd)
+	internal.LeftClick(hWnd, game.GAME_WIDTH/2, game.GAME_HEIGHT/2)
 
-	OpenInventory(bw.hWnd)
+	game.OpenInventory(hWnd)
 
-	if px, py, ok := GetItemWindowPos(bw.hWnd); ok {
-		return !areMoreThanTwoInventorySlotsFree(bw.hWnd, px, py)
+	if px, py, ok := game.GetItemWindowPos(hWnd); ok {
+		return !game.AreMoreThanTwoInventorySlotsFree(hWnd, px, py)
+	}
+	return false
+}
+
+func isInventoryFull(hWnd win.HWND) bool {
+	defer game.CloseAllWindows(hWnd)
+	defer time.Sleep(game.DURATION_INVENTORY_CHECKER_WAITING)
+
+	time.Sleep(DURATION_BATTLE_RESULT_DISAPPEARING)
+	game.CloseAllWindows(hWnd)
+
+	internal.LeftClick(hWnd, game.GAME_WIDTH/2, game.GAME_HEIGHT/2)
+
+	game.OpenInventory(hWnd)
+
+	if px, py, ok := game.GetItemWindowPos(hWnd); ok {
+		return !game.IsAnyInventorySlotFree(hWnd, px, py)
 	}
 	return false
 }

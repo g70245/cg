@@ -23,7 +23,7 @@ const (
 	DURATION_PRODUCTION_CHECKER_AUDIBLE_CUE = 4 * time.Second
 )
 
-type ProductionWorker struct {
+type Worker struct {
 	hWnd     win.HWND
 	name     string
 	gameDir  *string
@@ -38,7 +38,7 @@ type ProductionWorker struct {
 	audibleCueTicker       *time.Ticker
 }
 
-func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) ProductionWorker {
+func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Worker {
 	newWorkerTicker := time.NewTicker(time.Hour)
 	newLogCheckerTicker := time.NewTicker(time.Hour)
 	newInventoryCheckerTicker := time.NewTicker(time.Hour)
@@ -49,7 +49,7 @@ func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) ProductionWor
 	newInventoryCheckerTicker.Stop()
 	newAudibleCueTicker.Stop()
 
-	return ProductionWorker{
+	return Worker{
 		hWnd:                   hWnd,
 		name:                   NO_WORKER_NAME,
 		gameDir:                gameDir,
@@ -61,7 +61,7 @@ func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) ProductionWor
 	}
 }
 
-func (p *ProductionWorker) Work() {
+func (p *Worker) Work() {
 
 	p.workerTicker.Reset(DURATION_PRODUCTION_WORKER)
 	p.logCheckerTicker.Reset(DURATION_PRODUCTION_CHECKER_LOG)
@@ -108,25 +108,25 @@ func (p *ProductionWorker) Work() {
 	}()
 }
 
-func (p *ProductionWorker) StopTickers() {
+func (p *Worker) StopTickers() {
 	p.workerTicker.Stop()
 	p.logCheckerTicker.Stop()
 	p.inventoryCheckerTicker.Stop()
 	p.audibleCueTicker.Stop()
 }
 
-func (p *ProductionWorker) Stop() {
+func (p *Worker) Stop() {
 	p.stopChan <- true
 	p.ManualMode = true
 	utils.Beeper.Stop()
 }
 
-func (p *ProductionWorker) Reset() {
+func (p *Worker) Reset() {
 	p.ManualMode = false
 	utils.Beeper.Stop()
 }
 
-func (p *ProductionWorker) prepareMaterials() {
+func (p *Worker) prepareMaterials() {
 
 	if p.ManualMode {
 		return
@@ -165,7 +165,7 @@ func (p *ProductionWorker) prepareMaterials() {
 	}
 }
 
-func (p *ProductionWorker) produce() {
+func (p *Worker) produce() {
 
 	if p.ManualMode {
 		return
@@ -208,7 +208,7 @@ func (p *ProductionWorker) produce() {
 	}
 }
 
-func (p *ProductionWorker) tidyInventory() {
+func (p *Worker) tidyInventory() {
 
 	if p.ManualMode {
 		return
@@ -238,6 +238,6 @@ func (p *ProductionWorker) tidyInventory() {
 	}
 }
 
-func (p *ProductionWorker) SetName(name string) {
+func (p *Worker) SetName(name string) {
 	p.name = name
 }
