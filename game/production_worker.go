@@ -83,7 +83,7 @@ func (p *ProductionWorker) Work() {
 					p.tidyInventory()
 				}
 			case <-p.logCheckerTicker.C:
-				if isProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
+				if IsProductionStatusOK(p.name, *p.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", p.hWnd)
 					p.StopTickers()
 					Beeper.Play()

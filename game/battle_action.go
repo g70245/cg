@@ -94,7 +94,7 @@ func (b *BattleActionState) executeActivity() {
 		return
 	}
 
-	if doesEncounterActivityMonsters := doesEncounterActivityMonsters(*b.GameDir); doesEncounterActivityMonsters {
+	if DoesEncounterActivityMonsters(*b.GameDir) {
 		b.logH("encounters the activity monster")
 		Beeper.Play()
 

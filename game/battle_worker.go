@@ -153,17 +153,17 @@ func (b *BattleWorker) Work() {
 					break
 				}
 
-				if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || isTeleported(*b.gameDir) {
+				if newMapName := getMapName(b.hWnd); b.currentMapName != newMapName || IsTeleported(*b.gameDir) {
 					log.Printf("Handle %d has been teleported to: %s\n", b.hWnd, getMapName(b.hWnd))
 					b.StopTickers()
 					Beeper.Play()
 				}
-				if b.isOutOfResource = isOutOfResource(*b.gameDir); b.isOutOfResource {
+				if b.isOutOfResource = IsOutOfResource(*b.gameDir); b.isOutOfResource {
 					log.Printf("Handle %d is out of resource\n", b.hWnd)
 					b.StopTickers()
 					Beeper.Play()
 				}
-				if isVerificationTriggered(*b.gameDir) {
+				if IsVerificationTriggered(*b.gameDir) {
 					log.Printf("Handle %d triggered the verification\n", b.hWnd)
 					Beeper.Play()
 				}
