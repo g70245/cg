@@ -318,8 +318,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		levelSelectorDialog := getNewSelectorDialog(levelDialog, battle.Levels.GetOptions(), levelOnChanged)
 
-		/* battle.Human Actions */
-		humanActionSelector := widget.NewButtonWithIcon("Man Actions", theme.ContentAddIcon(), func() {
+		/* Human Actions */
+		humanActionSelector := widget.NewButtonWithIcon("Character Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanActions()
 			actionViewer.Objects = generateTags(*worker)
 			actionViewer.Refresh()
@@ -602,8 +602,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			actionsDialog.Show()
 		})
 
-		/* battle.Pet Actions */
-		petActionSelector := widget.NewButtonWithIcon("battle.Pet Actions", theme.ContentAddIcon(), func() {
+		/* Pet Actions */
+		petActionSelector := widget.NewButtonWithIcon("Pet Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearPetActions()
 			actionViewer.Objects = generateTags(*worker)
 			actionViewer.Refresh()
