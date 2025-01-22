@@ -1,7 +1,7 @@
 package containers
 
 import (
-	. "cg/game"
+	"cg/game"
 	"cg/game/battle"
 	"cg/utils"
 	"encoding/json"
@@ -31,7 +31,7 @@ type BattleGroups struct {
 	stopChans map[int]chan bool
 }
 
-func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
+func newBattleContainer(games game.Games) (*fyne.Container, BattleGroups) {
 	id := 0
 	battleGroups := BattleGroups{make(map[int]chan bool)}
 
@@ -93,7 +93,7 @@ func newBattleContainer(games Games) (*fyne.Container, BattleGroups) {
 	return newBattleContainer, battleGroups
 }
 
-func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
+func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy func()) (autoBattleWidget *fyne.Container, sharedStopChan chan bool) {
 	manaChecker := battle.NO_MANA_CHECKER
 	sharedStopChan = make(chan bool, len(games))
 	workers := battle.CreateWorkers(games, r.gameDir, &manaChecker, new(bool), sharedStopChan, new(sync.WaitGroup))
@@ -119,8 +119,8 @@ func newBatttleGroupContainer(games Games, allGames Games, destroy func()) (auto
 }
 
 type gameWidgeOptions struct {
-	games       Games
-	allGames    Games
+	games       game.Games
+	allGames    game.Games
 	manaChecker *string
 	workers     battle.Workers
 }
@@ -269,7 +269,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		paramDialog.SetOnClosed(onClosed)
 
 		healingRatioSelectorDialog := getNewSelectorDialog(paramDialog, battle.Ratios.GetOptions(), paramOnChanged)
-		bombSelectorDialog := getNewSelectorDialog(paramDialog, Bombs.GetOptions(), paramOnChanged)
+		bombSelectorDialog := getNewSelectorDialog(paramDialog, game.Bombs.GetOptions(), paramOnChanged)
 
 		/* Threshold Dialog */
 		var thresholdDialog *dialog.CustomDialog
@@ -820,8 +820,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 }
 
 type menuWidgetOptions struct {
-	games          Games
-	allGames       Games
+	games          game.Games
+	allGames       game.Games
 	manaChecker    *string
 	workers        battle.Workers
 	sharedStopChan chan bool
