@@ -326,7 +326,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		levelSelectorDialog := getNewSelectorDialog(levelDialog, battle.Levels.GetOptions(), levelOnChanged)
 
 		/* Human Actions */
-		humanActionSelector := widget.NewButtonWithIcon("Character Actions", theme.ContentAddIcon(), func() {
+		humanActionSelector := widget.NewButtonWithIcon("Human Actions", theme.ContentAddIcon(), func() {
 			worker.ActionState.ClearHumanActions()
 			actionViewer.Objects = generateTags(*worker)
 			actionViewer.Refresh()
