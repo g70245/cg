@@ -1,21 +1,5 @@
 package battle
 
-import (
-	"cg/game/battle/enums"
-	"cg/game/battle/enums/controlunit"
-	"cg/game/battle/enums/offset"
-	"cg/game/battle/enums/ratio"
-	"cg/game/battle/enums/threshold"
-)
-
-var (
-	ControlUnits = enums.GenericEnum[controlunit.ControlUnit]{List: []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}}
-	Offsets      = enums.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
-	Levels       = enums.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
-	Ratios       = enums.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.OneTenth, ratio.TwoTenth, ratio.ThreeTenth, ratio.FourTenth, ratio.FiveTenth, ratio.SixTenth, ratio.SevenTenth, ratio.EightTenth, ratio.NineTenth}}
-	Thresholds   = enums.GenericEnum[threshold.Threshold]{List: []threshold.Threshold{threshold.OneFoe, threshold.TwoFoes, threshold.ThreeFoes, threshold.FourFoes, threshold.FiveFoes, threshold.SixFoes, threshold.SevenFoes, threshold.EightFoes, threshold.NineFoes, threshold.TenFoes}}
-)
-
 const (
 	COLOR_BATTLE_COMMAND_ENABLE  = 7125907
 	COLOR_BATTLE_COMMAND_DISABLE = 6991316
