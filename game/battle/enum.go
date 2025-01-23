@@ -2,34 +2,20 @@ package battle
 
 import (
 	"cg/game/battle/enums/controlunit"
+	"cg/game/battle/enums/offset"
 	"fmt"
 )
 
 var (
 	ControlUnits controlUnits = []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}
-	Offsets      offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
-	Levels       offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
+	Offsets      offsets      = []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}
+	Levels       offsets      = []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}
 	Ratios       ratios       = []ratio{OneTenth, TwoTenth, ThreeTenth, FourTenth, FiveTenth, SixTenth, SevenTenth, EightTenth, NineTenth}
 	Thresholds   thresholds   = []Threshold{OneFoe, TwoFoes, ThreeFoes, FourFoes, FiveFoes, SixFoes, SevenFoes, EightFoes, NineFoes, TenFoes}
 )
 
 type controlUnits []controlunit.ControlUnit
-
-type Offset int
-type offsets []Offset
-
-const (
-	One   Offset = 1
-	Two   Offset = 2
-	Three Offset = 3
-	Four  Offset = 4
-	Five  Offset = 5
-	Six   Offset = 6
-	Seven Offset = 7
-	Eight Offset = 8
-	Nine  Offset = 9
-	Ten   Offset = 10
-)
+type offsets []offset.Offset
 
 type ratio float32
 type ratios []ratio

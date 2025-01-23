@@ -6,6 +6,7 @@ import (
 	"cg/game/battle/enums/controlunit"
 	"cg/game/battle/enums/human"
 	"cg/game/battle/enums/movement"
+	"cg/game/battle/enums/offset"
 	"cg/game/battle/enums/pet"
 	"cg/game/battle/enums/role"
 	"cg/utils"
@@ -296,8 +297,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		offsetOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
-					offset, _ := strconv.Atoi(s)
-					worker.ActionState.AddSkillOffset(r, battle.Offset(offset))
+					o, _ := strconv.Atoi(s)
+					worker.ActionState.AddSkillOffset(r, offset.Offset(o))
 					offsetDialog.Hide()
 				}
 			}
@@ -312,8 +313,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		levelOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
-					level, _ := strconv.Atoi(s)
-					worker.ActionState.AddHumanSkillLevel(battle.Offset(level))
+					l, _ := strconv.Atoi(s)
+					worker.ActionState.AddHumanSkillLevel(offset.Offset(l))
 					levelDialog.Hide()
 				}
 			}
