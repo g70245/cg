@@ -1012,7 +1012,7 @@ func (s *ActionState) wait() {
 	}
 }
 
-func TestAction(hWnd win.HWND) (x int32, y int32, successful bool) {
+func Debug(hWnd win.HWND) (x int32, y int32, successful bool) {
 	game.CloseAllWindows(hWnd)
 	game.ClearChat(hWnd)
 	game.OpenWindow(hWnd, game.KEY_INVENTORY)
