@@ -9,6 +9,7 @@ import (
 	"cg/game/battle/enums/offset"
 	"cg/game/battle/enums/pet"
 	"cg/game/battle/enums/role"
+	"cg/game/battle/enums/threshold"
 	"cg/utils"
 	"encoding/json"
 	"errors"
@@ -282,7 +283,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		thresholdOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
-					worker.ActionState.AddThreshold(r, battle.Threshold(s))
+					worker.ActionState.AddThreshold(r, threshold.Threshold(s))
 					thresholdDialog.Hide()
 				}
 			}
@@ -1086,24 +1087,24 @@ func createTagContainers(actionState battle.ActionState, r role.Role) (tagContai
 		}
 
 		var param string
-		var threshold battle.Threshold
-		var successControlUnit string
+		var threshold threshold.Threshold
+		var successControlUnit controlunit.ControlUnit
 		var successJumpId int
-		var failureControlUnit string
+		var failureControlUnit controlunit.ControlUnit
 		var failureJumpId int
 
 		if r == role.Human {
 			param = action.(battle.HumanAction).Param
 			threshold = action.(battle.HumanAction).Threshold
-			successControlUnit = string(action.(battle.HumanAction).SuccessControlUnit)
-			failureControlUnit = string(action.(battle.HumanAction).FailureControlUnit)
+			successControlUnit = action.(battle.HumanAction).SuccessControlUnit
+			failureControlUnit = action.(battle.HumanAction).FailureControlUnit
 			successJumpId = action.(battle.HumanAction).SuccessJumpId
 			failureJumpId = action.(battle.HumanAction).FailureJumpId
 		} else {
 			param = action.(battle.PetAction).Param
 			threshold = action.(battle.PetAction).Threshold
-			successControlUnit = string(action.(battle.PetAction).SuccessControlUnit)
-			failureControlUnit = string(action.(battle.PetAction).FailureControlUnit)
+			successControlUnit = action.(battle.PetAction).SuccessControlUnit
+			failureControlUnit = action.(battle.PetAction).FailureControlUnit
 			successJumpId = action.(battle.PetAction).SuccessJumpId
 			failureJumpId = action.(battle.PetAction).FailureJumpId
 		}
@@ -1117,7 +1118,7 @@ func createTagContainers(actionState battle.ActionState, r role.Role) (tagContai
 		}
 
 		if len(successControlUnit) > 0 {
-			controlUnitFirstLetter := strings.ToLower(successControlUnit[:1])
+			controlUnitFirstLetter := strings.ToLower(successControlUnit[:1].String())
 			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
 			if controlUnitFirstLetter == "j" {
 				tag = fmt.Sprintf("%s%d", tag, successJumpId)
@@ -1127,7 +1128,7 @@ func createTagContainers(actionState battle.ActionState, r role.Role) (tagContai
 		}
 
 		if len(failureControlUnit) > 0 {
-			controlUnitFirstLetter := strings.ToLower(failureControlUnit[:1])
+			controlUnitFirstLetter := strings.ToLower(failureControlUnit[:1].String())
 			tag = fmt.Sprintf("%s:%s", tag, controlUnitFirstLetter)
 			if controlUnitFirstLetter == "j" {
 				tag = fmt.Sprintf("%s%d", tag, failureJumpId)

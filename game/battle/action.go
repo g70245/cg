@@ -7,6 +7,7 @@ import (
 	"cg/game/battle/enums/offset"
 	"cg/game/battle/enums/pet"
 	"cg/game/battle/enums/role"
+	"cg/game/battle/enums/threshold"
 	"cg/internal"
 	"cg/utils"
 
@@ -32,7 +33,7 @@ type HumanAction struct {
 	Action             human.Action
 	Offset             offset.Offset
 	Level              offset.Offset
-	Threshold          Threshold
+	Threshold          threshold.Threshold
 	Param              string
 	SuccessControlUnit controlunit.ControlUnit
 	FailureControlUnit controlunit.ControlUnit
@@ -43,7 +44,7 @@ type HumanAction struct {
 type PetAction struct {
 	Action             pet.Action
 	Offset             offset.Offset
-	Threshold          Threshold
+	Threshold          threshold.Threshold
 	Param              string
 	SuccessControlUnit controlunit.ControlUnit
 	FailureControlUnit controlunit.ControlUnit
@@ -868,7 +869,7 @@ func (s *ActionState) AddSkillOffset(r role.Role, offset offset.Offset) {
 	}
 }
 
-func (s *ActionState) AddThreshold(r role.Role, threshold Threshold) {
+func (s *ActionState) AddThreshold(r role.Role, threshold threshold.Threshold) {
 	s.HumanActions[len(s.HumanActions)-1].Threshold = threshold
 }
 

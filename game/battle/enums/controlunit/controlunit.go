@@ -9,3 +9,7 @@ const (
 	Repeat    ControlUnit = "Repeat"
 	Jump      ControlUnit = "Jump"
 )
+
+func (cu ControlUnit) String() string {
+	return string(cu)
+}
