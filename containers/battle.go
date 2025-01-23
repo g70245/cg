@@ -3,6 +3,7 @@ package containers
 import (
 	"cg/game"
 	"cg/game/battle"
+	"cg/game/battle/enums/movement"
 	"cg/utils"
 	"encoding/json"
 	"errors"
@@ -155,8 +156,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		var movementModeDialog *dialog.CustomDialog
 		movementModeSelector := widget.NewRadioGroup(battle.MOVEMENT_MODES.GetOptions(), func(s string) {
 			if s != "" {
-				worker.MovementState.Mode = battle.MovementMode(s)
-				if worker.MovementState.Mode != battle.None {
+				worker.MovementState.Mode = movement.Mode(s)
+				if worker.MovementState.Mode != movement.None {
 					movementModeButton.SetText(s)
 				} else {
 					movementModeButton.SetText("Move Way")

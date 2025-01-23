@@ -2,6 +2,7 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/battle/enums/movement"
 	"cg/utils"
 	"sync"
 
@@ -70,7 +71,7 @@ func CreateWorkers(games game.Games, gameDir, manaChecker *string, sharedInvento
 			ActionState:           CreateNewBattleActionState(hWnd, gameDir, manaChecker),
 			MovementState: MovementState{
 				hWnd: hWnd,
-				Mode: None,
+				Mode: movement.None,
 			},
 			workerTicker:                     newWorkerTicker,
 			inventoryCheckerTicker:           newInventoryCheckerTicker,
@@ -115,7 +116,7 @@ func (w *Worker) Work() {
 						w.ActionState.Act()
 					}
 				case game.NORMAL_SCENE:
-					if w.MovementState.Mode == None {
+					if w.MovementState.Mode == movement.None {
 						break
 					}
 
