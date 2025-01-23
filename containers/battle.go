@@ -784,7 +784,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}, window)
 
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
 			fileOpenDialog.SetLocation(listableURI)
 			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
 			fileOpenDialog.Show()
@@ -884,7 +884,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 		}, window)
 
-		listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
+		listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
 		fileOpenDialog.SetLocation(listableURI)
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
 		fileOpenDialog.Show()

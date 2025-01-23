@@ -20,12 +20,13 @@ var (
 )
 
 type robot struct {
-	main    *fyne.Container
-	gameDir *string
-	width   float32
-	height  float32
-	games   game.Games
-	close   func()
+	main      *fyne.Container
+	gameDir   *string
+	actionDir string
+	width     float32
+	height    float32
+	games     game.Games
+	close     func()
 }
 
 func App(title, gameDir string, width, height float32) {
@@ -34,10 +35,11 @@ func App(title, gameDir string, width, height float32) {
 	window.Resize(fyne.NewSize(width, height))
 
 	r = robot{
-		games:   game.NewGames(),
-		gameDir: &gameDir,
-		width:   width,
-		height:  height,
+		games:     game.NewGames(),
+		gameDir:   &gameDir,
+		actionDir: gameDir,
+		width:     width,
+		height:    height,
 	}
 	r.generateRobotContainer()
 
