@@ -2,6 +2,7 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/battle/enums/movement"
 	"cg/internal"
 	"fmt"
 
@@ -17,8 +18,7 @@ const (
 	BIAS_ANGLE float64 = 30
 )
 
-type MovementMode string
-type MovementModes []MovementMode
+type MovementModes []movement.Mode
 
 func (m MovementModes) GetOptions() []string {
 	var options []string
@@ -30,44 +30,42 @@ func (m MovementModes) GetOptions() []string {
 	return options
 }
 
-const (
-	None                     MovementMode = "None"
-	DIAGONAL                 MovementMode = "Diagonal"
-	BIASED_DIAGONAL          MovementMode = "B. Diagonal"
-	REVERSED_DIAGONAL        MovementMode = "Reversed Diagonal"
-	BIASED_REVERSED_DIAGONAL MovementMode = "B. Reversed Diagonal"
-	HYBRID_DIAGONAL          MovementMode = "Hybrid Diagonal"
-)
-
-var MOVEMENT_MODES MovementModes = []MovementMode{None, DIAGONAL, REVERSED_DIAGONAL, BIASED_DIAGONAL, BIASED_REVERSED_DIAGONAL, HYBRID_DIAGONAL}
+var MOVEMENT_MODES MovementModes = []movement.Mode{
+	movement.None,
+	movement.DIAGONAL,
+	movement.REVERSED_DIAGONAL,
+	movement.BIASED_DIAGONAL,
+	movement.BIASED_REVERSED_DIAGONAL,
+	movement.HYBRID_DIAGONAL,
+}
 
 type MovementState struct {
 	hWnd   win.HWND
 	origin game.GamePos
-	Mode   MovementMode
+	Mode   movement.Mode
 }
 
-func (state *MovementState) Move() {
+func (s *MovementState) Move() {
 
 	var x, y int32
-	switch state.Mode {
-	case DIAGONAL:
-		x, y = diagonal(RADIUS, state, false, false)
-	case REVERSED_DIAGONAL:
-		x, y = diagonal(RADIUS, state, true, false)
-	case BIASED_DIAGONAL:
-		x, y = diagonal(RADIUS, state, false, true)
-	case BIASED_REVERSED_DIAGONAL:
-		x, y = diagonal(RADIUS, state, true, true)
-	case HYBRID_DIAGONAL:
-		x, y = diagonal(RADIUS, state, rand.Intn(2) != 0, true)
+	switch s.Mode {
+	case movement.DIAGONAL:
+		x, y = diagonal(RADIUS, s, false, false)
+	case movement.REVERSED_DIAGONAL:
+		x, y = diagonal(RADIUS, s, true, false)
+	case movement.BIASED_DIAGONAL:
+		x, y = diagonal(RADIUS, s, false, true)
+	case movement.BIASED_REVERSED_DIAGONAL:
+		x, y = diagonal(RADIUS, s, true, true)
+	case movement.HYBRID_DIAGONAL:
+		x, y = diagonal(RADIUS, s, rand.Intn(2) != 0, true)
 	default:
 		x, y = none()
 	}
 
-	log.Printf("Handle %d moves to (%d, %d)\n", state.hWnd, x, y)
+	log.Printf("Handle %d moves to (%d, %d)\n", s.hWnd, x, y)
 
-	internal.LeftClick(state.hWnd, x, y)
+	internal.LeftClick(s.hWnd, x, y)
 }
 
 func diagonal(radius float64, state *MovementState, isReverse bool, isBiasable bool) (x, y int32) {
@@ -97,32 +95,32 @@ func none() (int32, int32) {
 	return game.GAME_WIDTH / 2, game.GAME_HEIGHT / 2
 }
 
-func (state *MovementState) nextDirectionAngleMultilpier(isReverse bool) float64 {
-	current := game.GetCurrentGamePos(state.hWnd)
+func (s *MovementState) nextDirectionAngleMultilpier(isReverse bool) float64 {
+	current := game.GetCurrentGamePos(s.hWnd)
 
 	check := diagonalCondition
 	if isReverse {
 		check = reversedDiagonalCondition
 	}
 
-	if check(state.origin, current) {
+	if check(s.origin, current) {
 		return 0
 	} else {
 		return 1
 	}
 }
 
-func (state *MovementState) nextBiasMultiplier() float64 {
-	current := game.GetCurrentGamePos(state.hWnd)
+func (s *MovementState) nextBiasMultiplier() float64 {
+	current := game.GetCurrentGamePos(s.hWnd)
 
 	switch {
-	case current.X > state.origin.X && current.Y <= state.origin.Y:
+	case current.X > s.origin.X && current.Y <= s.origin.Y:
 		return 1
-	case current.X > state.origin.X && current.Y > state.origin.Y:
+	case current.X > s.origin.X && current.Y > s.origin.Y:
 		return -1
-	case current.X <= state.origin.X && current.Y <= state.origin.Y:
+	case current.X <= s.origin.X && current.Y <= s.origin.Y:
 		return -1
-	case current.X <= state.origin.X && current.Y > state.origin.Y:
+	case current.X <= s.origin.X && current.Y > s.origin.Y:
 		return 1
 	default:
 		return []float64{1, -1}[rand.Intn(2)]

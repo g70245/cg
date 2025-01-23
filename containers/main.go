@@ -35,7 +35,7 @@ func App(title, gameDir string, width, height float32) {
 
 	r = robot{
 		games:   game.NewGames(),
-		gameDir: new(string),
+		gameDir: &gameDir,
 		width:   width,
 		height:  height,
 	}

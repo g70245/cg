@@ -2,6 +2,12 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/battle/enums/controlunit"
+	"cg/game/battle/enums/human"
+	"cg/game/battle/enums/offset"
+	"cg/game/battle/enums/pet"
+	"cg/game/battle/enums/role"
+	"cg/game/battle/enums/threshold"
 	"cg/internal"
 	"cg/utils"
 
@@ -24,37 +30,37 @@ const (
 )
 
 type HumanAction struct {
-	Action             humanAction
-	Offset             Offset
-	Level              Offset
-	Threshold          Threshold
+	Action             human.Action
+	Offset             offset.Offset
+	Level              offset.Offset
+	Threshold          threshold.Threshold
 	Param              string
-	SuccessControlUnit ControlUnit
-	FailureControlUnit ControlUnit
+	SuccessControlUnit controlunit.ControlUnit
+	FailureControlUnit controlunit.ControlUnit
 	SuccessJumpId      int
 	FailureJumpId      int
 }
 
 type PetAction struct {
-	Action             petAction
-	Offset             Offset
-	Threshold          Threshold
+	Action             pet.Action
+	Offset             offset.Offset
+	Threshold          threshold.Threshold
 	Param              string
-	SuccessControlUnit ControlUnit
-	FailureControlUnit ControlUnit
+	SuccessControlUnit controlunit.ControlUnit
+	FailureControlUnit controlunit.ControlUnit
 	SuccessJumpId      int
 	FailureJumpId      int
 }
 
-type BattleActionState struct {
+type ActionState struct {
 	hWnd win.HWND `json:"-"`
 
 	HumanActions         []HumanAction
 	PetActions           []PetAction
-	currentHumanActionId int         `json:"-"`
-	currentPetActionId   int         `json:"-"`
-	currentControlUnit   ControlUnit `json:"-"`
-	currentJumpId        int         `json:"-"`
+	currentHumanActionId int                     `json:"-"`
+	currentPetActionId   int                     `json:"-"`
+	currentCU            controlunit.ControlUnit `json:"-"`
+	currentJumpId        int                     `json:"-"`
 
 	Enabled                bool `json:"-"`
 	ActivityCheckerEnabled bool `json:"-"`
@@ -70,676 +76,676 @@ type BattleActionState struct {
 	trainingCounter int                `json:"-"`
 }
 
-func (b *BattleActionState) Act() {
-	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(b.hWnd))
+func (s *ActionState) Act() {
+	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(s.hWnd))
 
-	for game.IsBattleScene(b.hWnd) && b.Enabled {
-		b.wait()
-		b.executeActivity()
-		b.detectEnemies()
-		b.checkHumanMana()
-		b.executeHumanStateMachine()
-		b.wait()
-		b.executeHumanStateMachine()
-		b.wait()
-		b.executePetStateMachiine()
-		b.wait()
-		b.executePetStateMachiine()
+	for game.IsBattleScene(s.hWnd) && s.Enabled {
+		s.wait()
+		s.executeActivity()
+		s.detectEnemies()
+		s.checkCharacterMana()
+		s.executeHumanStateMachine()
+		s.wait()
+		s.executeHumanStateMachine()
+		s.wait()
+		s.executePetStateMachiine()
+		s.wait()
+		s.executePetStateMachiine()
 	}
 
-	b.reset()
-	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(b.hWnd))
+	s.reset()
+	log.Printf("@ Handle %s's battle ended\n", fmt.Sprint(s.hWnd))
 }
 
-func (b *BattleActionState) executeActivity() {
+func (s *ActionState) executeActivity() {
 
-	if !b.ActivityCheckerEnabled {
+	if !s.ActivityCheckerEnabled {
 		return
 	}
 
-	if game.DoesEncounterActivityMonsters(*b.GameDir) {
-		b.logH("encounters the activity monster")
+	if game.DoesEncounterActivityMonsters(*s.GameDir) {
+		s.logH("encounters the activity monster")
 		utils.Beeper.Play()
 
-		for game.IsBattleScene(b.hWnd) && b.Enabled {
+		for game.IsBattleScene(s.hWnd) && s.Enabled {
 			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 		}
 	}
 }
 
-func (b *BattleActionState) executeHumanStateMachine() {
+func (s *ActionState) executeHumanStateMachine() {
 
-	for b.currentHumanActionId < len(b.HumanActions) && game.IsBattleScene(b.hWnd) && b.isHumanStageStable() && b.Enabled {
+	for s.currentHumanActionId < len(s.HumanActions) && game.IsBattleScene(s.hWnd) && s.isHumanStageStable() && s.Enabled {
 
-		b.resetCurrentControlUnit()
-		b.endPetHanging()
+		s.resetCurrentControlUnit()
+		s.endPetHanging()
 
-		switch b.HumanActions[b.currentHumanActionId].Action {
-		case HumanAttack:
-			b.enableBattleCommandAttack()
-			if b.attack(b.isHumanActionSuccessful) {
-				b.logH("attacked")
-				b.setSuccessState(Human)
+		switch s.HumanActions[s.currentHumanActionId].Action {
+		case human.Attack:
+			s.enableBattleCommandAttack()
+			if s.attack(s.isHumanActionSuccessful) {
+				s.logH("attacked")
+				s.setSuccessState(role.Human)
 			} else {
-				b.logH("missed a hit")
-				b.setFailureState(Human)
+				s.logH("missed a hit")
+				s.setFailureState(role.Human)
 			}
-		case HumanSkill:
-			game.OpenWindow(b.hWnd, game.KEY_SKILL)
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				game.UseHumanSkill(b.hWnd, x, y, offset, level)
-				if b.didHumanMissSkill(x, y) {
-					b.logH("missed the skill button or is out of mana")
-				} else if b.isHumanActionSuccessful() {
-					b.logH("used a skill")
-					b.setSuccessState(Human)
-				} else if b.attack(b.isHumanActionSuccessful) {
-					b.logH("used a skill")
-					b.setSuccessState(Human)
+		case human.Skill:
+			game.OpenWindow(s.hWnd, game.KEY_SKILL)
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+				level := int(s.HumanActions[s.currentHumanActionId].Level)
+				game.UseHumanSkill(s.hWnd, x, y, offset, level)
+				if s.didHumanMissSkill(x, y) {
+					s.logH("missed the skill button or is out of mana")
+				} else if s.isHumanActionSuccessful() {
+					s.logH("used a skill")
+					s.setSuccessState(role.Human)
+				} else if s.attack(s.isHumanActionSuccessful) {
+					s.logH("used a skill")
+					s.setSuccessState(role.Human)
 				} else {
-					b.logH("missed a hit")
-					b.setFailureState(Human)
+					s.logH("missed a hit")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("cannot find the position of window")
-				b.setFailureState(Human)
+				s.logH("cannot find the position of window")
+				s.setFailureState(role.Human)
 			}
 
-		case HumanThresholdSkill:
-			threshold, _ := strconv.Atoi(strings.Split(string(b.HumanActions[b.currentHumanActionId].Threshold), " ")[0])
-			if len(b.enemies) < threshold {
-				b.logH("performs next action due to too few enemies")
+		case human.ThresholdSkill:
+			threshold, _ := strconv.Atoi(strings.Split(string(s.HumanActions[s.currentHumanActionId].Threshold), " ")[0])
+			if len(s.enemies) < threshold {
+				s.logH("performs next action due to too few enemies")
 				break
 			}
 
-			game.OpenWindow(b.hWnd, game.KEY_SKILL)
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				game.UseHumanSkill(b.hWnd, x, y, offset, level)
-				if b.didHumanMissSkill(x, y) {
-					b.logH("missed the skill button or is out of mana")
-				} else if b.isHumanActionSuccessful() {
-					b.logH("used a skill")
-					b.setSuccessState(Human)
-				} else if b.attack(b.isHumanActionSuccessful) {
-					b.logH("used a skill")
-					b.setSuccessState(Human)
+			game.OpenWindow(s.hWnd, game.KEY_SKILL)
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+				level := int(s.HumanActions[s.currentHumanActionId].Level)
+				game.UseHumanSkill(s.hWnd, x, y, offset, level)
+				if s.didHumanMissSkill(x, y) {
+					s.logH("missed the skill button or is out of mana")
+				} else if s.isHumanActionSuccessful() {
+					s.logH("used a skill")
+					s.setSuccessState(role.Human)
+				} else if s.attack(s.isHumanActionSuccessful) {
+					s.logH("used a skill")
+					s.setSuccessState(role.Human)
 				} else {
-					b.logH("missed a hit")
-					b.setFailureState(Human)
+					s.logH("missed a hit")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("cannot find the position of window")
-				b.setFailureState(Human)
+				s.logH("cannot find the position of window")
+				s.setFailureState(role.Human)
 			}
-		case HumanDefend:
-			b.defend()
-			b.logH("defended")
-			b.setSuccessState(Human)
-		case HumanMove:
-			b.move()
-			b.logH("moved")
-			b.setSuccessState(Human)
-		case HumanEscape:
-			b.escape()
-			b.logH("escaped")
-			b.setFailureState(Human)
-		case HumanHang:
-			b.logH("is hanging")
-			b.isHumanHanging = true
-			b.currentControlUnit = Repeat
-		case HumanBomb:
+		case human.Defend:
+			s.defend()
+			s.logH("defended")
+			s.setSuccessState(role.Human)
+		case human.Move:
+			s.move()
+			s.logH("moved")
+			s.setSuccessState(role.Human)
+		case human.Escape:
+			s.escape()
+			s.logH("escaped")
+			s.setFailureState(role.Human)
+		case human.Hang:
+			s.logH("is hanging")
+			s.isHumanHanging = true
+			s.currentCU = controlunit.Repeat
+		case human.Bomb:
 			var bomb Item
 			for i := range Bombs {
-				if Bombs[i].name == b.HumanActions[b.currentHumanActionId].Param {
+				if Bombs[i].name == s.HumanActions[s.currentHumanActionId].Param {
 					bomb = Bombs[i]
 				}
 			}
 
-			if bomb == I_B_9A && len(b.enemies) < 5 {
-				b.logH("performs next action due to too few enemies")
+			if bomb == I_B_9A && len(s.enemies) < 5 {
+				s.logH("performs next action due to too few enemies")
 				break
 			}
 
-			game.OpenWindow(b.hWnd, game.KEY_INVENTORY)
-			if px, py, isPivotFound := b.getItemWindowPos(); isPivotFound {
-				if x, y, ok := game.GetItemPos(b.hWnd, px, py, bomb.color, 2); ok {
-					game.UseItem(b.hWnd, x, y)
-					if b.isItemWindowStillOpened(px, py) {
-						b.logH("failed at double clicking")
-						b.setFailureState(Human)
-					} else if b.attack(b.isHumanActionSuccessful) {
-						b.logH("throwed a bomb")
-						b.setSuccessState(Human)
+			game.OpenWindow(s.hWnd, game.KEY_INVENTORY)
+			if px, py, isPivotFound := s.getInventoryPos(); isPivotFound {
+				if x, y, ok := game.GetItemPos(s.hWnd, px, py, bomb.color, 2); ok {
+					game.UseItem(s.hWnd, x, y)
+					if s.isInventoryStillOpened(px, py) {
+						s.logH("failed at double clicking")
+						s.setFailureState(role.Human)
+					} else if s.attack(s.isHumanActionSuccessful) {
+						s.logH("throwed a bomb")
+						s.setSuccessState(role.Human)
 					} else {
-						b.logH("missed a hit")
-						b.setFailureState(Human)
+						s.logH("missed a hit")
+						s.setFailureState(role.Human)
 					}
 
 				} else {
-					b.logH("cannot find a bomb")
-					b.setFailureState(Human)
+					s.logH("cannot find a bomb")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("cannot find the position of window")
-				b.setFailureState(Human)
+				s.logH("cannot find the position of window")
+				s.setFailureState(role.Human)
 			}
-		case HumanPotion:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
-				game.OpenWindow(b.hWnd, game.KEY_INVENTORY)
-				if px, py, isPivotFound := b.getItemWindowPos(); isPivotFound {
-					if x, y, ok := game.GetItemPos(b.hWnd, px, py, game.COLOR_ITEM_POTION, 3); ok {
-						game.UseItem(b.hWnd, x, y)
-						if b.isItemWindowStillOpened(px, py) {
-							b.logH("failed at double clicking")
-							b.setFailureState(Human)
-						} else if b.aim(target, b.isHumanActionSuccessful) {
-							b.logH("healed an ally")
-							b.setSuccessState(Human)
+		case human.Potion:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
+				game.OpenWindow(s.hWnd, game.KEY_INVENTORY)
+				if px, py, isPivotFound := s.getInventoryPos(); isPivotFound {
+					if x, y, ok := game.GetItemPos(s.hWnd, px, py, game.COLOR_ITEM_POTION, 3); ok {
+						game.UseItem(s.hWnd, x, y)
+						if s.isInventoryStillOpened(px, py) {
+							s.logH("failed at double clicking")
+							s.setFailureState(role.Human)
+						} else if s.aim(target, s.isHumanActionSuccessful) {
+							s.logH("healed an ally")
+							s.setSuccessState(role.Human)
 						} else {
-							b.logH("cannot target")
-							b.setFailureState(Human)
+							s.logH("cannot target")
+							s.setFailureState(role.Human)
 						}
 					} else {
-						b.logH("cannot find a potion")
+						s.logH("cannot find a potion")
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("found all good")
+				s.logH("found all good")
 			}
-		case HumanRide:
-			game.OpenWindow(b.hWnd, game.KEY_SKILL)
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-				level := int(b.HumanActions[b.currentHumanActionId].Level)
-				game.UseHumanSkill(b.hWnd, x, y, offset, level)
-				if b.didHumanMissSkill(x, y) {
-					b.logH("missed the skill button or is out of mana")
+		case human.Ride:
+			game.OpenWindow(s.hWnd, game.KEY_SKILL)
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+				level := int(s.HumanActions[s.currentHumanActionId].Level)
+				game.UseHumanSkill(s.hWnd, x, y, offset, level)
+				if s.didHumanMissSkill(x, y) {
+					s.logH("missed the skill button or is out of mana")
 				} else {
-					b.logH("is tring to get on a pet")
-					for i, v := range b.PetActions {
-						if v.Action == PetRide {
-							b.currentPetActionId = i
+					s.logH("is tring to get on a pet")
+					for i, v := range s.PetActions {
+						if v.Action == pet.Ride {
+							s.currentPetActionId = i
 							break
 						}
 					}
-					b.setSuccessState(Human)
+					s.setSuccessState(role.Human)
 				}
 			} else {
-				b.logH("cannot find the position of window")
-				b.setFailureState(Human)
+				s.logH("cannot find the position of window")
+				s.setFailureState(role.Human)
 			}
-		case HumanBloodMagic:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
+		case human.BloodMagic:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			if self, ok := s.getSelfTarget(true); ok {
+				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
 
-				if !b.isHealthLowerThan(float32(ratio), self) {
-					b.logH("is a healthy boy")
+				if !s.isHealthLowerThan(float32(ratio), self) {
+					s.logH("is a healthy boy")
 					break
 				}
 
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
-					} else if b.isHumanActionSuccessful() {
-						b.logH("used a skill")
-						b.setSuccessState(Human)
-					} else if b.attack(b.isHumanActionSuccessful) {
-						b.logH("used a skill")
-						b.setSuccessState(Human)
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
+					} else if s.isHumanActionSuccessful() {
+						s.logH("used a skill")
+						s.setSuccessState(role.Human)
+					} else if s.attack(s.isHumanActionSuccessful) {
+						s.logH("used a skill")
+						s.setSuccessState(role.Human)
 					} else {
-						b.logH("missed a hit")
-						b.setFailureState(Human)
+						s.logH("missed a hit")
+						s.setFailureState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 
 			} else {
-				b.logH("cannot find self")
+				s.logH("cannot find self")
 			}
-		case HumanHealSelf:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
+		case human.HealSelf:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			if self, ok := s.getSelfTarget(true); ok {
+				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
 
-				if !b.isHealthLowerThan(float32(ratio), self) {
-					b.logH("is a healthy boy")
+				if !s.isHealthLowerThan(float32(ratio), self) {
+					s.logH("is a healthy boy")
 					break
 				}
 
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
 					} else {
-						b.logH("healed self")
-						b.setSuccessState(Human)
+						s.logH("healed self")
+						s.setSuccessState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 
 			} else {
-				b.logH("cannot find self")
+				s.logH("cannot find self")
 			}
-		case HumanHealOne:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(target, b.isHumanActionSuccessful) {
-						b.logH("healed an ally")
-						b.setSuccessState(Human)
+		case human.HealOne:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
+					} else if s.aim(target, s.isHumanActionSuccessful) {
+						s.logH("healed an ally")
+						s.setSuccessState(role.Human)
 					} else {
-						b.logH("cannot target")
-						b.setFailureState(Human)
+						s.logH("cannot target")
+						s.setFailureState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("found all good")
+				s.logH("found all good")
 			}
-		case HumanHealTShaped:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-			if target, ok := b.searchTShapeHealthLowerThan(float32(ratio)); ok {
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(target, b.isHumanActionSuccessful) {
-						b.logH("healed allies")
-						b.setSuccessState(Human)
+		case human.HealTShaped:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			if target, ok := s.searchWeightedTShapedHealthLowerThan(float32(ratio)); ok {
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
+					} else if s.aim(target, s.isHumanActionSuccessful) {
+						s.logH("healed allies")
+						s.setSuccessState(role.Human)
 					} else {
-						b.logH("cannot target")
-						b.setFailureState(Human)
+						s.logH("cannot target")
+						s.setFailureState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("found all good")
+				s.logH("found all good")
 			}
-		case HumanHealMulti:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-			count := b.countHealthLowerThan(float32(ratio))
+		case human.HealMulti:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			count := s.countHealthLowerThan(float32(ratio))
 			if count >= 4 {
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
-					} else if b.aim(&PLAYER_L_3_H, b.isHumanActionSuccessful) {
-						b.logH("healed allies")
-						b.setSuccessState(Human)
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
+					} else if s.aim(&PLAYER_L_3_H, s.isHumanActionSuccessful) {
+						s.logH("healed allies")
+						s.setSuccessState(role.Human)
 					} else {
-						b.logH("cannot target")
-						b.setFailureState(Human)
+						s.logH("cannot target")
+						s.setFailureState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("found all good")
+				s.logH("found all good")
 			}
-		case HumanRecall:
-			game.OpenWindow(b.hWnd, game.KEY_PET)
-			if b.canRecall() {
-				b.recall()
-				b.logH("recalled")
-				b.currentControlUnit = Repeat
+		case human.Recall:
+			game.OpenWindow(s.hWnd, game.KEY_PET)
+			if s.canRecall() {
+				s.recall()
+				s.logH("recalled")
+				s.currentCU = controlunit.Repeat
 			} else {
-				b.logH("already recalled")
-				b.setSuccessState(Human)
+				s.logH("already recalled")
+				s.setSuccessState(role.Human)
 			}
-		case HumanTrainSkill:
-			if self, ok := b.getSelfTarget(false); ok {
-				game.OpenWindow(b.hWnd, game.KEY_SKILL)
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.HumanActions[b.currentHumanActionId].Offset)
-					level := int(b.HumanActions[b.currentHumanActionId].Level)
-					game.UseHumanSkill(b.hWnd, x, y, offset, level)
-					if b.didHumanMissSkill(x, y) {
-						b.logH("missed the skill button or is out of mana")
-					} else if b.isHumanActionSuccessful() {
-						b.logH("is training")
-						b.setSuccessState(Human)
-					} else if b.aim(self, b.isHumanActionSuccessful) {
-						b.logH("is training")
-						b.setSuccessState(Human)
+		case human.TrainSkill:
+			if self, ok := s.getSelfTarget(false); ok {
+				game.OpenWindow(s.hWnd, game.KEY_SKILL)
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
+					level := int(s.HumanActions[s.currentHumanActionId].Level)
+					game.UseHumanSkill(s.hWnd, x, y, offset, level)
+					if s.didHumanMissSkill(x, y) {
+						s.logH("missed the skill button or is out of mana")
+					} else if s.isHumanActionSuccessful() {
+						s.logH("is training")
+						s.setSuccessState(role.Human)
+					} else if s.aim(self, s.isHumanActionSuccessful) {
+						s.logH("is training")
+						s.setSuccessState(role.Human)
 					}
 				} else {
-					b.logH("cannot find the position of window")
-					b.setFailureState(Human)
+					s.logH("cannot find the position of window")
+					s.setFailureState(role.Human)
 				}
 			} else {
-				b.logH("cannot find self")
-				b.setFailureState(Human)
+				s.logH("cannot find self")
+				s.setFailureState(role.Human)
 			}
-		case HumanCatch:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(b.HumanActions[b.currentHumanActionId].Param, 32)
-				if b.isHealthLowerThan(float32(ratio), self) {
-					b.isOutOfHealth = true
-					b.logH("is out of health")
+		case human.Catch:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			if self, ok := s.getSelfTarget(true); ok {
+				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+				if s.isHealthLowerThan(float32(ratio), self) {
+					s.isOutOfHealth = true
+					s.logH("is out of health")
 				}
 			}
 		}
 
-		b.updateCurrentActionId(Human)
+		s.updateCurrentActionId(role.Human)
 	}
 
-	if len(b.HumanActions) != 0 {
-		b.currentHumanActionId %= len(b.HumanActions)
+	if len(s.HumanActions) != 0 {
+		s.currentHumanActionId %= len(s.HumanActions)
 	} else {
-		b.currentHumanActionId = 0
+		s.currentHumanActionId = 0
 	}
 }
 
-func (b *BattleActionState) executePetStateMachiine() {
+func (s *ActionState) executePetStateMachiine() {
 
-	for b.currentPetActionId < len(b.PetActions) && game.IsBattleScene(b.hWnd) && b.isPetStageStable() && b.Enabled {
+	for s.currentPetActionId < len(s.PetActions) && game.IsBattleScene(s.hWnd) && s.isPetStageStable() && s.Enabled {
 
-		b.resetCurrentControlUnit()
-		b.endHumanHanging()
+		s.resetCurrentControlUnit()
+		s.endHumanHanging()
 
-		switch b.PetActions[b.currentPetActionId].Action {
-		case PetAttack:
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				game.UsePetSkill(b.hWnd, x, y, 1)
-				if b.attack(b.isPetActionSuccessful) {
-					b.logP("attacked")
-					b.setSuccessState(Pet)
+		switch s.PetActions[s.currentPetActionId].Action {
+		case pet.Attack:
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				game.UsePetSkill(s.hWnd, x, y, 1)
+				if s.attack(s.isPetActionSuccessful) {
+					s.logP("attacked")
+					s.setSuccessState(role.Pet)
 				} else {
-					b.logP("missed a hit")
-					b.setFailureState(Pet)
+					s.logP("missed a hit")
+					s.setFailureState(role.Pet)
 				}
 			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
 			}
-		case PetEscape:
-			if !b.isOnRide() {
-				b.logP("cannot escape while off ride")
+		case pet.Escape:
+			if !s.isOnRide() {
+				s.logP("cannot escape while off ride")
 				break
 			}
 
-			b.escape()
-			b.logP("escaped")
-			b.setFailureState(Pet)
-		case PetDefend:
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.PetActions[b.currentPetActionId].Offset)
-				game.UsePetSkill(b.hWnd, x, y, offset)
-				if b.didPetMissSkill() || b.didOnRideMissSkill() {
-					b.logP("missed the skill button or is out of mana")
+			s.escape()
+			s.logP("escaped")
+			s.setFailureState(role.Pet)
+		case pet.Defend:
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				if s.didPetMissSkill() || s.didOnRideMissSkill() {
+					s.logP("missed the skill button or is out of mana")
 				} else {
-					b.logP("defended")
-					b.setSuccessState(Pet)
+					s.logP("defended")
+					s.setSuccessState(role.Pet)
 				}
 			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
 			}
-		case PetSkill:
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.PetActions[b.currentPetActionId].Offset)
-				game.UsePetSkill(b.hWnd, x, y, offset)
-				if b.didPetMissSkill() || b.didOnRideMissSkill() {
-					b.logP("missed the skill button or is out of mana")
-				} else if b.attack(b.isPetActionSuccessful) {
-					b.logP("used a skill")
-					b.setSuccessState(Pet)
+		case pet.Skill:
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				if s.didPetMissSkill() || s.didOnRideMissSkill() {
+					s.logP("missed the skill button or is out of mana")
+				} else if s.attack(s.isPetActionSuccessful) {
+					s.logP("used a skill")
+					s.setSuccessState(role.Pet)
 				} else {
-					b.logP("missed a hit")
-					b.setFailureState(Pet)
+					s.logP("missed a hit")
+					s.setFailureState(role.Pet)
 				}
 			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
 			}
-		case PetHealSelf:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(b.isOnRide()); ok {
-				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
-				if !b.isHealthLowerThan(float32(ratio), self) {
-					b.logP("is a healthy boy")
+		case pet.HealSelf:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			if self, ok := s.getSelfTarget(s.isOnRide()); ok {
+				ratio, _ := strconv.ParseFloat(s.PetActions[s.currentPetActionId].Param, 32)
+				if !s.isHealthLowerThan(float32(ratio), self) {
+					s.logP("is a healthy boy")
 					break
 				}
 
-				b.openPetSkillWindow()
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.PetActions[b.currentPetActionId].Offset)
-					game.UsePetSkill(b.hWnd, x, y, offset)
-					if b.didPetMissSkill() || b.didOnRideMissSkill() {
-						b.logP("missed the skill button or is out of mana")
+				s.openPetSkillWindow()
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.PetActions[s.currentPetActionId].Offset)
+					game.UsePetSkill(s.hWnd, x, y, offset)
+					if s.didPetMissSkill() || s.didOnRideMissSkill() {
+						s.logP("missed the skill button or is out of mana")
 					} else {
-						b.logP("healed self")
-						b.setSuccessState(Pet)
+						s.logP("healed self")
+						s.setSuccessState(role.Pet)
 					}
 				} else {
-					b.logP("cannot find the position of window")
-					b.setFailureState(Pet)
+					s.logP("cannot find the position of window")
+					s.setFailureState(role.Pet)
 				}
 			} else {
-				b.logP("cannot find self")
+				s.logP("cannot find self")
 			}
-		case PetHealOne:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
-			if target, ok := b.searchHealthLowerThan(float32(ratio)); ok {
-				b.openPetSkillWindow()
-				if x, y, ok := b.getSkillWindowPos(); ok {
-					offset := int(b.PetActions[b.currentPetActionId].Offset)
-					game.UsePetSkill(b.hWnd, x, y, offset)
-					if b.aim(target, b.isPetActionSuccessful) {
-						b.logP("healed an ally")
-						b.setSuccessState(Pet)
+		case pet.HealOne:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			ratio, _ := strconv.ParseFloat(s.PetActions[s.currentPetActionId].Param, 32)
+			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
+				s.openPetSkillWindow()
+				if x, y, ok := s.getSkillWindowPos(); ok {
+					offset := int(s.PetActions[s.currentPetActionId].Offset)
+					game.UsePetSkill(s.hWnd, x, y, offset)
+					if s.aim(target, s.isPetActionSuccessful) {
+						s.logP("healed an ally")
+						s.setSuccessState(role.Pet)
 					} else {
-						b.logP("cannot target")
-						b.setFailureState(Pet)
+						s.logP("cannot target")
+						s.setFailureState(role.Pet)
 					}
 				} else {
-					b.logP("cannot find the position of window")
-					b.setFailureState(Pet)
+					s.logP("cannot find the position of window")
+					s.setFailureState(role.Pet)
 				}
 
 			} else {
-				b.logH("found all good")
+				s.logH("found all good")
 			}
-		case PetRide:
-			if b.isOnRide() {
-				b.logP("is on ride")
-				b.setSuccessState(Pet)
+		case pet.Ride:
+			if s.isOnRide() {
+				s.logP("is on ride")
+				s.setSuccessState(role.Pet)
 				break
 			}
 
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.PetActions[b.currentPetActionId].Offset)
-				game.UsePetSkill(b.hWnd, x, y, offset)
-				b.logP("tries to get on ride")
-				b.currentControlUnit = Repeat
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				s.logP("tries to get on ride")
+				s.currentCU = controlunit.Repeat
 			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
 			}
-		case PetOffRide:
-			if !b.isOnRide() {
-				b.logP("is off ride")
-				b.setSuccessState(Pet)
+		case pet.OffRide:
+			if !s.isOnRide() {
+				s.logP("is off ride")
+				s.setSuccessState(role.Pet)
 				break
 			}
 
-			b.openPetSkillWindow()
-			if x, y, ok := b.getSkillWindowPos(); ok {
-				offset := int(b.PetActions[b.currentPetActionId].Offset)
-				game.UsePetSkill(b.hWnd, x, y, offset)
-				b.logP("tries to get off ride")
-				b.currentControlUnit = Repeat
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				s.logP("tries to get off ride")
+				s.currentCU = controlunit.Repeat
 			} else {
-				b.logP("cannot find the position of window")
-				b.setFailureState(Pet)
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
 			}
-		case PetCatch:
-			game.CloseAllWindows(b.hWnd)
-			game.ClearChat(b.hWnd)
-			if self, ok := b.getSelfTarget(b.isOnRide()); ok {
-				ratio, _ := strconv.ParseFloat(b.PetActions[b.currentPetActionId].Param, 32)
-				if b.isHealthLowerThan(float32(ratio), self) {
-					b.isOutOfHealth = true
-					b.logP("is out of health")
+		case pet.Catch:
+			game.CloseAllWindows(s.hWnd)
+			game.ClearChat(s.hWnd)
+			if self, ok := s.getSelfTarget(s.isOnRide()); ok {
+				ratio, _ := strconv.ParseFloat(s.PetActions[s.currentPetActionId].Param, 32)
+				if s.isHealthLowerThan(float32(ratio), self) {
+					s.isOutOfHealth = true
+					s.logP("is out of health")
 				}
 			}
-		case PetHang:
-			b.logP("is hanging")
-			b.isPetHanging = true
-			b.currentControlUnit = Repeat
+		case pet.Hang:
+			s.logP("is hanging")
+			s.isPetHanging = true
+			s.currentCU = controlunit.Repeat
 		}
 
-		b.updateCurrentActionId(Pet)
+		s.updateCurrentActionId(role.Pet)
 	}
 
-	if len(b.PetActions) != 0 {
-		b.currentPetActionId %= len(b.PetActions)
+	if len(s.PetActions) != 0 {
+		s.currentPetActionId %= len(s.PetActions)
 	} else {
-		b.currentPetActionId = 0
+		s.currentPetActionId = 0
 	}
 }
 
-func (b *BattleActionState) reset() {
-	b.currentHumanActionId = 0
-	b.currentPetActionId = 0
-	b.trainingCounter = 0
+func (s *ActionState) reset() {
+	s.currentHumanActionId = 0
+	s.currentPetActionId = 0
+	s.trainingCounter = 0
 }
 
-func (b *BattleActionState) resetCurrentControlUnit() {
-	b.currentControlUnit = Undefined
-	b.currentJumpId = 0
+func (s *ActionState) resetCurrentControlUnit() {
+	s.currentCU = controlunit.Undefined
+	s.currentJumpId = 0
 }
 
-func (b *BattleActionState) setSuccessState(r Role) {
+func (s *ActionState) setSuccessState(r role.Role) {
 	switch r {
-	case Human:
-		b.currentControlUnit = b.HumanActions[b.currentHumanActionId].SuccessControlUnit
-		b.currentJumpId = b.HumanActions[b.currentHumanActionId].SuccessJumpId
-	case Pet:
-		b.currentControlUnit = b.PetActions[b.currentPetActionId].SuccessControlUnit
-		b.currentJumpId = b.PetActions[b.currentPetActionId].SuccessJumpId
+	case role.Human:
+		s.currentCU = s.HumanActions[s.currentHumanActionId].SuccessControlUnit
+		s.currentJumpId = s.HumanActions[s.currentHumanActionId].SuccessJumpId
+	case role.Pet:
+		s.currentCU = s.PetActions[s.currentPetActionId].SuccessControlUnit
+		s.currentJumpId = s.PetActions[s.currentPetActionId].SuccessJumpId
 	}
 }
 
-func (b *BattleActionState) setFailureState(r Role) {
+func (s *ActionState) setFailureState(r role.Role) {
 	switch r {
-	case Human:
-		b.currentControlUnit = b.HumanActions[b.currentHumanActionId].FailureControlUnit
-		b.currentJumpId = b.HumanActions[b.currentHumanActionId].FailureJumpId
-	case Pet:
-		b.currentControlUnit = b.PetActions[b.currentPetActionId].FailureControlUnit
-		b.currentJumpId = b.PetActions[b.currentPetActionId].FailureJumpId
+	case role.Human:
+		s.currentCU = s.HumanActions[s.currentHumanActionId].FailureControlUnit
+		s.currentJumpId = s.HumanActions[s.currentHumanActionId].FailureJumpId
+	case role.Pet:
+		s.currentCU = s.PetActions[s.currentPetActionId].FailureControlUnit
+		s.currentJumpId = s.PetActions[s.currentPetActionId].FailureJumpId
 	}
 }
 
-func (b *BattleActionState) updateCurrentActionId(r Role) {
+func (s *ActionState) updateCurrentActionId(r role.Role) {
 	switch r {
-	case Human:
-		switch b.currentControlUnit {
-		case StartOver:
-			b.currentHumanActionId = 0
-		case Continue:
-			b.currentHumanActionId++
-		case Repeat:
+	case role.Human:
+		switch s.currentCU {
+		case controlunit.StartOver:
+			s.currentHumanActionId = 0
+		case controlunit.Continue:
+			s.currentHumanActionId++
+		case controlunit.Repeat:
 			return
-		case Jump:
-			b.currentHumanActionId = b.currentJumpId
+		case controlunit.Jump:
+			s.currentHumanActionId = s.currentJumpId
 		default:
-			b.currentHumanActionId++
+			s.currentHumanActionId++
 		}
-	case Pet:
-		switch b.currentControlUnit {
-		case StartOver:
-			b.currentPetActionId = 0
-		case Continue:
-			b.currentPetActionId++
-		case Repeat:
+	case role.Pet:
+		switch s.currentCU {
+		case controlunit.StartOver:
+			s.currentPetActionId = 0
+		case controlunit.Continue:
+			s.currentPetActionId++
+		case controlunit.Repeat:
 			return
-		case Jump:
-			b.currentPetActionId = b.currentJumpId
+		case controlunit.Jump:
+			s.currentPetActionId = s.currentJumpId
 		default:
-			b.currentPetActionId++
+			s.currentPetActionId++
 		}
 	}
 
-	b.currentControlUnit = Undefined
-	b.currentJumpId = 0
+	s.currentCU = controlunit.Undefined
+	s.currentJumpId = 0
 }
 
-func (b BattleActionState) isManaChecker() bool {
-	return *b.ManaChecker == fmt.Sprint(b.hWnd)
+func (s ActionState) isManaChecker() bool {
+	return *s.ManaChecker == fmt.Sprint(s.hWnd)
 }
 
-func (b *BattleActionState) enableBattleCommandAttack() {
-	if !b.isBattleCommandEnable(BATTLE_COMMAND_ATTACK) {
-		internal.LeftClick(b.hWnd, BATTLE_COMMAND_ATTACK.X, BATTLE_COMMAND_ATTACK.Y)
+func (s *ActionState) enableBattleCommandAttack() {
+	if !s.isBattleCommandEnable(BATTLE_COMMAND_ATTACK) {
+		internal.LeftClick(s.hWnd, BATTLE_COMMAND_ATTACK.X, BATTLE_COMMAND_ATTACK.Y)
 		time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 	}
 }
 
-func (b *BattleActionState) attack(stateChecker func() bool) bool {
-	targets := make([]game.CheckTarget, len(b.enemies))
-	copy(targets, b.enemies)
+func (s *ActionState) attack(stateChecker func() bool) bool {
+	targets := make([]game.CheckTarget, len(s.enemies))
+	copy(targets, s.enemies)
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
 	for _, target := range targets {
-		internal.LeftClick(b.hWnd, target.X, target.Y)
+		internal.LeftClick(s.hWnd, target.X, target.Y)
 		time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
 		if stateChecker() {
 			return true
@@ -748,79 +754,79 @@ func (b *BattleActionState) attack(stateChecker func() bool) bool {
 	return false
 }
 
-func (b *BattleActionState) aim(target *game.CheckTarget, stateChecker func() bool) bool {
-	internal.LeftClick(b.hWnd, target.X+15, target.Y-22)
+func (s *ActionState) aim(target *game.CheckTarget, stateChecker func() bool) bool {
+	internal.LeftClick(s.hWnd, target.X+15, target.Y-22)
 	time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
 	return stateChecker()
 }
 
-func (b *BattleActionState) defend() {
-	internal.LeftClick(b.hWnd, BATTLE_COMMAND_DEFENCE.X, BATTLE_COMMAND_DEFENCE.Y)
+func (s *ActionState) defend() {
+	internal.LeftClick(s.hWnd, BATTLE_COMMAND_DEFENCE.X, BATTLE_COMMAND_DEFENCE.Y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
-func (b *BattleActionState) escape() {
-	internal.LeftClick(b.hWnd, BATTLE_COMMAND_ESCAPE.X, BATTLE_COMMAND_ESCAPE.Y)
+func (s *ActionState) escape() {
+	internal.LeftClick(s.hWnd, BATTLE_COMMAND_ESCAPE.X, BATTLE_COMMAND_ESCAPE.Y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
-func (b *BattleActionState) move() {
-	internal.LeftClick(b.hWnd, BATTLE_COMMAND_MOVE.X, BATTLE_COMMAND_MOVE.Y)
+func (s *ActionState) move() {
+	internal.LeftClick(s.hWnd, BATTLE_COMMAND_MOVE.X, BATTLE_COMMAND_MOVE.Y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
-func (b *BattleActionState) recall() {
-	internal.LeftClick(b.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y)
+func (s *ActionState) recall() {
+	internal.LeftClick(s.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
-func (b *BattleActionState) openPetSkillWindow() {
-	if b.isPetSkillWindowOpened() {
-		game.ResetAllWindows(b.hWnd)
+func (s *ActionState) openPetSkillWindow() {
+	if s.isPetSkillWindowOpened() {
+		game.ResetAllWindows(s.hWnd)
 	} else {
-		game.CloseAllWindows(b.hWnd)
-		internal.RightClick(b.hWnd, game.GAME_WIDTH/2, 28)
+		game.CloseAllWindows(s.hWnd)
+		internal.RightClick(s.hWnd, game.GAME_WIDTH/2, 28)
 		time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
-		game.ResetAllWindows(b.hWnd)
+		game.ResetAllWindows(s.hWnd)
 	}
 }
 
-func (b *BattleActionState) openSkillWindowWithMouse() {
-	internal.LeftClick(b.hWnd, BATTLE_COMMAND_SKILL.X, BATTLE_COMMAND_SKILL.Y)
+func (s *ActionState) openSkillWindowWithMouse() {
+	internal.LeftClick(s.hWnd, BATTLE_COMMAND_SKILL.X, BATTLE_COMMAND_SKILL.Y)
 	time.Sleep(DURATION_BATTLE_ACTION_GENERAL)
 }
 
-func (b *BattleActionState) logH(message string) {
-	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentHumanActionId, strings.Trim(b.HumanActions[b.currentHumanActionId].Action.String(), "*"))
+func (s *ActionState) logH(message string) {
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(s.hWnd), s.currentHumanActionId, strings.Trim(s.HumanActions[s.currentHumanActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
 	)
 }
 
-func (b *BattleActionState) logP(message string) {
-	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(b.hWnd), b.currentPetActionId, strings.Trim(b.PetActions[b.currentPetActionId].Action.String(), "*"))
+func (s *ActionState) logP(message string) {
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(s.hWnd), s.currentPetActionId, strings.Trim(s.PetActions[s.currentPetActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
 	)
 }
 
-func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) BattleActionState {
-	return BattleActionState{
+func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) ActionState {
+	return ActionState{
 		hWnd: hWnd,
 		HumanActions: []HumanAction{
 			{
-				Action:             HumanAttack,
-				SuccessControlUnit: Continue,
-				FailureControlUnit: Continue,
+				Action:             human.Attack,
+				SuccessControlUnit: controlunit.Continue,
+				FailureControlUnit: controlunit.Continue,
 			},
 		},
 		PetActions: []PetAction{
 			{
-				Action:             PetAttack,
-				SuccessControlUnit: Continue,
-				FailureControlUnit: Continue,
+				Action:             pet.Attack,
+				SuccessControlUnit: controlunit.Continue,
+				FailureControlUnit: controlunit.Continue,
 			},
 		},
 		GameDir:     gameDir,
@@ -828,180 +834,180 @@ func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) Bat
 	}
 }
 
-func (b *BattleActionState) GetHWND() win.HWND {
-	return b.hWnd
+func (s *ActionState) GetHWND() win.HWND {
+	return s.hWnd
 }
 
-func (b *BattleActionState) SetHWND(hWnd win.HWND) {
-	b.hWnd = hWnd
+func (s *ActionState) SetHWND(hWnd win.HWND) {
+	s.hWnd = hWnd
 }
 
-func (b *BattleActionState) AddHumanAction(action humanAction) {
+func (s *ActionState) AddHumanAction(action human.Action) {
 	newHumanState := HumanAction{
 		Action: action,
 	}
-	b.HumanActions = append(b.HumanActions, newHumanState)
+	s.HumanActions = append(s.HumanActions, newHumanState)
 }
 
-func (b *BattleActionState) AddHumanSkillLevel(level Offset) {
-	b.HumanActions[len(b.HumanActions)-1].Level = level
+func (s *ActionState) AddHumanSkillLevel(level offset.Offset) {
+	s.HumanActions[len(s.HumanActions)-1].Level = level
 }
 
-func (b *BattleActionState) AddPetAction(action petAction) {
+func (s *ActionState) AddPetAction(action pet.Action) {
 	newPetState := PetAction{
 		Action: action,
 	}
-	b.PetActions = append(b.PetActions, newPetState)
+	s.PetActions = append(s.PetActions, newPetState)
 }
 
-func (b *BattleActionState) AddSkillOffset(r Role, offset Offset) {
+func (s *ActionState) AddSkillOffset(r role.Role, offset offset.Offset) {
 	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].Offset = offset
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].Offset = offset
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].Offset = offset
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].Offset = offset
 	}
 }
 
-func (b *BattleActionState) AddThreshold(r Role, threshold Threshold) {
-	b.HumanActions[len(b.HumanActions)-1].Threshold = threshold
+func (s *ActionState) AddThreshold(r role.Role, threshold threshold.Threshold) {
+	s.HumanActions[len(s.HumanActions)-1].Threshold = threshold
 }
 
-func (b *BattleActionState) AddParam(r Role, param string) {
+func (s *ActionState) AddParam(r role.Role, param string) {
 	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].Param = param
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].Param = param
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].Param = param
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].Param = param
 	}
 }
 
-func (b *BattleActionState) AddSuccessControlUnit(r Role, cu ControlUnit) {
+func (s *ActionState) AddSuccessControlUnit(r role.Role, cu controlunit.ControlUnit) {
 	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].SuccessControlUnit = cu
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].SuccessControlUnit = cu
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].SuccessControlUnit = cu
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].SuccessControlUnit = cu
 	}
 }
-func (b *BattleActionState) AddSuccessJumpId(r Role, jumpId int) {
+func (s *ActionState) AddSuccessJumpId(r role.Role, jumpId int) {
 	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].SuccessJumpId = jumpId
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].SuccessJumpId = jumpId
-	}
-}
-
-func (b *BattleActionState) AddFailureControlUnit(r Role, cu ControlUnit) {
-	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].FailureControlUnit = cu
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].FailureControlUnit = cu
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].SuccessJumpId = jumpId
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].SuccessJumpId = jumpId
 	}
 }
 
-func (b *BattleActionState) AddFailureJumpId(r Role, jumpId int) {
+func (s *ActionState) AddFailureControlUnit(r role.Role, cu controlunit.ControlUnit) {
 	switch r {
-	case Human:
-		b.HumanActions[len(b.HumanActions)-1].FailureJumpId = jumpId
-	case Pet:
-		b.PetActions[len(b.PetActions)-1].FailureJumpId = jumpId
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].FailureControlUnit = cu
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].FailureControlUnit = cu
 	}
 }
 
-func (b *BattleActionState) ClearHumanActions() {
-	b.HumanActions = b.HumanActions[:0]
+func (s *ActionState) AddFailureJumpId(r role.Role, jumpId int) {
+	switch r {
+	case role.Human:
+		s.HumanActions[len(s.HumanActions)-1].FailureJumpId = jumpId
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].FailureJumpId = jumpId
+	}
 }
 
-func (b *BattleActionState) ClearPetActions() {
-	b.PetActions = b.PetActions[:0]
+func (s *ActionState) ClearHumanActions() {
+	s.HumanActions = s.HumanActions[:0]
 }
 
-func (b *BattleActionState) GetHumanActions() []HumanAction {
-	return b.HumanActions
+func (s *ActionState) ClearPetActions() {
+	s.PetActions = s.PetActions[:0]
 }
 
-func (b *BattleActionState) GetPetActions() []PetAction {
-	return b.PetActions
+func (s *ActionState) GetHumanActions() []HumanAction {
+	return s.HumanActions
 }
 
-func (b *BattleActionState) detectEnemies() {
+func (s *ActionState) GetPetActions() []PetAction {
+	return s.PetActions
+}
 
-	if !game.IsBattleScene(b.hWnd) || !b.Enabled {
+func (s *ActionState) detectEnemies() {
+
+	if !game.IsBattleScene(s.hWnd) || !s.Enabled {
 		return
 	}
 
-	if b.isInventoryWindowStuck() {
-		b.openSkillWindowWithMouse()
+	if s.isInventoryStuck() {
+		s.openSkillWindowWithMouse()
 	}
-	game.CloseAllWindows(b.hWnd)
+	game.CloseAllWindows(s.hWnd)
 
-	if b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
-		b.enemies = b.getEnemies(allMonsters)
-	}
-
-	if len(b.enemies) == 1 && b.trainingCounter < TRAINING_COUNTER_THRESHOLD {
-		b.trainingCounter++
+	if s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
+		s.enemies = s.getEnemies(allMonsters)
 	}
 
-	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(b.hWnd), len(b.enemies))
+	if len(s.enemies) == 1 && s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
+		s.trainingCounter++
+	}
+
+	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(s.hWnd), len(s.enemies))
 }
 
-func (b *BattleActionState) endHumanHanging() {
-	if b.isHumanHanging {
-		b.isHumanHanging = false
-		cu := b.HumanActions[b.currentHumanActionId].SuccessControlUnit
-		jumpId := b.HumanActions[b.currentHumanActionId].SuccessJumpId
+func (s *ActionState) endHumanHanging() {
+	if s.isHumanHanging {
+		s.isHumanHanging = false
+		cu := s.HumanActions[s.currentHumanActionId].SuccessControlUnit
+		jumpId := s.HumanActions[s.currentHumanActionId].SuccessJumpId
 
 		switch cu {
-		case StartOver:
-			b.currentHumanActionId = 0
-		case Continue:
-			b.currentHumanActionId++
-		case Jump:
-			b.currentHumanActionId = jumpId
+		case controlunit.StartOver:
+			s.currentHumanActionId = 0
+		case controlunit.Continue:
+			s.currentHumanActionId++
+		case controlunit.Jump:
+			s.currentHumanActionId = jumpId
 		}
 	}
 }
-func (b *BattleActionState) endPetHanging() {
-	if b.isPetHanging {
-		b.isPetHanging = false
-		cu := b.PetActions[b.currentPetActionId].SuccessControlUnit
-		jumpId := b.PetActions[b.currentPetActionId].SuccessJumpId
+func (s *ActionState) endPetHanging() {
+	if s.isPetHanging {
+		s.isPetHanging = false
+		cu := s.PetActions[s.currentPetActionId].SuccessControlUnit
+		jumpId := s.PetActions[s.currentPetActionId].SuccessJumpId
 
 		switch cu {
-		case StartOver:
-			b.currentPetActionId = 0
-		case Continue:
-			b.currentPetActionId++
-		case Jump:
-			b.currentPetActionId = jumpId
+		case controlunit.StartOver:
+			s.currentPetActionId = 0
+		case controlunit.Continue:
+			s.currentPetActionId++
+		case controlunit.Jump:
+			s.currentPetActionId = jumpId
 		}
 	}
 }
 
-func (b *BattleActionState) checkHumanMana() {
+func (s *ActionState) checkCharacterMana() {
 
-	if !game.IsBattleScene(b.hWnd) || !b.Enabled {
+	if !game.IsBattleScene(s.hWnd) || !s.Enabled {
 		return
 	}
 
-	if b.isManaChecker() {
-		b.logH("checks human mana")
+	if s.isManaChecker() {
+		s.logH("checks characters' mana")
 
-		game.CloseAllWindows(b.hWnd)
-		game.ClearChat(b.hWnd)
-		if b.isOutOfMana = b.isAnyPlayerOutOfMana(); b.isOutOfMana {
-			b.logH("someone is out of mana")
+		game.CloseAllWindows(s.hWnd)
+		game.ClearChat(s.hWnd)
+		if s.isOutOfMana = s.isAnyCharacterOutOfMana(); s.isOutOfMana {
+			s.logH("someone is out of mana")
 		}
 	}
 }
 
-func (b *BattleActionState) wait() {
+func (s *ActionState) wait() {
 
-	for game.IsBattleScene(b.hWnd) && b.Enabled && !b.isHumanStageStable() && !b.isPetStageStable() {
+	for game.IsBattleScene(s.hWnd) && s.Enabled && !s.isHumanStageStable() && !s.isPetStageStable() {
 		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 }
