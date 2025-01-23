@@ -4,7 +4,9 @@ import (
 	"cg/game"
 	"cg/game/battle"
 	"cg/game/battle/enums/controlunit"
+	"cg/game/battle/enums/human"
 	"cg/game/battle/enums/movement"
+	"cg/game/battle/enums/pet"
 	"cg/game/battle/enums/role"
 	"cg/utils"
 	"encoding/json"
@@ -347,8 +349,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var healMultiButton *widget.Button
 			var bloodMagicButton *widget.Button
 
-			attackButton = widget.NewButton(battle.HumanAttack.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanAttack)
+			attackButton = widget.NewButton(human.Attack.String(), func() {
+				worker.ActionState.AddHumanAction(human.Attack)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(role.Human),
@@ -358,8 +360,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			attackButton.Importance = widget.WarningImportance
 
-			defendButton = widget.NewButton(battle.HumanDefend.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanDefend)
+			defendButton = widget.NewButton(human.Defend.String(), func() {
+				worker.ActionState.AddHumanAction(human.Defend)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(role.Human),
@@ -368,8 +370,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			defendButton.Importance = widget.WarningImportance
 
-			escapeButton = widget.NewButton(battle.HumanEscape.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanEscape)
+			escapeButton = widget.NewButton(human.Escape.String(), func() {
+				worker.ActionState.AddHumanAction(human.Escape)
 
 				dialogs := []func(){
 					failureControlUnitSelectorDialog(role.Human),
@@ -378,8 +380,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			escapeButton.Importance = widget.WarningImportance
 
-			catchButton = widget.NewButton(battle.HumanCatch.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanCatch)
+			catchButton = widget.NewButton(human.Catch.String(), func() {
+				worker.ActionState.AddHumanAction(human.Catch)
 				actionViewer.Objects = generateTags(*worker)
 				actionViewer.Refresh()
 
@@ -392,8 +394,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			catchButton.Importance = widget.SuccessImportance
 
-			bombButton = widget.NewButton(battle.HumanBomb.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanBomb)
+			bombButton = widget.NewButton(human.Bomb.String(), func() {
+				worker.ActionState.AddHumanAction(human.Bomb)
 
 				dialogs := []func(){
 					bombSelectorDialog(role.Human),
@@ -404,8 +406,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			bombButton.Importance = widget.HighImportance
 
-			potionButton = widget.NewButton(battle.HumanPotion.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanPotion)
+			potionButton = widget.NewButton(human.Potion.String(), func() {
+				worker.ActionState.AddHumanAction(human.Potion)
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(role.Human),
@@ -416,8 +418,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			potionButton.Importance = widget.HighImportance
 
-			recallButton = widget.NewButton(battle.HumanRecall.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanRecall)
+			recallButton = widget.NewButton(human.Recall.String(), func() {
+				worker.ActionState.AddHumanAction(human.Recall)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(role.Human),
@@ -426,8 +428,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			recallButton.Importance = widget.HighImportance
 
-			moveButton = widget.NewButton(battle.HumanMove.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanMove)
+			moveButton = widget.NewButton(human.Move.String(), func() {
+				worker.ActionState.AddHumanAction(human.Move)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(role.Human),
@@ -436,15 +438,15 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			moveButton.Importance = widget.WarningImportance
 
-			hangButton = widget.NewButton(battle.HumanHang.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanHang)
+			hangButton = widget.NewButton(human.Hang.String(), func() {
+				worker.ActionState.AddHumanAction(human.Hang)
 				actionViewer.Objects = generateTags(*worker)
 				actionViewer.Refresh()
 			})
 			hangButton.Importance = widget.SuccessImportance
 
-			skillButton = widget.NewButton(battle.HumanSkill.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanSkill)
+			skillButton = widget.NewButton(human.Skill.String(), func() {
+				worker.ActionState.AddHumanAction(human.Skill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -456,8 +458,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			skillButton.Importance = widget.HighImportance
 
-			thresholdSkillButton = widget.NewButton(battle.HumanThresholdSkill.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanThresholdSkill)
+			thresholdSkillButton = widget.NewButton(human.ThresholdSkill.String(), func() {
+				worker.ActionState.AddHumanAction(human.ThresholdSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -470,8 +472,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			thresholdSkillButton.Importance = widget.HighImportance
 
-			stealButton = widget.NewButton(battle.HumanSteal.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanSteal)
+			stealButton = widget.NewButton(human.Steal.String(), func() {
+				worker.ActionState.AddHumanAction(human.Steal)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -483,8 +485,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			stealButton.Importance = widget.SuccessImportance
 
-			trainButton = widget.NewButton(battle.HumanTrainSkill.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanTrainSkill)
+			trainButton = widget.NewButton(human.TrainSkill.String(), func() {
+				worker.ActionState.AddHumanAction(human.TrainSkill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -496,8 +498,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			trainButton.Importance = widget.SuccessImportance
 
-			rideButton = widget.NewButton(battle.HumanRide.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanRide)
+			rideButton = widget.NewButton(human.Ride.String(), func() {
+				worker.ActionState.AddHumanAction(human.Ride)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -509,8 +511,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			rideButton.Importance = widget.HighImportance
 
-			healSelfButton = widget.NewButton(battle.HumanHealSelf.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanHealSelf)
+			healSelfButton = widget.NewButton(human.HealSelf.String(), func() {
+				worker.ActionState.AddHumanAction(human.HealSelf)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -523,8 +525,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			healSelfButton.Importance = widget.HighImportance
 
-			healOneButton = widget.NewButton(battle.HumanHealOne.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanHealOne)
+			healOneButton = widget.NewButton(human.HealOne.String(), func() {
+				worker.ActionState.AddHumanAction(human.HealOne)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -537,8 +539,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			healOneButton.Importance = widget.HighImportance
 
-			healTShapeButton = widget.NewButton(battle.HumanHealTShaped.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanHealTShaped)
+			healTShapeButton = widget.NewButton(human.HealTShaped.String(), func() {
+				worker.ActionState.AddHumanAction(human.HealTShaped)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -551,8 +553,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			healTShapeButton.Importance = widget.HighImportance
 
-			healMultiButton = widget.NewButton(battle.HumanHealMulti.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanHealMulti)
+			healMultiButton = widget.NewButton(human.HealMulti.String(), func() {
+				worker.ActionState.AddHumanAction(human.HealMulti)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -565,8 +567,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			healMultiButton.Importance = widget.HighImportance
 
-			bloodMagicButton = widget.NewButton(battle.HumanBloodMagic.String(), func() {
-				worker.ActionState.AddHumanAction(battle.HumanBloodMagic)
+			bloodMagicButton = widget.NewButton(human.BloodMagic.String(), func() {
+				worker.ActionState.AddHumanAction(human.BloodMagic)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Human),
@@ -622,8 +624,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var petOffRideButton *widget.Button
 			var petCatchButton *widget.Button
 
-			petAttackButton = widget.NewButton(battle.PetAttack.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetAttack)
+			petAttackButton = widget.NewButton(pet.Attack.String(), func() {
+				worker.ActionState.AddPetAction(pet.Attack)
 
 				dialogs := []func(){
 					successControlUnitSelectorDialog(role.Pet),
@@ -633,15 +635,15 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petAttackButton.Importance = widget.WarningImportance
 
-			petHangButton = widget.NewButton(battle.PetHang.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetHang)
+			petHangButton = widget.NewButton(pet.Hang.String(), func() {
+				worker.ActionState.AddPetAction(pet.Hang)
 				actionViewer.Objects = generateTags(*worker)
 				actionViewer.Refresh()
 			})
 			petHangButton.Importance = widget.SuccessImportance
 
-			petSkillButton = widget.NewButton(battle.PetSkill.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetSkill)
+			petSkillButton = widget.NewButton(pet.Skill.String(), func() {
+				worker.ActionState.AddPetAction(pet.Skill)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -652,8 +654,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petSkillButton.Importance = widget.HighImportance
 
-			petDefendButton = widget.NewButton(battle.PetDefend.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetDefend)
+			petDefendButton = widget.NewButton(pet.Defend.String(), func() {
+				worker.ActionState.AddPetAction(pet.Defend)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -664,8 +666,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petDefendButton.Importance = widget.HighImportance
 
-			petHealSelfButton = widget.NewButton(battle.PetHealSelf.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetHealSelf)
+			petHealSelfButton = widget.NewButton(pet.HealSelf.String(), func() {
+				worker.ActionState.AddPetAction(pet.HealSelf)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -677,8 +679,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petHealSelfButton.Importance = widget.HighImportance
 
-			petHealOneButton = widget.NewButton(battle.PetHealOne.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetHealOne)
+			petHealOneButton = widget.NewButton(pet.HealOne.String(), func() {
+				worker.ActionState.AddPetAction(pet.HealOne)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -690,8 +692,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petHealOneButton.Importance = widget.HighImportance
 
-			petRideButton = widget.NewButton(battle.PetRide.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetRide)
+			petRideButton = widget.NewButton(pet.Ride.String(), func() {
+				worker.ActionState.AddPetAction(pet.Ride)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -702,8 +704,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petRideButton.Importance = widget.HighImportance
 
-			petOffRideButton = widget.NewButton(battle.PetOffRide.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetOffRide)
+			petOffRideButton = widget.NewButton(pet.OffRide.String(), func() {
+				worker.ActionState.AddPetAction(pet.OffRide)
 
 				dialogs := []func(){
 					offsetSelectorDialog(role.Pet),
@@ -714,8 +716,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petOffRideButton.Importance = widget.HighImportance
 
-			petEscapeButton = widget.NewButton(battle.PetEscape.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetEscape)
+			petEscapeButton = widget.NewButton(pet.Escape.String(), func() {
+				worker.ActionState.AddPetAction(pet.Escape)
 
 				dialogs := []func(){
 					failureControlUnitSelectorDialog(role.Pet),
@@ -724,8 +726,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petEscapeButton.Importance = widget.WarningImportance
 
-			petCatchButton = widget.NewButton(battle.PetCatch.String(), func() {
-				worker.ActionState.AddPetAction(battle.PetCatch)
+			petCatchButton = widget.NewButton(pet.Catch.String(), func() {
+				worker.ActionState.AddPetAction(pet.Catch)
 				actionViewer.Objects = generateTags(*worker)
 				actionViewer.Refresh()
 

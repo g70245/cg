@@ -15,46 +15,6 @@ var (
 
 type controlUnits []controlunit.ControlUnit
 
-type humanAction int
-
-const (
-	HumanAttack humanAction = iota
-	HumanDefend
-	HumanEscape
-	HumanMove
-	HumanBomb
-	HumanRecall
-	HumanPotion
-	HumanSkill
-	HumanThresholdSkill
-	HumanBloodMagic
-	HumanHealSelf
-	HumanHealOne
-	HumanHealTShaped
-	HumanHealMulti
-	HumanRide
-	HumanHang
-	HumanSteal
-	HumanCatch
-	HumanTrainSkill
-)
-
-type petAction int
-
-const (
-	PetAttack petAction = iota
-	PetEscape
-	PetDefend
-	PetProtect
-	PetSkill
-	PetHealSelf
-	PetHealOne
-	PetRide
-	PetOffRide
-	PetCatch
-	PetHang
-)
-
 type Offset int
 type offsets []Offset
 
@@ -101,78 +61,6 @@ const (
 	NineFoes  Threshold = "9 foes"
 	TenFoes   Threshold = "10 foes"
 )
-
-func (ha humanAction) String() string {
-	switch ha {
-	case HumanAttack:
-		return "**Attack"
-	case HumanDefend:
-		return "**Defend"
-	case HumanEscape:
-		return "**Escape"
-	case HumanMove:
-		return "**Move"
-	case HumanBomb:
-		return "*Bomb"
-	case HumanRecall:
-		return "*Recall Pet"
-	case HumanPotion:
-		return "*Potion"
-	case HumanSkill:
-		return "*Skill"
-	case HumanThresholdSkill:
-		return "*Threshold Skill"
-	case HumanBloodMagic:
-		return "*Blood Magic"
-	case HumanHealSelf:
-		return "*Heal Self"
-	case HumanHealOne:
-		return "*Heal One"
-	case HumanHealTShaped:
-		return "*Heal T-Shaped"
-	case HumanHealMulti:
-		return "*Heal Multi"
-	case HumanRide:
-		return "*Ride"
-	case HumanHang:
-		return "Hang"
-	case HumanSteal:
-		return "Steal"
-	case HumanCatch:
-		return "Catch"
-	case HumanTrainSkill:
-		return "Train Skill"
-	default:
-		return "Unknown"
-	}
-}
-
-func (pa petAction) String() string {
-	switch pa {
-	case PetAttack:
-		return "**Pet Attack"
-	case PetEscape:
-		return "**Pet Escape"
-	case PetSkill:
-		return "*Pet Skill"
-	case PetDefend:
-		return "*Pet Defend"
-	case PetHealSelf:
-		return "*Pet Heal Self"
-	case PetHealOne:
-		return "*Pet Heal One"
-	case PetRide:
-		return "*Pet Ride"
-	case PetOffRide:
-		return "*Pet Off Ride"
-	case PetCatch:
-		return "Pet Catch"
-	case PetHang:
-		return "Pet Hang"
-	default:
-		return "Unknown"
-	}
-}
 
 func (c controlUnits) GetOptions() []string {
 	var options []string
