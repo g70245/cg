@@ -4,6 +4,7 @@ import (
 	"cg/game"
 	"cg/game/battle"
 	"cg/game/battle/enums/movement"
+	"cg/game/battle/enums/role"
 	"cg/utils"
 	"encoding/json"
 	"errors"
@@ -207,7 +208,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			}, window)
 			jumpDialog.Show()
 		}
-		successControlUnitOnChanged := func(r battle.Role) func(s string) {
+		successControlUnitOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s == "" {
 					return
@@ -225,7 +226,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}
 		}
-		failureControlUnitOnChanged := func(r battle.Role) func(s string) {
+		failureControlUnitOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s == "" {
 					return
@@ -258,7 +259,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		/* Param Dialogs */
 		var paramDialog *dialog.CustomDialog
-		paramOnChanged := func(r battle.Role) func(s string) {
+		paramOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
 					worker.ActionState.AddParam(r, s)
@@ -274,7 +275,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		/* Threshold Dialog */
 		var thresholdDialog *dialog.CustomDialog
-		thresholdOnChanged := func(r battle.Role) func(s string) {
+		thresholdOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
 					worker.ActionState.AddThreshold(r, battle.Threshold(s))
@@ -289,7 +290,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		/* Offset Dialog */
 		var offsetDialog *dialog.CustomDialog
-		offsetOnChanged := func(r battle.Role) func(s string) {
+		offsetOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
 					offset, _ := strconv.Atoi(s)
@@ -305,7 +306,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		/* Level Dialog */
 		var levelDialog *dialog.CustomDialog
-		levelOnChanged := func(r battle.Role) func(s string) {
+		levelOnChanged := func(r role.Role) func(s string) {
 			return func(s string) {
 				if s != "" {
 					level, _ := strconv.Atoi(s)
@@ -349,8 +350,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanAttack)
 
 				dialogs := []func(){
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -360,7 +361,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanDefend)
 
 				dialogs := []func(){
-					successControlUnitSelectorDialog(battle.Human),
+					successControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -370,7 +371,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanEscape)
 
 				dialogs := []func(){
-					failureControlUnitSelectorDialog(battle.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -382,7 +383,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				actionViewer.Refresh()
 
 				dialogs := []func(){
-					healingRatioSelectorDialog(battle.Human),
+					healingRatioSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 
@@ -394,9 +395,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanBomb)
 
 				dialogs := []func(){
-					bombSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					bombSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -406,9 +407,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanPotion)
 
 				dialogs := []func(){
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -418,7 +419,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanRecall)
 
 				dialogs := []func(){
-					successControlUnitSelectorDialog(battle.Human),
+					successControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -428,7 +429,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanMove)
 
 				dialogs := []func(){
-					successControlUnitSelectorDialog(battle.Human),
+					successControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -445,10 +446,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanSkill)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -458,11 +459,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanThresholdSkill)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					thresholdSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					thresholdSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -472,10 +473,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanSteal)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -485,10 +486,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanTrainSkill)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -498,10 +499,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanRide)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -511,11 +512,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanHealSelf)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -525,11 +526,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanHealOne)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -539,11 +540,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanHealTShaped)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -553,11 +554,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanHealMulti)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -567,11 +568,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddHumanAction(battle.HumanBloodMagic)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Human),
-					levelSelectorDialog(battle.Human),
-					healingRatioSelectorDialog(battle.Human),
-					successControlUnitSelectorDialog(battle.Human),
-					failureControlUnitSelectorDialog(battle.Human),
+					offsetSelectorDialog(role.Human),
+					levelSelectorDialog(role.Human),
+					healingRatioSelectorDialog(role.Human),
+					successControlUnitSelectorDialog(role.Human),
+					failureControlUnitSelectorDialog(role.Human),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -624,8 +625,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetAttack)
 
 				dialogs := []func(){
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -642,9 +643,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetSkill)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -654,9 +655,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetDefend)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -666,10 +667,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetHealSelf)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					healingRatioSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					healingRatioSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -679,10 +680,10 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetHealOne)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					healingRatioSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					healingRatioSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -692,9 +693,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetRide)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -704,9 +705,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetOffRide)
 
 				dialogs := []func(){
-					offsetSelectorDialog(battle.Pet),
-					successControlUnitSelectorDialog(battle.Pet),
-					failureControlUnitSelectorDialog(battle.Pet),
+					offsetSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -716,7 +717,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				worker.ActionState.AddPetAction(battle.PetEscape)
 
 				dialogs := []func(){
-					failureControlUnitSelectorDialog(battle.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -730,7 +731,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				notifyLogConfig("About Catch")
 
 				dialogs := []func(){
-					healingRatioSelectorDialog(battle.Pet),
+					healingRatioSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
@@ -981,9 +982,9 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	return
 }
 
-func selectorDialoger(selector *widget.RadioGroup) func(dialog *dialog.CustomDialog, options []string, onChanged func(r battle.Role) func(s string)) func(r battle.Role) func() {
-	return func(dialog *dialog.CustomDialog, options []string, onChanged func(r battle.Role) func(s string)) func(r battle.Role) func() {
-		return func(r battle.Role) func() {
+func selectorDialoger(selector *widget.RadioGroup) func(dialog *dialog.CustomDialog, options []string, onChanged func(r role.Role) func(s string)) func(r role.Role) func() {
+	return func(dialog *dialog.CustomDialog, options []string, onChanged func(r role.Role) func(s string)) func(r role.Role) func() {
+		return func(r role.Role) func() {
 			return func() {
 				selector.Disable()
 				selector.Options = options
@@ -1015,8 +1016,8 @@ func activateDialogs(selectorDialogs []func(), enableChan chan bool) {
 }
 
 func generateTags(worker battle.Worker) (tagContaines []fyne.CanvasObject) {
-	tagContaines = createTagContainers(worker.ActionState, battle.Human)
-	tagContaines = append(tagContaines, createTagContainers(worker.ActionState, battle.Pet)...)
+	tagContaines = createTagContainers(worker.ActionState, role.Human)
+	tagContaines = append(tagContaines, createTagContainers(worker.ActionState, role.Pet)...)
 	return
 }
 
@@ -1029,10 +1030,10 @@ var (
 	petSpecialTagColor       = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
 )
 
-func createTagContainers(actionState battle.ActionState, role battle.Role) (tagContainers []fyne.CanvasObject) {
+func createTagContainers(actionState battle.ActionState, r role.Role) (tagContainers []fyne.CanvasObject) {
 	var tag string
 	var anyActions []any
-	if role == battle.Human {
+	if r == role.Human {
 		for _, hs := range actionState.GetHumanActions() {
 			anyActions = append(anyActions, hs)
 		}
@@ -1044,7 +1045,7 @@ func createTagContainers(actionState battle.ActionState, role battle.Role) (tagC
 
 	for _, action := range anyActions {
 		var tagColor color.RGBA
-		if role == battle.Human {
+		if r == role.Human {
 			tag = action.(battle.HumanAction).Action.String()
 			switch {
 			case strings.Contains(action.(battle.HumanAction).Action.String(), "**"):
@@ -1070,7 +1071,7 @@ func createTagContainers(actionState battle.ActionState, role battle.Role) (tagC
 		tagCanvas.SetMinSize(fyne.NewSize(60, 22))
 		tagContainer := container.NewStack(tagCanvas)
 
-		if role == battle.Human {
+		if r == role.Human {
 			if offset := action.(battle.HumanAction).Offset; offset != 0 {
 				tag = fmt.Sprintf("%s:%d:%d", tag, offset, action.(battle.HumanAction).Level)
 			}
@@ -1087,7 +1088,7 @@ func createTagContainers(actionState battle.ActionState, role battle.Role) (tagC
 		var failureControlUnit string
 		var failureJumpId int
 
-		if role == battle.Human {
+		if r == role.Human {
 			param = action.(battle.HumanAction).Param
 			threshold = action.(battle.HumanAction).Threshold
 			successControlUnit = string(action.(battle.HumanAction).SuccessControlUnit)

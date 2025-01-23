@@ -10,13 +10,6 @@ var (
 	Thresholds   thresholds   = []Threshold{OneFoe, TwoFoes, ThreeFoes, FourFoes, FiveFoes, SixFoes, SevenFoes, EightFoes, NineFoes, TenFoes}
 )
 
-type Role int
-
-const (
-	Human Role = iota
-	Pet
-)
-
 type ControlUnit string
 type controlUnits []ControlUnit
 
