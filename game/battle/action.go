@@ -2,10 +2,12 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/battle/enums"
 	"cg/game/battle/enums/controlunit"
 	"cg/game/battle/enums/human"
 	"cg/game/battle/enums/offset"
 	"cg/game/battle/enums/pet"
+	"cg/game/battle/enums/ratio"
 	"cg/game/battle/enums/role"
 	"cg/game/battle/enums/threshold"
 	"cg/internal"
@@ -19,6 +21,14 @@ import (
 	"time"
 
 	"github.com/g70245/win"
+)
+
+var (
+	ControlUnits = enums.GenericEnum[controlunit.ControlUnit]{List: []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}}
+	Offsets      = enums.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
+	Levels       = enums.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
+	Ratios       = enums.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.OneTenth, ratio.TwoTenth, ratio.ThreeTenth, ratio.FourTenth, ratio.FiveTenth, ratio.SixTenth, ratio.SevenTenth, ratio.EightTenth, ratio.NineTenth}}
+	Thresholds   = enums.GenericEnum[threshold.Threshold]{List: []threshold.Threshold{threshold.OneFoe, threshold.TwoFoes, threshold.ThreeFoes, threshold.FourFoes, threshold.FiveFoes, threshold.SixFoes, threshold.SevenFoes, threshold.EightFoes, threshold.NineFoes, threshold.TenFoes}}
 )
 
 const (
@@ -199,9 +209,9 @@ func (s *ActionState) executeHumanStateMachine() {
 			s.currentCU = controlunit.Repeat
 		case human.Bomb:
 			var bomb Item
-			for i := range Bombs {
-				if Bombs[i].name == s.HumanActions[s.currentHumanActionId].Param {
-					bomb = Bombs[i]
+			for i := range Bombs.List {
+				if Bombs.List[i].name == s.HumanActions[s.currentHumanActionId].Param {
+					bomb = Bombs.List[i]
 				}
 			}
 

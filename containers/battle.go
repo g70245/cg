@@ -160,7 +160,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		var movementModeButton *widget.Button
 		var movementModeDialog *dialog.CustomDialog
-		movementModeSelector := widget.NewRadioGroup(battle.MOVEMENT_MODES.GetOptions(), func(s string) {
+		movementModeSelector := widget.NewRadioGroup(battle.MovementModes.GetOptions(), func(s string) {
 			if s != "" {
 				worker.MovementState.Mode = movement.Mode(s)
 				if worker.MovementState.Mode != movement.None {

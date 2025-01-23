@@ -2,9 +2,9 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/battle/enums"
 	"cg/game/battle/enums/movement"
 	"cg/internal"
-	"fmt"
 
 	"log"
 	"math"
@@ -13,31 +13,14 @@ import (
 	"github.com/g70245/win"
 )
 
+var (
+	MovementModes = enums.GenericEnum[movement.Mode]{List: []movement.Mode{movement.None, movement.DIAGONAL, movement.REVERSED_DIAGONAL, movement.BIASED_DIAGONAL, movement.BIASED_REVERSED_DIAGONAL, movement.HYBRID_DIAGONAL}}
+)
+
 const (
 	RADIUS     float64 = 120
 	BIAS_ANGLE float64 = 30
 )
-
-type MovementModes []movement.Mode
-
-func (m MovementModes) GetOptions() []string {
-	var options []string
-
-	for _, mode := range m {
-		options = append(options, fmt.Sprint(mode))
-	}
-
-	return options
-}
-
-var MOVEMENT_MODES MovementModes = []movement.Mode{
-	movement.None,
-	movement.DIAGONAL,
-	movement.REVERSED_DIAGONAL,
-	movement.BIASED_DIAGONAL,
-	movement.BIASED_REVERSED_DIAGONAL,
-	movement.HYBRID_DIAGONAL,
-}
 
 type MovementState struct {
 	hWnd   win.HWND
