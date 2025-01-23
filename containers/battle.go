@@ -758,7 +758,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 			fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 				if uc != nil {
-					var actionState battle.BattleActionState
+					var actionState battle.ActionState
 					file, openErr := os.Open(uc.URI().Path())
 
 					if openErr == nil {
@@ -856,7 +856,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if uc != nil {
-				var actionState battle.BattleActionState
+				var actionState battle.ActionState
 				file, openErr := os.Open(uc.URI().Path())
 
 				if openErr == nil {
@@ -1028,7 +1028,7 @@ var (
 	petSpecialTagColor       = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
 )
 
-func createTagContainers(actionState battle.BattleActionState, role battle.Role) (tagContainers []fyne.CanvasObject) {
+func createTagContainers(actionState battle.ActionState, role battle.Role) (tagContainers []fyne.CanvasObject) {
 	var tag string
 	var anyActions []any
 	if role == battle.Human {
