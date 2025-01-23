@@ -3,6 +3,7 @@ package containers
 import (
 	"cg/game"
 	"cg/game/battle"
+	"cg/game/battle/enums/controlunit"
 	"cg/game/battle/enums/movement"
 	"cg/game/battle/enums/role"
 	"cg/utils"
@@ -214,7 +215,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 					return
 				}
 
-				if cu := battle.ControlUnit(s); cu == battle.Jump {
+				if cu := controlunit.ControlUnit(s); cu == controlunit.Jump {
 					activateJumpDialog(len(worker.ActionState.HumanActions), func(jumpId int) {
 						worker.ActionState.AddSuccessControlUnit(r, cu)
 						worker.ActionState.AddSuccessJumpId(r, jumpId)
@@ -232,7 +233,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 					return
 				}
 
-				if cu := battle.ControlUnit(s); cu == battle.Jump {
+				if cu := controlunit.ControlUnit(s); cu == controlunit.Jump {
 					activateJumpDialog(len(worker.ActionState.HumanActions), func(jumpId int) {
 						worker.ActionState.AddFailureControlUnit(r, cu)
 						worker.ActionState.AddFailureJumpId(r, jumpId)

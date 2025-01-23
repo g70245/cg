@@ -1,25 +1,19 @@
 package battle
 
-import "fmt"
+import (
+	"cg/game/battle/enums/controlunit"
+	"fmt"
+)
 
 var (
-	ControlUnits controlUnits = []ControlUnit{StartOver, Continue, Repeat, Jump}
+	ControlUnits controlUnits = []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}
 	Offsets      offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
 	Levels       offsets      = []Offset{One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten}
 	Ratios       ratios       = []ratio{OneTenth, TwoTenth, ThreeTenth, FourTenth, FiveTenth, SixTenth, SevenTenth, EightTenth, NineTenth}
 	Thresholds   thresholds   = []Threshold{OneFoe, TwoFoes, ThreeFoes, FourFoes, FiveFoes, SixFoes, SevenFoes, EightFoes, NineFoes, TenFoes}
 )
 
-type ControlUnit string
-type controlUnits []ControlUnit
-
-const (
-	Undefined ControlUnit = "Undefined"
-	StartOver ControlUnit = "Start Over"
-	Continue  ControlUnit = "Continue"
-	Repeat    ControlUnit = "Repeat"
-	Jump      ControlUnit = "Jump"
-)
+type controlUnits []controlunit.ControlUnit
 
 type humanAction int
 
