@@ -2,8 +2,8 @@ package battle
 
 import (
 	"cg/game"
-	"cg/game/enums"
-	"cg/game/enums/movement"
+	"cg/game/enum"
+	"cg/game/enum/movement"
 	"cg/internal"
 
 	"log"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	MovementModes = enums.GenericEnum[movement.Mode]{List: []movement.Mode{movement.None, movement.DIAGONAL, movement.REVERSED_DIAGONAL, movement.BIASED_DIAGONAL, movement.BIASED_REVERSED_DIAGONAL, movement.HYBRID_DIAGONAL}}
+	MovementModes = enum.GenericEnum[movement.Mode]{List: []movement.Mode{movement.None, movement.DIAGONAL, movement.REVERSED_DIAGONAL, movement.BIASED_DIAGONAL, movement.BIASED_REVERSED_DIAGONAL, movement.HYBRID_DIAGONAL}}
 )
 
 const (
