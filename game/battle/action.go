@@ -2,14 +2,15 @@ package battle
 
 import (
 	"cg/game"
-	"cg/game/battle/enums"
-	"cg/game/battle/enums/controlunit"
-	"cg/game/battle/enums/human"
-	"cg/game/battle/enums/offset"
-	"cg/game/battle/enums/pet"
-	"cg/game/battle/enums/ratio"
-	"cg/game/battle/enums/role"
-	"cg/game/battle/enums/threshold"
+	"cg/game/enums"
+	"cg/game/enums/controlunit"
+	"cg/game/enums/human"
+	"cg/game/enums/offset"
+	"cg/game/enums/pet"
+	"cg/game/enums/ratio"
+	"cg/game/enums/role"
+	"cg/game/enums/threshold"
+	"cg/game/items"
 	"cg/internal"
 	"cg/utils"
 
@@ -208,21 +209,21 @@ func (s *ActionState) executeHumanStateMachine() {
 			s.isHumanHanging = true
 			s.currentCU = controlunit.Repeat
 		case human.Bomb:
-			var bomb Item
-			for i := range Bombs.List {
-				if Bombs.List[i].name == s.HumanActions[s.currentHumanActionId].Param {
-					bomb = Bombs.List[i]
+			var bomb items.Item
+			for i := range items.Bombs.List {
+				if items.Bombs.List[i].Name == s.HumanActions[s.currentHumanActionId].Param {
+					bomb = items.Bombs.List[i]
 				}
 			}
 
-			if bomb == I_B_9A && len(s.enemies) < 5 {
+			if bomb == items.I_B_9A && len(s.enemies) < 5 {
 				s.logH("performs next action due to too few enemies")
 				break
 			}
 
 			game.OpenWindow(s.hWnd, game.KEY_INVENTORY)
 			if px, py, isPivotFound := s.getInventoryPos(); isPivotFound {
-				if x, y, ok := game.GetItemPos(s.hWnd, px, py, bomb.color, 2); ok {
+				if x, y, ok := game.GetItemPos(s.hWnd, px, py, bomb.Color, 2); ok {
 					game.UseItem(s.hWnd, x, y)
 					if s.isInventoryStillOpened(px, py) {
 						s.logH("failed at double clicking")
@@ -250,7 +251,7 @@ func (s *ActionState) executeHumanStateMachine() {
 			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
 				game.OpenWindow(s.hWnd, game.KEY_INVENTORY)
 				if px, py, isPivotFound := s.getInventoryPos(); isPivotFound {
-					if x, y, ok := game.GetItemPos(s.hWnd, px, py, game.COLOR_ITEM_POTION, 3); ok {
+					if x, y, ok := game.GetItemPos(s.hWnd, px, py, items.COLOR_ITEM_POTION, 3); ok {
 						game.UseItem(s.hWnd, x, y)
 						if s.isInventoryStillOpened(px, py) {
 							s.logH("failed at double clicking")

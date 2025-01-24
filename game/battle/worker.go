@@ -2,7 +2,7 @@ package battle
 
 import (
 	"cg/game"
-	"cg/game/battle/enums/movement"
+	"cg/game/enums/movement"
 	"cg/utils"
 	"sync"
 

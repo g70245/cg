@@ -3,13 +3,14 @@ package containers
 import (
 	"cg/game"
 	"cg/game/battle"
-	"cg/game/battle/enums/controlunit"
-	"cg/game/battle/enums/human"
-	"cg/game/battle/enums/movement"
-	"cg/game/battle/enums/offset"
-	"cg/game/battle/enums/pet"
-	"cg/game/battle/enums/role"
-	"cg/game/battle/enums/threshold"
+	"cg/game/enums/controlunit"
+	"cg/game/enums/human"
+	"cg/game/enums/movement"
+	"cg/game/enums/offset"
+	"cg/game/enums/pet"
+	"cg/game/enums/role"
+	"cg/game/enums/threshold"
+	"cg/game/items"
 	"cg/utils"
 	"encoding/json"
 	"errors"
@@ -276,7 +277,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		paramDialog.SetOnClosed(onClosed)
 
 		healingRatioSelectorDialog := getNewSelectorDialog(paramDialog, battle.Ratios.GetOptions(), paramOnChanged)
-		bombSelectorDialog := getNewSelectorDialog(paramDialog, game.Bombs.GetOptions(), paramOnChanged)
+		bombSelectorDialog := getNewSelectorDialog(paramDialog, items.Bombs.GetOptions(), paramOnChanged)
 
 		/* Threshold Dialog */
 		var thresholdDialog *dialog.CustomDialog

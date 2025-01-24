@@ -2,8 +2,8 @@ package battle
 
 import (
 	"cg/game"
-	"cg/game/battle/enums"
-	"cg/game/battle/enums/movement"
+	"cg/game/enums"
+	"cg/game/enums/movement"
 	"cg/internal"
 
 	"log"

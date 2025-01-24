@@ -1,6 +1,7 @@
 package game
 
 import (
+	"cg/game/items"
 	"cg/internal"
 
 	"github.com/g70245/win"
@@ -139,7 +140,7 @@ func searchSlotForColor(hWnd win.HWND, px, py int32, color win.COLORREF, granula
 			currentColor := internal.GetColor(hWnd, x, y)
 			if currentColor == color {
 				return x, y, true
-			} else if currentColor == COLOR_ITEM_CAN_NOT_BE_USED {
+			} else if currentColor == items.COLOR_ITEM_CAN_NOT_BE_USED {
 				return 0, 0, false
 			}
 			y += granularity
