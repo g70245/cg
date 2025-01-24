@@ -461,7 +461,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 				} else if s.isCharacterActionSuccessful() {
 					s.logH("is training")
 					s.setSuccessState(role.Character)
-				} else if s.aim(&PLAYER_L_3_P, s.isCharacterActionSuccessful) {
+				} else if s.aim(&PLAYER_L_3_H, s.isCharacterActionSuccessful) {
 					s.logH("is training")
 					s.setSuccessState(role.Character)
 				}
