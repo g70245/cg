@@ -3,8 +3,8 @@ package battle
 import (
 	"cg/game"
 	"cg/game/enum"
+	"cg/game/enum/character"
 	"cg/game/enum/controlunit"
-	"cg/game/enum/human"
 	"cg/game/enum/offset"
 	"cg/game/enum/pet"
 	"cg/game/enum/ratio"
@@ -40,8 +40,8 @@ const (
 	TRAINING_COUNTER_THRESHOLD = 8
 )
 
-type HumanAction struct {
-	Action             human.Action
+type CharacterAction struct {
+	Action             character.Action
 	Offset             offset.Offset
 	Level              offset.Offset
 	Threshold          threshold.Threshold
@@ -66,18 +66,18 @@ type PetAction struct {
 type ActionState struct {
 	hWnd win.HWND `json:"-"`
 
-	HumanActions         []HumanAction
-	PetActions           []PetAction
-	currentHumanActionId int                     `json:"-"`
-	currentPetActionId   int                     `json:"-"`
-	currentCU            controlunit.ControlUnit `json:"-"`
-	currentJumpId        int                     `json:"-"`
+	CharacterActions         []CharacterAction
+	PetActions               []PetAction
+	currentCharacterActionId int                     `json:"-"`
+	currentPetActionId       int                     `json:"-"`
+	currentCU                controlunit.ControlUnit `json:"-"`
+	currentJumpId            int                     `json:"-"`
 
 	Enabled                bool `json:"-"`
 	ActivityCheckerEnabled bool `json:"-"`
 	isOutOfHealth          bool `json:"-"`
 	isOutOfMana            bool `json:"-"`
-	isHumanHanging         bool `json:"-"`
+	isCharacterHanging     bool `json:"-"`
 	isPetHanging           bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
@@ -95,9 +95,9 @@ func (s *ActionState) Act() {
 		s.executeActivity()
 		s.detectEnemies()
 		s.checkCharacterMana()
-		s.executeHumanStateMachine()
+		s.executeCharacterStateMachine()
 		s.wait()
-		s.executeHumanStateMachine()
+		s.executeCharacterStateMachine()
 		s.wait()
 		s.executePetStateMachiine()
 		s.wait()
@@ -124,48 +124,48 @@ func (s *ActionState) executeActivity() {
 	}
 }
 
-func (s *ActionState) executeHumanStateMachine() {
+func (s *ActionState) executeCharacterStateMachine() {
 
-	for s.currentHumanActionId < len(s.HumanActions) && game.IsBattleScene(s.hWnd) && s.isHumanStageStable() && s.Enabled {
+	for s.currentCharacterActionId < len(s.CharacterActions) && game.IsBattleScene(s.hWnd) && s.isCharacterStageStable() && s.Enabled {
 
 		s.resetCurrentControlUnit()
 		s.endPetHanging()
 
-		switch s.HumanActions[s.currentHumanActionId].Action {
-		case human.Attack:
+		switch s.CharacterActions[s.currentCharacterActionId].Action {
+		case character.Attack:
 			s.enableBattleCommandAttack()
-			if s.attack(s.isHumanActionSuccessful) {
+			if s.attack(s.isCharacterActionSuccessful) {
 				s.logH("attacked")
-				s.setSuccessState(role.Human)
+				s.setSuccessState(role.Character)
 			} else {
 				s.logH("missed a hit")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
-		case human.Skill:
+		case character.Skill:
 			game.OpenWindow(s.hWnd, game.KEY_SKILL)
 			if x, y, ok := s.getSkillWindowPos(); ok {
-				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-				level := int(s.HumanActions[s.currentHumanActionId].Level)
-				game.UseHumanSkill(s.hWnd, x, y, offset, level)
-				if s.didHumanMissSkill(x, y) {
+				offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+				level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+				game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+				if s.didCharacterMissSkill(x, y) {
 					s.logH("missed the skill button or is out of mana")
-				} else if s.isHumanActionSuccessful() {
+				} else if s.isCharacterActionSuccessful() {
 					s.logH("used a skill")
-					s.setSuccessState(role.Human)
-				} else if s.attack(s.isHumanActionSuccessful) {
+					s.setSuccessState(role.Character)
+				} else if s.attack(s.isCharacterActionSuccessful) {
 					s.logH("used a skill")
-					s.setSuccessState(role.Human)
+					s.setSuccessState(role.Character)
 				} else {
 					s.logH("missed a hit")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("cannot find the position of window")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
 
-		case human.ThresholdSkill:
-			threshold, _ := strconv.Atoi(strings.Split(string(s.HumanActions[s.currentHumanActionId].Threshold), " ")[0])
+		case character.ThresholdSkill:
+			threshold, _ := strconv.Atoi(strings.Split(string(s.CharacterActions[s.currentCharacterActionId].Threshold), " ")[0])
 			if len(s.enemies) < threshold {
 				s.logH("performs next action due to too few enemies")
 				break
@@ -173,45 +173,45 @@ func (s *ActionState) executeHumanStateMachine() {
 
 			game.OpenWindow(s.hWnd, game.KEY_SKILL)
 			if x, y, ok := s.getSkillWindowPos(); ok {
-				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-				level := int(s.HumanActions[s.currentHumanActionId].Level)
-				game.UseHumanSkill(s.hWnd, x, y, offset, level)
-				if s.didHumanMissSkill(x, y) {
+				offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+				level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+				game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+				if s.didCharacterMissSkill(x, y) {
 					s.logH("missed the skill button or is out of mana")
-				} else if s.isHumanActionSuccessful() {
+				} else if s.isCharacterActionSuccessful() {
 					s.logH("used a skill")
-					s.setSuccessState(role.Human)
-				} else if s.attack(s.isHumanActionSuccessful) {
+					s.setSuccessState(role.Character)
+				} else if s.attack(s.isCharacterActionSuccessful) {
 					s.logH("used a skill")
-					s.setSuccessState(role.Human)
+					s.setSuccessState(role.Character)
 				} else {
 					s.logH("missed a hit")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("cannot find the position of window")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
-		case human.Defend:
+		case character.Defend:
 			s.defend()
 			s.logH("defended")
-			s.setSuccessState(role.Human)
-		case human.Move:
+			s.setSuccessState(role.Character)
+		case character.Move:
 			s.move()
 			s.logH("moved")
-			s.setSuccessState(role.Human)
-		case human.Escape:
+			s.setSuccessState(role.Character)
+		case character.Escape:
 			s.escape()
 			s.logH("escaped")
-			s.setFailureState(role.Human)
-		case human.Hang:
+			s.setFailureState(role.Character)
+		case character.Hang:
 			s.logH("is hanging")
-			s.isHumanHanging = true
+			s.isCharacterHanging = true
 			s.currentCU = controlunit.Repeat
-		case human.Bomb:
+		case character.Bomb:
 			var bomb items.Item
 			for i := range items.Bombs.List {
-				if items.Bombs.List[i].Name == s.HumanActions[s.currentHumanActionId].Param {
+				if items.Bombs.List[i].Name == s.CharacterActions[s.currentCharacterActionId].Param {
 					bomb = items.Bombs.List[i]
 				}
 			}
@@ -227,27 +227,27 @@ func (s *ActionState) executeHumanStateMachine() {
 					game.UseItem(s.hWnd, x, y)
 					if s.isInventoryStillOpened(px, py) {
 						s.logH("failed at double clicking")
-						s.setFailureState(role.Human)
-					} else if s.attack(s.isHumanActionSuccessful) {
+						s.setFailureState(role.Character)
+					} else if s.attack(s.isCharacterActionSuccessful) {
 						s.logH("throwed a bomb")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					} else {
 						s.logH("missed a hit")
-						s.setFailureState(role.Human)
+						s.setFailureState(role.Character)
 					}
 
 				} else {
 					s.logH("cannot find a bomb")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("cannot find the position of window")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
-		case human.Potion:
+		case character.Potion:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
-			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
 				game.OpenWindow(s.hWnd, game.KEY_INVENTORY)
 				if px, py, isPivotFound := s.getInventoryPos(); isPivotFound {
@@ -255,31 +255,31 @@ func (s *ActionState) executeHumanStateMachine() {
 						game.UseItem(s.hWnd, x, y)
 						if s.isInventoryStillOpened(px, py) {
 							s.logH("failed at double clicking")
-							s.setFailureState(role.Human)
-						} else if s.aim(target, s.isHumanActionSuccessful) {
+							s.setFailureState(role.Character)
+						} else if s.aim(target, s.isCharacterActionSuccessful) {
 							s.logH("healed an ally")
-							s.setSuccessState(role.Human)
+							s.setSuccessState(role.Character)
 						} else {
 							s.logH("cannot target")
-							s.setFailureState(role.Human)
+							s.setFailureState(role.Character)
 						}
 					} else {
 						s.logH("cannot find a potion")
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("found all good")
 			}
-		case human.Ride:
+		case character.Ride:
 			game.OpenWindow(s.hWnd, game.KEY_SKILL)
 			if x, y, ok := s.getSkillWindowPos(); ok {
-				offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-				level := int(s.HumanActions[s.currentHumanActionId].Level)
-				game.UseHumanSkill(s.hWnd, x, y, offset, level)
-				if s.didHumanMissSkill(x, y) {
+				offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+				level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+				game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+				if s.didCharacterMissSkill(x, y) {
 					s.logH("missed the skill button or is out of mana")
 				} else {
 					s.logH("is tring to get on a pet")
@@ -289,17 +289,17 @@ func (s *ActionState) executeHumanStateMachine() {
 							break
 						}
 					}
-					s.setSuccessState(role.Human)
+					s.setSuccessState(role.Character)
 				}
 			} else {
 				s.logH("cannot find the position of window")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
-		case human.BloodMagic:
+		case character.BloodMagic:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
 			if self, ok := s.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+				ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 
 				if !s.isHealthLowerThan(float32(ratio), self) {
 					s.logH("is a healthy boy")
@@ -308,34 +308,34 @@ func (s *ActionState) executeHumanStateMachine() {
 
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.isHumanActionSuccessful() {
+					} else if s.isCharacterActionSuccessful() {
 						s.logH("used a skill")
-						s.setSuccessState(role.Human)
-					} else if s.attack(s.isHumanActionSuccessful) {
+						s.setSuccessState(role.Character)
+					} else if s.attack(s.isCharacterActionSuccessful) {
 						s.logH("used a skill")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					} else {
 						s.logH("missed a hit")
-						s.setFailureState(role.Human)
+						s.setFailureState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 
 			} else {
 				s.logH("cannot find self")
 			}
-		case human.HealSelf:
+		case character.HealSelf:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
 			if self, ok := s.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+				ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 
 				if !s.isHealthLowerThan(float32(ratio), self) {
 					s.logH("is a healthy boy")
@@ -344,103 +344,103 @@ func (s *ActionState) executeHumanStateMachine() {
 
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
 					} else {
 						s.logH("healed self")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 
 			} else {
 				s.logH("cannot find self")
 			}
-		case human.HealOne:
+		case character.HealOne:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
-			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 			if target, ok := s.searchHealthLowerThan(float32(ratio)); ok {
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.aim(target, s.isHumanActionSuccessful) {
+					} else if s.aim(target, s.isCharacterActionSuccessful) {
 						s.logH("healed an ally")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					} else {
 						s.logH("cannot target")
-						s.setFailureState(role.Human)
+						s.setFailureState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("found all good")
 			}
-		case human.HealTShaped:
+		case character.HealTShaped:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
-			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 			if target, ok := s.searchWeightedTShapedHealthLowerThan(float32(ratio)); ok {
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.aim(target, s.isHumanActionSuccessful) {
+					} else if s.aim(target, s.isCharacterActionSuccessful) {
 						s.logH("healed allies")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					} else {
 						s.logH("cannot target")
-						s.setFailureState(role.Human)
+						s.setFailureState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("found all good")
 			}
-		case human.HealMulti:
+		case character.HealMulti:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
-			ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 			count := s.countHealthLowerThan(float32(ratio))
 			if count >= 4 {
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.aim(&PLAYER_L_3_H, s.isHumanActionSuccessful) {
+					} else if s.aim(&PLAYER_L_3_H, s.isCharacterActionSuccessful) {
 						s.logH("healed allies")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					} else {
 						s.logH("cannot target")
-						s.setFailureState(role.Human)
+						s.setFailureState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("found all good")
 			}
-		case human.Recall:
+		case character.Recall:
 			game.OpenWindow(s.hWnd, game.KEY_PET)
 			if s.canRecall() {
 				s.recall()
@@ -448,37 +448,37 @@ func (s *ActionState) executeHumanStateMachine() {
 				s.currentCU = controlunit.Repeat
 			} else {
 				s.logH("already recalled")
-				s.setSuccessState(role.Human)
+				s.setSuccessState(role.Character)
 			}
-		case human.TrainSkill:
+		case character.TrainSkill:
 			if self, ok := s.getSelfTarget(false); ok {
 				game.OpenWindow(s.hWnd, game.KEY_SKILL)
 				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.HumanActions[s.currentHumanActionId].Offset)
-					level := int(s.HumanActions[s.currentHumanActionId].Level)
-					game.UseHumanSkill(s.hWnd, x, y, offset, level)
-					if s.didHumanMissSkill(x, y) {
+					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.isHumanActionSuccessful() {
+					} else if s.isCharacterActionSuccessful() {
 						s.logH("is training")
-						s.setSuccessState(role.Human)
-					} else if s.aim(self, s.isHumanActionSuccessful) {
+						s.setSuccessState(role.Character)
+					} else if s.aim(self, s.isCharacterActionSuccessful) {
 						s.logH("is training")
-						s.setSuccessState(role.Human)
+						s.setSuccessState(role.Character)
 					}
 				} else {
 					s.logH("cannot find the position of window")
-					s.setFailureState(role.Human)
+					s.setFailureState(role.Character)
 				}
 			} else {
 				s.logH("cannot find self")
-				s.setFailureState(role.Human)
+				s.setFailureState(role.Character)
 			}
-		case human.Catch:
+		case character.Catch:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
 			if self, ok := s.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(s.HumanActions[s.currentHumanActionId].Param, 32)
+				ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
 				if s.isHealthLowerThan(float32(ratio), self) {
 					s.isOutOfHealth = true
 					s.logH("is out of health")
@@ -486,13 +486,13 @@ func (s *ActionState) executeHumanStateMachine() {
 			}
 		}
 
-		s.updateCurrentActionId(role.Human)
+		s.updateCurrentActionId(role.Character)
 	}
 
-	if len(s.HumanActions) != 0 {
-		s.currentHumanActionId %= len(s.HumanActions)
+	if len(s.CharacterActions) != 0 {
+		s.currentCharacterActionId %= len(s.CharacterActions)
 	} else {
-		s.currentHumanActionId = 0
+		s.currentCharacterActionId = 0
 	}
 }
 
@@ -501,7 +501,7 @@ func (s *ActionState) executePetStateMachiine() {
 	for s.currentPetActionId < len(s.PetActions) && game.IsBattleScene(s.hWnd) && s.isPetStageStable() && s.Enabled {
 
 		s.resetCurrentControlUnit()
-		s.endHumanHanging()
+		s.endCharacterHanging()
 
 		switch s.PetActions[s.currentPetActionId].Action {
 		case pet.Attack:
@@ -673,7 +673,7 @@ func (s *ActionState) executePetStateMachiine() {
 }
 
 func (s *ActionState) reset() {
-	s.currentHumanActionId = 0
+	s.currentCharacterActionId = 0
 	s.currentPetActionId = 0
 	s.trainingCounter = 0
 }
@@ -685,9 +685,9 @@ func (s *ActionState) resetCurrentControlUnit() {
 
 func (s *ActionState) setSuccessState(r role.Role) {
 	switch r {
-	case role.Human:
-		s.currentCU = s.HumanActions[s.currentHumanActionId].SuccessControlUnit
-		s.currentJumpId = s.HumanActions[s.currentHumanActionId].SuccessJumpId
+	case role.Character:
+		s.currentCU = s.CharacterActions[s.currentCharacterActionId].SuccessControlUnit
+		s.currentJumpId = s.CharacterActions[s.currentCharacterActionId].SuccessJumpId
 	case role.Pet:
 		s.currentCU = s.PetActions[s.currentPetActionId].SuccessControlUnit
 		s.currentJumpId = s.PetActions[s.currentPetActionId].SuccessJumpId
@@ -696,9 +696,9 @@ func (s *ActionState) setSuccessState(r role.Role) {
 
 func (s *ActionState) setFailureState(r role.Role) {
 	switch r {
-	case role.Human:
-		s.currentCU = s.HumanActions[s.currentHumanActionId].FailureControlUnit
-		s.currentJumpId = s.HumanActions[s.currentHumanActionId].FailureJumpId
+	case role.Character:
+		s.currentCU = s.CharacterActions[s.currentCharacterActionId].FailureControlUnit
+		s.currentJumpId = s.CharacterActions[s.currentCharacterActionId].FailureJumpId
 	case role.Pet:
 		s.currentCU = s.PetActions[s.currentPetActionId].FailureControlUnit
 		s.currentJumpId = s.PetActions[s.currentPetActionId].FailureJumpId
@@ -707,18 +707,18 @@ func (s *ActionState) setFailureState(r role.Role) {
 
 func (s *ActionState) updateCurrentActionId(r role.Role) {
 	switch r {
-	case role.Human:
+	case role.Character:
 		switch s.currentCU {
 		case controlunit.StartOver:
-			s.currentHumanActionId = 0
+			s.currentCharacterActionId = 0
 		case controlunit.Continue:
-			s.currentHumanActionId++
+			s.currentCharacterActionId++
 		case controlunit.Repeat:
 			return
 		case controlunit.Jump:
-			s.currentHumanActionId = s.currentJumpId
+			s.currentCharacterActionId = s.currentJumpId
 		default:
-			s.currentHumanActionId++
+			s.currentCharacterActionId++
 		}
 	case role.Pet:
 		switch s.currentCU {
@@ -808,7 +808,7 @@ func (s *ActionState) openSkillWindowWithMouse() {
 }
 
 func (s *ActionState) logH(message string) {
-	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(s.hWnd), s.currentHumanActionId, strings.Trim(s.HumanActions[s.currentHumanActionId].Action.String(), "*"))
+	header := fmt.Sprintf("[%s][%d][%s]", fmt.Sprint(s.hWnd), s.currentCharacterActionId, strings.Trim(s.CharacterActions[s.currentCharacterActionId].Action.String(), "*"))
 	log.Printf("%-26s %s",
 		header,
 		message,
@@ -826,9 +826,9 @@ func (s *ActionState) logP(message string) {
 func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) ActionState {
 	return ActionState{
 		hWnd: hWnd,
-		HumanActions: []HumanAction{
+		CharacterActions: []CharacterAction{
 			{
-				Action:             human.Attack,
+				Action:             character.Attack,
 				SuccessControlUnit: controlunit.Continue,
 				FailureControlUnit: controlunit.Continue,
 			},
@@ -853,15 +853,15 @@ func (s *ActionState) SetHWND(hWnd win.HWND) {
 	s.hWnd = hWnd
 }
 
-func (s *ActionState) AddHumanAction(action human.Action) {
-	newHumanState := HumanAction{
+func (s *ActionState) AddCharacterAction(action character.Action) {
+	newCharacterState := CharacterAction{
 		Action: action,
 	}
-	s.HumanActions = append(s.HumanActions, newHumanState)
+	s.CharacterActions = append(s.CharacterActions, newCharacterState)
 }
 
-func (s *ActionState) AddHumanSkillLevel(level offset.Offset) {
-	s.HumanActions[len(s.HumanActions)-1].Level = level
+func (s *ActionState) AddCharacterSkillLevel(level offset.Offset) {
+	s.CharacterActions[len(s.CharacterActions)-1].Level = level
 }
 
 func (s *ActionState) AddPetAction(action pet.Action) {
@@ -873,21 +873,21 @@ func (s *ActionState) AddPetAction(action pet.Action) {
 
 func (s *ActionState) AddSkillOffset(r role.Role, offset offset.Offset) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].Offset = offset
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].Offset = offset
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].Offset = offset
 	}
 }
 
 func (s *ActionState) AddThreshold(r role.Role, threshold threshold.Threshold) {
-	s.HumanActions[len(s.HumanActions)-1].Threshold = threshold
+	s.CharacterActions[len(s.CharacterActions)-1].Threshold = threshold
 }
 
 func (s *ActionState) AddParam(r role.Role, param string) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].Param = param
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].Param = param
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].Param = param
 	}
@@ -895,16 +895,16 @@ func (s *ActionState) AddParam(r role.Role, param string) {
 
 func (s *ActionState) AddSuccessControlUnit(r role.Role, cu controlunit.ControlUnit) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].SuccessControlUnit = cu
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].SuccessControlUnit = cu
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].SuccessControlUnit = cu
 	}
 }
 func (s *ActionState) AddSuccessJumpId(r role.Role, jumpId int) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].SuccessJumpId = jumpId
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].SuccessJumpId = jumpId
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].SuccessJumpId = jumpId
 	}
@@ -912,8 +912,8 @@ func (s *ActionState) AddSuccessJumpId(r role.Role, jumpId int) {
 
 func (s *ActionState) AddFailureControlUnit(r role.Role, cu controlunit.ControlUnit) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].FailureControlUnit = cu
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].FailureControlUnit = cu
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].FailureControlUnit = cu
 	}
@@ -921,23 +921,23 @@ func (s *ActionState) AddFailureControlUnit(r role.Role, cu controlunit.ControlU
 
 func (s *ActionState) AddFailureJumpId(r role.Role, jumpId int) {
 	switch r {
-	case role.Human:
-		s.HumanActions[len(s.HumanActions)-1].FailureJumpId = jumpId
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].FailureJumpId = jumpId
 	case role.Pet:
 		s.PetActions[len(s.PetActions)-1].FailureJumpId = jumpId
 	}
 }
 
-func (s *ActionState) ClearHumanActions() {
-	s.HumanActions = s.HumanActions[:0]
+func (s *ActionState) ClearCharacterActions() {
+	s.CharacterActions = s.CharacterActions[:0]
 }
 
 func (s *ActionState) ClearPetActions() {
 	s.PetActions = s.PetActions[:0]
 }
 
-func (s *ActionState) GetHumanActions() []HumanAction {
-	return s.HumanActions
+func (s *ActionState) GetCharacterActions() []CharacterAction {
+	return s.CharacterActions
 }
 
 func (s *ActionState) GetPetActions() []PetAction {
@@ -966,19 +966,19 @@ func (s *ActionState) detectEnemies() {
 	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(s.hWnd), len(s.enemies))
 }
 
-func (s *ActionState) endHumanHanging() {
-	if s.isHumanHanging {
-		s.isHumanHanging = false
-		cu := s.HumanActions[s.currentHumanActionId].SuccessControlUnit
-		jumpId := s.HumanActions[s.currentHumanActionId].SuccessJumpId
+func (s *ActionState) endCharacterHanging() {
+	if s.isCharacterHanging {
+		s.isCharacterHanging = false
+		cu := s.CharacterActions[s.currentCharacterActionId].SuccessControlUnit
+		jumpId := s.CharacterActions[s.currentCharacterActionId].SuccessJumpId
 
 		switch cu {
 		case controlunit.StartOver:
-			s.currentHumanActionId = 0
+			s.currentCharacterActionId = 0
 		case controlunit.Continue:
-			s.currentHumanActionId++
+			s.currentCharacterActionId++
 		case controlunit.Jump:
-			s.currentHumanActionId = jumpId
+			s.currentCharacterActionId = jumpId
 		}
 	}
 }
@@ -1018,7 +1018,7 @@ func (s *ActionState) checkCharacterMana() {
 
 func (s *ActionState) wait() {
 
-	for game.IsBattleScene(s.hWnd) && s.Enabled && !s.isHumanStageStable() && !s.isPetStageStable() {
+	for game.IsBattleScene(s.hWnd) && s.Enabled && !s.isCharacterStageStable() && !s.isPetStageStable() {
 		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 }

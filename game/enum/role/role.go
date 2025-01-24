@@ -3,6 +3,6 @@ package role
 type Role int
 
 const (
-	Human Role = iota
+	Character Role = iota
 	Pet
 )
