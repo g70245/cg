@@ -1,7 +1,7 @@
 package main
 
-import "cg/containers"
+import "cg/container"
 
 func main() {
-	containers.App("CG", `D:\CG`, 960, 320)
+	container.App("CG", `D:\CG`, 960, 320)
 }
