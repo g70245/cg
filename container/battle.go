@@ -602,7 +602,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				healMultiButton,
 				hangButton,
 				catchButton,
-				stealButton,
 				trainButton,
 			)
 
