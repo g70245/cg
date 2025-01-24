@@ -52,8 +52,8 @@ var (
 	BATTLE_COMMAND_PET_SKILL_RIDING = game.CheckTarget{X: 524, Y: 54, Color: game.COLOR_ANY}
 	BATTLE_COMMAND_PET_SKILL_ESCAPE = game.CheckTarget{X: 594, Y: 54, Color: game.COLOR_ANY}
 
-	BATTLE_STAGE_HUMAN = game.CheckTarget{X: 594, Y: 28, Color: COLOR_BATTLE_STAGE_HUMAN}
-	BATTLE_STAGE_PET   = game.CheckTarget{X: 594, Y: 28, Color: COLOR_BATTLE_STAGE_PET}
+	BATTLE_STAGE_CHARACTER = game.CheckTarget{X: 594, Y: 28, Color: COLOR_BATTLE_STAGE_CHARACTER}
+	BATTLE_STAGE_PET       = game.CheckTarget{X: 594, Y: 28, Color: COLOR_BATTLE_STAGE_PET}
 
 	BATTLE_WINDOW_SKILL_FIRST       = game.CheckTarget{X: 154, Y: 132, Color: game.COLOR_WINDOW_SKILL_UNSELECTED}
 	BATTLE_WINDOW_PET_RECALL_BUTTON = game.CheckTarget{X: 384, Y: 280, Color: game.COLOR_ANY}
@@ -66,8 +66,8 @@ func (s *ActionState) isBattleCommandEnable(checkTarget game.CheckTarget) bool {
 	return internal.GetColor(s.hWnd, checkTarget.X, checkTarget.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
-func (s *ActionState) isHumanStageStable() bool {
-	return internal.GetColor(s.hWnd, BATTLE_STAGE_HUMAN.X, BATTLE_STAGE_HUMAN.Y) == BATTLE_STAGE_HUMAN.Color
+func (s *ActionState) isCharacterStageStable() bool {
+	return internal.GetColor(s.hWnd, BATTLE_STAGE_CHARACTER.X, BATTLE_STAGE_CHARACTER.Y) == BATTLE_STAGE_CHARACTER.Color
 }
 
 func (s *ActionState) isPetStageStable() bool {
@@ -78,9 +78,9 @@ func (s *ActionState) isPetSkillWindowOpened() bool {
 	return internal.GetColor(s.hWnd, BATTLE_COMMAND_ESCAPE.X, BATTLE_COMMAND_ESCAPE.Y) == COLOR_BATTLE_COMMAND_ENABLE
 }
 
-func (s *ActionState) isHumanActionSuccessful() bool {
+func (s *ActionState) isCharacterActionSuccessful() bool {
 	internal.MoveCursorToNowhere(s.hWnd)
-	return internal.GetColor(s.hWnd, BATTLE_STAGE_HUMAN.X, BATTLE_STAGE_HUMAN.Y) != BATTLE_STAGE_HUMAN.Color
+	return internal.GetColor(s.hWnd, BATTLE_STAGE_CHARACTER.X, BATTLE_STAGE_CHARACTER.Y) != BATTLE_STAGE_CHARACTER.Color
 }
 
 func (s *ActionState) isPetActionSuccessful() bool {
@@ -128,7 +128,7 @@ func (s *ActionState) isInventoryStillOpened(x, y int32) bool {
 	return internal.GetColor(s.hWnd, x+78, y-20) == BATTLE_INVENTORY_MONEY_PIVOT.Color
 }
 
-func (s *ActionState) didHumanMissSkill(x, y int32) bool {
+func (s *ActionState) didCharacterMissSkill(x, y int32) bool {
 	internal.MoveCursorToNowhere(s.hWnd)
 	time.Sleep(DURATION_DID_MISS_SKILL_WAITING)
 	return internal.GetColor(s.hWnd, x, y+16*10) == game.COLOR_WINDOW_SKILL_BOTTOM_SPACE

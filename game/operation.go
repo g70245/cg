@@ -38,7 +38,7 @@ func SwitchWindow(hWnd win.HWND, key uintptr) {
 	ResetAllWindows(hWnd)
 }
 
-func UseHumanSkill(hWnd win.HWND, x, y int32, id, level int) {
+func UseCharacterSkill(hWnd win.HWND, x, y int32, id, level int) {
 	internal.LeftClick(hWnd, x, y+int32((id-1)*16))
 	time.Sleep(DURATION_ACTION)
 	internal.LeftClick(hWnd, x, y+int32((level-1)*16))

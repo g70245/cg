@@ -1,4 +1,4 @@
-package human
+package character
 
 type Action int
 
