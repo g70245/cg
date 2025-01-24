@@ -451,27 +451,22 @@ func (s *ActionState) executeCharacterStateMachine() {
 				s.setSuccessState(role.Character)
 			}
 		case character.TrainSkill:
-			if self, ok := s.getSelfTarget(false); ok {
-				game.OpenWindow(s.hWnd, game.KEY_SKILL)
-				if x, y, ok := s.getSkillWindowPos(); ok {
-					offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
-					level := int(s.CharacterActions[s.currentCharacterActionId].Level)
-					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
-					if s.didCharacterMissSkill(x, y) {
-						s.logH("missed the skill button or is out of mana")
-					} else if s.isCharacterActionSuccessful() {
-						s.logH("is training")
-						s.setSuccessState(role.Character)
-					} else if s.aim(self, s.isCharacterActionSuccessful) {
-						s.logH("is training")
-						s.setSuccessState(role.Character)
-					}
-				} else {
-					s.logH("cannot find the position of window")
-					s.setFailureState(role.Character)
+			game.OpenWindow(s.hWnd, game.KEY_SKILL)
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+				level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+				game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+				if s.didCharacterMissSkill(x, y) {
+					s.logH("missed the skill button or is out of mana")
+				} else if s.isCharacterActionSuccessful() {
+					s.logH("is training")
+					s.setSuccessState(role.Character)
+				} else if s.aim(&PLAYER_L_3_P, s.isCharacterActionSuccessful) {
+					s.logH("is training")
+					s.setSuccessState(role.Character)
 				}
 			} else {
-				s.logH("cannot find self")
+				s.logH("cannot find the position of window")
 				s.setFailureState(role.Character)
 			}
 		case character.Catch:
