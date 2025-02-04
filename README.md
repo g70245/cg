@@ -1,4 +1,4 @@
-# Multi-Game Instance Robot
+# Multi-Game Instance Bot
 
 A versatile automation tool developed using **Golang**, **Fyne**, and **Win32 API** to manage multiple game instances with advanced features and human-like behavior simulation.
 
