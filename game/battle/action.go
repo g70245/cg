@@ -216,7 +216,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 				}
 			}
 
-			if bomb == items.I_B_9A && len(s.enemies) < 5 {
+			if bomb == items.I_B_9A && len(s.enemies) < 4 {
 				s.logH("performs next action due to too few enemies")
 				break
 			}
