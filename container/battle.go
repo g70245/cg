@@ -801,7 +801,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 					}
 				}
 			}, window)
-			listableURI, _ := storage.ListerForURI(storage.NewFileURI(*r.gameDir + `\actions`))
+			listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
 			fileSaveDialog.SetFileName("default.ac")
 			fileSaveDialog.SetLocation(listableURI)
 			fileSaveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".ac"}))
