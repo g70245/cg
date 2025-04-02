@@ -46,6 +46,6 @@ go build .
 fyne package -os windows -icon C:\path\to\your\icon.png
 ```
 
-## Example
+## Sreenshots
 ![alt text](https://github.com/g70245/cg/blob/main/example.png?raw=true)  
 *Example interface showing the bot in action, demonstrating customizable settings and monitoring features.*
