@@ -30,8 +30,8 @@ var (
 	PLAYER_L_4_P = game.CheckTarget{X: 460, Y: 277, Color: game.COLOR_ANY}
 	PLAYER_L_5_P = game.CheckTarget{X: 524, Y: 241, Color: game.COLOR_ANY}
 
-	F4         = []game.CheckTarget{MON_POS_B_5, MON_POS_T_5, MON_POS_B_4, MON_POS_T_4, MON_POS_T_3, MON_POS_B_3, MON_POS_B_2, MON_POS_T_2, MON_POS_B_1, MON_POS_T_1}
-	AllEnemies = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_5, MON_POS_B_4, MON_POS_B_3, MON_POS_B_2, MON_POS_B_1}
+	F4         = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
+	AllEnemies = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_1, MON_POS_B_2, MON_POS_B_3, MON_POS_B_4, MON_POS_B_5}
 
 	EnemyOrder = enum.GenericEnum[enemyorder.EnemyOrder]{List: []enemyorder.EnemyOrder{enemyorder.Default, enemyorder.F4}}
 )
