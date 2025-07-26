@@ -75,6 +75,7 @@ func CreateWorkers(games game.Games, gameDir, manaChecker *string, sharedInvento
 				hWnd: hWnd,
 				Mode: movement.None,
 			},
+			EnemyOrder:                       enemyorder.Default,
 			workerTicker:                     newWorkerTicker,
 			inventoryCheckerTicker:           newInventoryCheckerTicker,
 			teleportAndResourceCheckerTicker: newTeleportAndResourceCheckerTicker,
