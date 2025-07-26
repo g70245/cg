@@ -12,4 +12,5 @@ const (
 	SevenTenth Ratio = 0.7
 	EightTenth Ratio = 0.8
 	NineTenth  Ratio = 0.9
+	One        Ratio = 1
 )

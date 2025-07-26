@@ -29,6 +29,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
@@ -827,13 +828,14 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 }
 
 type menuWidgetOptions struct {
-	games          game.Games
-	allGames       game.Games
-	manaChecker    *string
-	workers        battle.Workers
-	sharedStopChan chan bool
-	actionViewers  []*fyne.Container
-	destroy        func()
+	games            game.Games
+	allGames         game.Games
+	manaChecker      *string
+	customEnemyOrder []string
+	workers          battle.Workers
+	sharedStopChan   chan bool
+	actionViewers    []*fyne.Container
+	destroy          func()
 }
 
 func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) {
@@ -983,7 +985,25 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	})
 	checkersButton.Importance = widget.HighImportance
 
-	menuWidget = container.NewGridWithColumns(5, manaCheckerSelectorButton, checkersButton, loadSettingButton, deleteButton, switchButton)
+	enemyOrderBindingStr := binding.NewString()
+	enemyOrderCheckGroup := widget.NewCheckGroup(battle.EnemyPositions.GetOptions(), func(s []string) {
+		options.customEnemyOrder = s
+		enemyOrderBindingStr.Set(strings.Join(s, "    "))
+	})
+	enemyOrderCheckGroup.Horizontal = true
+	enemyOrderLabel := widget.NewLabelWithData(enemyOrderBindingStr)
+	enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.MenuIcon(), func() {
+		d := dialog.NewCustom("Enemy Order", "Leave", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
+		d.SetOnClosed(func() {
+			for i := range options.workers {
+				options.workers[i].CustomEnemyOrder = options.customEnemyOrder
+			}
+		})
+		d.Show()
+	})
+	enemyOrderButton.Importance = widget.HighImportance
+
+	menuWidget = container.NewGridWithColumns(6, manaCheckerSelectorButton, checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton)
 	return
 }
 

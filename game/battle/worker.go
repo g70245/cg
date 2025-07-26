@@ -2,6 +2,7 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/enum/enemy"
 	"cg/game/enum/movement"
 	"cg/utils"
 	"sync"
@@ -40,6 +41,7 @@ type Worker struct {
 	TeleportAndResourceCheckerEnabled bool
 	InventoryCheckerEnabled           bool
 	ActivityCheckerEnabled            bool
+	CustomEnemyOrder                  []string
 
 	workerTicker                     *time.Ticker
 	inventoryCheckerTicker           *time.Ticker
@@ -200,6 +202,12 @@ func (w *Worker) reset() {
 	w.ActionState.isOutOfHealth = false
 	w.ActionState.isOutOfMana = false
 	w.ActionState.ActivityCheckerEnabled = w.ActivityCheckerEnabled
+
+	var enemies []game.CheckTarget
+	for _, v := range w.CustomEnemyOrder {
+		enemies = append(enemies, EnemyEnumMap[enemy.Position(v)])
+	}
+	w.ActionState.CustomEnemies = enemies
 
 	w.MovementState.origin = game.GetCurrentGamePos(w.hWnd)
 
