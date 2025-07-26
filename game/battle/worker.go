@@ -2,6 +2,7 @@ package battle
 
 import (
 	"cg/game"
+	"cg/game/enum/enemyorder"
 	"cg/game/enum/movement"
 	"cg/utils"
 	"sync"
@@ -40,6 +41,7 @@ type Worker struct {
 	TeleportAndResourceCheckerEnabled bool
 	InventoryCheckerEnabled           bool
 	ActivityCheckerEnabled            bool
+	EnemyOrder                        enemyorder.EnemyOrder
 
 	workerTicker                     *time.Ticker
 	inventoryCheckerTicker           *time.Ticker
@@ -200,6 +202,7 @@ func (w *Worker) reset() {
 	w.ActionState.isOutOfHealth = false
 	w.ActionState.isOutOfMana = false
 	w.ActionState.ActivityCheckerEnabled = w.ActivityCheckerEnabled
+	w.ActionState.EnemyOrder = w.EnemyOrder
 
 	w.MovementState.origin = game.GetCurrentGamePos(w.hWnd)
 

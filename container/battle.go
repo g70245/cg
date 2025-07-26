@@ -5,6 +5,7 @@ import (
 	"cg/game/battle"
 	"cg/game/enum/character"
 	"cg/game/enum/controlunit"
+	"cg/game/enum/enemyorder"
 	"cg/game/enum/movement"
 	"cg/game/enum/offset"
 	"cg/game/enum/pet"
@@ -983,7 +984,20 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	})
 	checkersButton.Importance = widget.HighImportance
 
-	menuWidget = container.NewGridWithColumns(5, manaCheckerSelectorButton, checkersButton, loadSettingButton, deleteButton, switchButton)
+	enemyOrderRadio := widget.NewRadioGroup(battle.EnemyOrder.GetOptions(), func(order string) {
+		for i := range options.workers {
+			options.workers[i].EnemyOrder = enemyorder.EnemyOrder(order)
+		}
+	})
+	enemyOrderRadio.Selected = enemyorder.Default.String()
+	enemyOrderRadio.Horizontal = true
+	enemyOrderRadio.Required = true
+	enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.MenuIcon(), func() {
+		dialog.NewCustom("Enemy Order", "Leave", container.NewAdaptiveGrid(4, enemyOrderRadio), window).Show()
+	})
+	enemyOrderButton.Importance = widget.HighImportance
+
+	menuWidget = container.NewGridWithColumns(6, manaCheckerSelectorButton, checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton)
 	return
 }
 

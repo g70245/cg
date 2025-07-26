@@ -5,6 +5,7 @@ import (
 	"cg/game/enum"
 	"cg/game/enum/character"
 	"cg/game/enum/controlunit"
+	"cg/game/enum/enemyorder"
 	"cg/game/enum/offset"
 	"cg/game/enum/pet"
 	"cg/game/enum/ratio"
@@ -73,12 +74,14 @@ type ActionState struct {
 	currentCU                controlunit.ControlUnit `json:"-"`
 	currentJumpId            int                     `json:"-"`
 
-	Enabled                bool `json:"-"`
-	ActivityCheckerEnabled bool `json:"-"`
-	isOutOfHealth          bool `json:"-"`
-	isOutOfMana            bool `json:"-"`
-	isCharacterHanging     bool `json:"-"`
-	isPetHanging           bool `json:"-"`
+	Enabled                bool                  `json:"-"`
+	ActivityCheckerEnabled bool                  `json:"-"`
+	EnemyOrder             enemyorder.EnemyOrder `json:"-"`
+
+	isOutOfHealth      bool `json:"-"`
+	isOutOfMana        bool `json:"-"`
+	isCharacterHanging bool `json:"-"`
+	isPetHanging       bool `json:"-"`
 
 	ManaChecker *string `json:"-"`
 	GameDir     *string `json:"-"`
@@ -747,9 +750,12 @@ func (s *ActionState) enableBattleCommandAttack() {
 
 func (s *ActionState) attack(stateChecker func() bool) bool {
 	targets := make([]game.CheckTarget, len(s.enemies))
-	copy(targets, s.enemies)
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
+	if s.EnemyOrder == enemyorder.Default {
+		copy(targets, s.enemies)
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
+	}
+
 	for _, target := range targets {
 		internal.LeftClick(s.hWnd, target.X, target.Y)
 		time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
@@ -951,7 +957,11 @@ func (s *ActionState) detectEnemies() {
 	game.CloseAllWindows(s.hWnd)
 
 	if s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
-		s.enemies = s.getEnemies(allMonsters)
+		if s.EnemyOrder == enemyorder.F4 {
+			s.enemies = s.getEnemies(F4)
+		} else {
+			s.enemies = s.getEnemies(AllEnemies)
+		}
 	}
 
 	if len(s.enemies) == 1 && s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
