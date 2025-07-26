@@ -5,7 +5,7 @@ import (
 	"cg/game/enum"
 	"cg/game/enum/character"
 	"cg/game/enum/controlunit"
-	"cg/game/enum/enemyorder"
+	"cg/game/enum/enemy"
 	"cg/game/enum/offset"
 	"cg/game/enum/pet"
 	"cg/game/enum/ratio"
@@ -26,19 +26,18 @@ import (
 )
 
 var (
-	ControlUnits = enum.GenericEnum[controlunit.ControlUnit]{List: []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}}
-	Offsets      = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
-	Levels       = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
-	Ratios       = enum.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.OneTenth, ratio.TwoTenth, ratio.ThreeTenth, ratio.FourTenth, ratio.FiveTenth, ratio.SixTenth, ratio.SevenTenth, ratio.EightTenth, ratio.NineTenth, ratio.One}}
-	Thresholds   = enum.GenericEnum[threshold.Threshold]{List: []threshold.Threshold{threshold.OneFoe, threshold.TwoFoes, threshold.ThreeFoes, threshold.FourFoes, threshold.FiveFoes, threshold.SixFoes, threshold.SevenFoes, threshold.EightFoes, threshold.NineFoes, threshold.TenFoes}}
+	ControlUnits   = enum.GenericEnum[controlunit.ControlUnit]{List: []controlunit.ControlUnit{controlunit.StartOver, controlunit.Continue, controlunit.Repeat, controlunit.Jump}}
+	Offsets        = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
+	Levels         = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
+	Ratios         = enum.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.OneTenth, ratio.TwoTenth, ratio.ThreeTenth, ratio.FourTenth, ratio.FiveTenth, ratio.SixTenth, ratio.SevenTenth, ratio.EightTenth, ratio.NineTenth, ratio.One}}
+	Thresholds     = enum.GenericEnum[threshold.Threshold]{List: []threshold.Threshold{threshold.OneFoe, threshold.TwoFoes, threshold.ThreeFoes, threshold.FourFoes, threshold.FiveFoes, threshold.SixFoes, threshold.SevenFoes, threshold.EightFoes, threshold.NineFoes, threshold.TenFoes}}
+	EnemyPositions = enum.GenericEnum[enemy.Position]{List: []enemy.Position{enemy.T1, enemy.T2, enemy.T3, enemy.T4, enemy.T5, enemy.B1, enemy.B2, enemy.B3, enemy.B4, enemy.B5}}
 )
 
 const (
 	DURATION_BATTLE_ACTION_WAITING_LOOP = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_ATTACK       = 100 * time.Millisecond
 	DURATION_BATTLE_ACTION_GENERAL      = 160 * time.Millisecond
-
-	TRAINING_COUNTER_THRESHOLD = 8
 )
 
 type CharacterAction struct {
@@ -74,9 +73,10 @@ type ActionState struct {
 	currentCU                controlunit.ControlUnit `json:"-"`
 	currentJumpId            int                     `json:"-"`
 
-	Enabled                bool                  `json:"-"`
-	ActivityCheckerEnabled bool                  `json:"-"`
-	EnemyOrder             enemyorder.EnemyOrder `json:"-"`
+	Enabled                bool               `json:"-"`
+	ActivityCheckerEnabled bool               `json:"-"`
+	EnemyOrder             enemy.Position     `json:"-"`
+	CustomEnemies          []game.CheckTarget `json:"-"`
 
 	isOutOfHealth      bool `json:"-"`
 	isOutOfMana        bool `json:"-"`
@@ -750,13 +750,13 @@ func (s *ActionState) enableBattleCommandAttack() {
 
 func (s *ActionState) attack(stateChecker func() bool) bool {
 	var targets []game.CheckTarget
-	if s.EnemyOrder == enemyorder.Default {
+	if len(s.CustomEnemies) != 0 {
+		targets = s.enemies
+	} else {
 		targets = make([]game.CheckTarget, len(s.enemies))
 		copy(targets, s.enemies)
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		r.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
-	} else {
-		targets = s.enemies
 	}
 
 	for _, target := range targets {
@@ -959,16 +959,10 @@ func (s *ActionState) detectEnemies() {
 	}
 	game.CloseAllWindows(s.hWnd)
 
-	if s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
-		if s.EnemyOrder == enemyorder.F4 {
-			s.enemies = s.getEnemies(F4)
-		} else {
-			s.enemies = s.getEnemies(AllEnemies)
-		}
-	}
-
-	if len(s.enemies) == 1 && s.trainingCounter < TRAINING_COUNTER_THRESHOLD {
-		s.trainingCounter++
+	if len(s.CustomEnemies) != 0 {
+		s.enemies = s.getEnemies(s.CustomEnemies)
+	} else {
+		s.enemies = s.getEnemies(AllEnemies)
 	}
 
 	log.Printf("# Handle %s detected %d enemies\n", fmt.Sprint(s.hWnd), len(s.enemies))

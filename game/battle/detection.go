@@ -135,35 +135,6 @@ func (s *ActionState) canRecall() bool {
 	return internal.GetColor(s.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
-var allPlayers = []game.CheckTarget{
-	PLAYER_L_1_P,
-	PLAYER_L_2_P,
-	PLAYER_L_3_P,
-	PLAYER_L_4_P,
-	PLAYER_L_5_P,
-	PLAYER_L_1_H,
-	PLAYER_L_2_H,
-	PLAYER_L_3_H,
-	PLAYER_L_4_H,
-	PLAYER_L_5_H,
-}
-
-var allCharacters = []game.CheckTarget{
-	PLAYER_L_1_H,
-	PLAYER_L_2_H,
-	PLAYER_L_3_H,
-	PLAYER_L_4_H,
-	PLAYER_L_5_H,
-}
-
-var allPets = []game.CheckTarget{
-	PLAYER_L_1_P,
-	PLAYER_L_2_P,
-	PLAYER_L_3_P,
-	PLAYER_L_4_P,
-	PLAYER_L_5_P,
-}
-
 func (s *ActionState) isAnyCharacterOutOfMana() bool {
 	internal.MoveCursorToNowhere(s.hWnd)
 

@@ -2,8 +2,7 @@ package battle
 
 import (
 	"cg/game"
-	"cg/game/enum"
-	"cg/game/enum/enemyorder"
+	"cg/game/enum/enemy"
 	"cg/internal"
 )
 
@@ -30,10 +29,14 @@ var (
 	PLAYER_L_4_P = game.CheckTarget{X: 460, Y: 277, Color: game.COLOR_ANY}
 	PLAYER_L_5_P = game.CheckTarget{X: 524, Y: 241, Color: game.COLOR_ANY}
 
-	F4         = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
-	AllEnemies = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_1, MON_POS_B_2, MON_POS_B_3, MON_POS_B_4, MON_POS_B_5}
+	allPlayers    = []game.CheckTarget{PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P, PLAYER_L_1_H, PLAYER_L_2_H, PLAYER_L_3_H, PLAYER_L_4_H, PLAYER_L_5_H}
+	allCharacters = []game.CheckTarget{PLAYER_L_1_H, PLAYER_L_2_H, PLAYER_L_3_H, PLAYER_L_4_H, PLAYER_L_5_H}
+	allPets       = []game.CheckTarget{PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P}
 
-	EnemyOrder = enum.GenericEnum[enemyorder.EnemyOrder]{List: []enemyorder.EnemyOrder{enemyorder.Default, enemyorder.F4}}
+	F4_W         = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
+	F4_P         = []game.CheckTarget{MON_POS_B_3, MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
+	AllEnemies   = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_1, MON_POS_B_2, MON_POS_B_3, MON_POS_B_4, MON_POS_B_5}
+	EnemyEnumMap = map[enemy.Position]game.CheckTarget{enemy.T1: MON_POS_T_1, enemy.T2: MON_POS_T_2, enemy.T3: MON_POS_T_3, enemy.T4: MON_POS_T_4, enemy.T5: MON_POS_T_5, enemy.B1: MON_POS_B_1, enemy.B2: MON_POS_B_2, enemy.B3: MON_POS_B_3, enemy.B4: MON_POS_B_4, enemy.B5: MON_POS_B_5}
 )
 
 func (s *ActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTarget {
