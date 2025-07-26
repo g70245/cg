@@ -749,11 +749,14 @@ func (s *ActionState) enableBattleCommandAttack() {
 }
 
 func (s *ActionState) attack(stateChecker func() bool) bool {
-	targets := make([]game.CheckTarget, len(s.enemies))
+	var targets []game.CheckTarget
 	if s.EnemyOrder == enemyorder.Default {
+		targets = make([]game.CheckTarget, len(s.enemies))
 		copy(targets, s.enemies)
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		r.Shuffle(len(targets), func(i, j int) { targets[i], targets[j] = targets[j], targets[i] })
+	} else {
+		targets = s.enemies
 	}
 
 	for _, target := range targets {
