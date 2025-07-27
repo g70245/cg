@@ -429,7 +429,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 					game.UseCharacterSkill(s.hWnd, x, y, offset, level)
 					if s.didCharacterMissSkill(x, y) {
 						s.logH("missed the skill button or is out of mana")
-					} else if s.aim(&PLAYER_L_3_H, s.isCharacterActionSuccessful) {
+					} else if s.aim(&PLAYER_L_3_C, s.isCharacterActionSuccessful) {
 						s.logH("healed allies")
 						s.setSuccessState(role.Character)
 					} else {
@@ -464,7 +464,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 				} else if s.isCharacterActionSuccessful() {
 					s.logH("is training")
 					s.setSuccessState(role.Character)
-				} else if s.aim(&PLAYER_L_3_H, s.isCharacterActionSuccessful) {
+				} else if s.aim(&PLAYER_L_3_C, s.isCharacterActionSuccessful) {
 					s.logH("is training")
 					s.setSuccessState(role.Character)
 				}

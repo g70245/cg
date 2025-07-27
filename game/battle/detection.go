@@ -3,7 +3,6 @@ package battle
 import (
 	"cg/game"
 	"cg/internal"
-	"math/rand"
 	"slices"
 
 	"time"
@@ -160,13 +159,9 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 func (s *ActionState) searchHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
 
-	copiedAllTargets := slices.Clone(allPlayers)
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(copiedAllTargets), func(i, j int) { copiedAllTargets[i], copiedAllTargets[j] = copiedAllTargets[j], copiedAllTargets[i] })
-
-	for i := range copiedAllTargets {
-		if s.isHealthLowerThan(ratio, &copiedAllTargets[i]) {
-			return &copiedAllTargets[i], true
+	for i := range allPlayers {
+		if s.isHealthLowerThan(ratio, &allPlayers[i]) {
+			return &allPlayers[i], true
 		}
 	}
 	return nil, false
@@ -194,7 +189,7 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	for i := range allPlayers {
 		if s.isHealthLowerThan(ratio, &allPlayers[i]) {
 			counter++
-			weight := 1 + i/5
+			weight := 1 + (i / 5) ^ 1
 			detectedTargets[i/5][i%5] += weight
 			detectedTargets[(i/5)^1][i%5] += weight
 			if i%5 > 0 {
