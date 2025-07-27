@@ -189,9 +189,9 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	for i := range allPlayers {
 		if s.isHealthLowerThan(ratio, &allPlayers[i]) {
 			counter++
-			weight := 1 + (i / 5) ^ 1
+			weight := 1 + (i/5 ^ 1)
 			detectedTargets[i/5][i%5] += weight
-			detectedTargets[(i/5)^1][i%5] += weight
+			detectedTargets[i/5^1][i%5] += weight
 			if i%5 > 0 {
 				detectedTargets[i/5][i%5-1] += weight
 			}
@@ -203,7 +203,7 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	if counter >= 2 {
 		max := 0
 		maxId := 0
-		for i := range allPlayers {
+		for i := len(allPlayers) - 1; i >= 0; i-- {
 			if max <= detectedTargets[i/5][i%5] && s.doesPlayerExist(allPlayers[i]) {
 				max = detectedTargets[i/5][i%5]
 				maxId = i
