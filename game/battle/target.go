@@ -18,19 +18,19 @@ var (
 	MON_POS_B_4 = game.CheckTarget{X: 284, Y: 187, Color: game.COLOR_ANY}
 	MON_POS_B_5 = game.CheckTarget{X: 343, Y: 148, Color: game.COLOR_ANY}
 
-	PLAYER_L_1_H = game.CheckTarget{X: 329, Y: 431, Color: game.COLOR_ANY}
-	PLAYER_L_2_H = game.CheckTarget{X: 394, Y: 396, Color: game.COLOR_ANY}
-	PLAYER_L_3_H = game.CheckTarget{X: 460, Y: 361, Color: game.COLOR_ANY}
-	PLAYER_L_4_H = game.CheckTarget{X: 524, Y: 326, Color: game.COLOR_ANY}
-	PLAYER_L_5_H = game.CheckTarget{X: 589, Y: 291, Color: game.COLOR_ANY}
+	PLAYER_L_1_C = game.CheckTarget{X: 329, Y: 431, Color: game.COLOR_ANY}
+	PLAYER_L_2_C = game.CheckTarget{X: 394, Y: 396, Color: game.COLOR_ANY}
+	PLAYER_L_3_C = game.CheckTarget{X: 460, Y: 361, Color: game.COLOR_ANY}
+	PLAYER_L_4_C = game.CheckTarget{X: 524, Y: 326, Color: game.COLOR_ANY}
+	PLAYER_L_5_C = game.CheckTarget{X: 589, Y: 291, Color: game.COLOR_ANY}
 	PLAYER_L_1_P = game.CheckTarget{X: 269, Y: 386, Color: game.COLOR_ANY}
 	PLAYER_L_2_P = game.CheckTarget{X: 333, Y: 350, Color: game.COLOR_ANY}
 	PLAYER_L_3_P = game.CheckTarget{X: 397, Y: 314, Color: game.COLOR_ANY}
 	PLAYER_L_4_P = game.CheckTarget{X: 460, Y: 277, Color: game.COLOR_ANY}
 	PLAYER_L_5_P = game.CheckTarget{X: 524, Y: 241, Color: game.COLOR_ANY}
 
-	allPlayers    = []game.CheckTarget{PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P, PLAYER_L_1_H, PLAYER_L_2_H, PLAYER_L_3_H, PLAYER_L_4_H, PLAYER_L_5_H}
-	allCharacters = []game.CheckTarget{PLAYER_L_1_H, PLAYER_L_2_H, PLAYER_L_3_H, PLAYER_L_4_H, PLAYER_L_5_H}
+	allPlayers    = []game.CheckTarget{PLAYER_L_1_C, PLAYER_L_2_C, PLAYER_L_3_C, PLAYER_L_4_C, PLAYER_L_5_C, PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P}
+	allCharacters = []game.CheckTarget{PLAYER_L_1_C, PLAYER_L_2_C, PLAYER_L_3_C, PLAYER_L_4_C, PLAYER_L_5_C}
 	allPets       = []game.CheckTarget{PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P}
 
 	F4_W         = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}

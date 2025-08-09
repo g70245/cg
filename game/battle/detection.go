@@ -3,7 +3,6 @@ package battle
 import (
 	"cg/game"
 	"cg/internal"
-	"math/rand"
 	"slices"
 
 	"time"
@@ -141,8 +140,8 @@ func (s *ActionState) isAnyCharacterOutOfMana() bool {
 	for _, h := range allCharacters {
 		oy := h.Y + 3
 		manaPoint := h.X + 2
-		if internal.GetColor(s.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER &&
-			internal.GetColor(s.hWnd, h.X, h.Y) == COLOR_BATTLE_BLOOD_UPPER {
+		if internal.GetColor(s.hWnd, h.X-1, oy) == COLOR_BATTLE_STATUS_PIVOT &&
+			internal.GetColor(s.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER {
 			return true
 		}
 	}
@@ -153,20 +152,18 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 
 	healthPoint := int32(ratio*30) + checkTarget.X
 	oy := checkTarget.Y + 3
-	return internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
-		internal.GetColor(s.hWnd, checkTarget.X, oy) == COLOR_BATTLE_MANA_UPPER
+	// return internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
+
+	return internal.GetColor(s.hWnd, checkTarget.X-1, oy) == COLOR_BATTLE_STATUS_PIVOT &&
+		internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
 }
 
 func (s *ActionState) searchHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
 
-	copiedAllTargets := slices.Clone(allPlayers)
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	rand.Shuffle(len(copiedAllTargets), func(i, j int) { copiedAllTargets[i], copiedAllTargets[j] = copiedAllTargets[j], copiedAllTargets[i] })
-
-	for i := range copiedAllTargets {
-		if s.isHealthLowerThan(ratio, &copiedAllTargets[i]) {
-			return &copiedAllTargets[i], true
+	for i := range allPlayers {
+		if s.isHealthLowerThan(ratio, &allPlayers[i]) {
+			return &allPlayers[i], true
 		}
 	}
 	return nil, false
@@ -194,9 +191,9 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	for i := range allPlayers {
 		if s.isHealthLowerThan(ratio, &allPlayers[i]) {
 			counter++
-			weight := 1 + i/5
+			weight := 1 + (i/5 ^ 1)
 			detectedTargets[i/5][i%5] += weight
-			detectedTargets[(i/5)^1][i%5] += weight
+			detectedTargets[i/5^1][i%5] += weight
 			if i%5 > 0 {
 				detectedTargets[i/5][i%5-1] += weight
 			}
@@ -208,7 +205,7 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	if counter >= 2 {
 		max := 0
 		maxId := 0
-		for i := range allPlayers {
+		for i := len(allPlayers) - 1; i >= 0; i-- {
 			if max <= detectedTargets[i/5][i%5] && s.doesPlayerExist(allPlayers[i]) {
 				max = detectedTargets[i/5][i%5]
 				maxId = i
