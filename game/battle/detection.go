@@ -152,7 +152,6 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 
 	healthPoint := int32(ratio*30) + checkTarget.X
 	oy := checkTarget.Y + 3
-	// return internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
 
 	return internal.GetColor(s.hWnd, checkTarget.X-1, oy) == COLOR_BATTLE_STATUS_PIVOT &&
 		internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
