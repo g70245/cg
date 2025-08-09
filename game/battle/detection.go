@@ -140,8 +140,8 @@ func (s *ActionState) isAnyCharacterOutOfMana() bool {
 	for _, h := range allCharacters {
 		oy := h.Y + 3
 		manaPoint := h.X + 2
-		if internal.GetColor(s.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER &&
-			internal.GetColor(s.hWnd, h.X, h.Y) == COLOR_BATTLE_BLOOD_UPPER {
+		if internal.GetColor(s.hWnd, h.X-1, oy) == COLOR_BATTLE_STATUS_PIVOT &&
+			internal.GetColor(s.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER {
 			return true
 		}
 	}
@@ -152,8 +152,10 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 
 	healthPoint := int32(ratio*30) + checkTarget.X
 	oy := checkTarget.Y + 3
-	return internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
-		internal.GetColor(s.hWnd, checkTarget.X, oy) == COLOR_BATTLE_MANA_UPPER
+	// return internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER &&
+
+	return internal.GetColor(s.hWnd, checkTarget.X-1, oy) == COLOR_BATTLE_STATUS_PIVOT &&
+		internal.GetColor(s.hWnd, healthPoint, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
 }
 
 func (s *ActionState) searchHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
