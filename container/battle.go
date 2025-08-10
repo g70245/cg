@@ -36,6 +36,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+const (
+	separator = "    "
+)
+
 type BattleGroups struct {
 	stopChans map[int]chan bool
 }
@@ -139,7 +143,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 	actionViewers = []*fyne.Container{}
 
 	for i := range options.workers {
-		workerMenuContainer := container.NewGridWithColumns(6)
+		workerMenuContainer := container.NewGridWithColumns(7)
 		worker := &options.workers[i]
 
 		var aliasButton *widget.Button
@@ -177,6 +181,23 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		movementModeDialog = dialog.NewCustomWithoutButtons("Select a move way", movementModeSelector, window)
 		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
+		})
+
+		enemyOrderBindingStr := binding.NewString()
+		enemyOrderCheckGroup := widget.NewCheckGroup(battle.EnemyPositions.GetOptions(), func(s []string) {
+			enemyOrderBindingStr.Set(strings.Join(s, separator))
+		})
+		enemyOrderCheckGroup.Horizontal = true
+		enemyOrderLabel := widget.NewLabelWithData(enemyOrderBindingStr)
+		enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.SearchIcon(), func() {
+			enemyOrderCheckGroup.Selected = worker.CustomEnemyOrder
+			enemyOrderBindingStr.Set(strings.Join(worker.CustomEnemyOrder, separator))
+
+			d := dialog.NewCustom("Enemy Order", "Apply", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
+			d.SetOnClosed(func() {
+				worker.CustomEnemyOrder = enemyOrderCheckGroup.Selected
+			})
+			d.Show()
 		})
 
 		var selector = widget.NewRadioGroup(nil, nil)
@@ -812,6 +833,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		workerMenuContainer.Add(aliasButton)
 		workerMenuContainer.Add(movementModeButton)
+		workerMenuContainer.Add(enemyOrderButton)
 		workerMenuContainer.Add(characterActionSelector)
 		workerMenuContainer.Add(petActionSelector)
 		workerMenuContainer.Add(loadSettingButton)
@@ -987,18 +1009,31 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 
 	enemyOrderBindingStr := binding.NewString()
 	enemyOrderCheckGroup := widget.NewCheckGroup(battle.EnemyPositions.GetOptions(), func(s []string) {
-		options.customEnemyOrder = s
-		enemyOrderBindingStr.Set(strings.Join(s, "    "))
+		enemyOrderBindingStr.Set(strings.Join(s, separator))
 	})
 	enemyOrderCheckGroup.Horizontal = true
 	enemyOrderLabel := widget.NewLabelWithData(enemyOrderBindingStr)
-	enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.MenuIcon(), func() {
+	enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.SearchIcon(), func() {
+		tempSelected := make([]string, len(enemyOrderCheckGroup.Selected))
+		copy(tempSelected, enemyOrderCheckGroup.Selected)
+
 		d := dialog.NewCustom("Enemy Order", "Leave", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
-		d.SetOnClosed(func() {
+
+		applyButton := widget.NewButton("Apply", func() {
 			for i := range options.workers {
-				options.workers[i].CustomEnemyOrder = options.customEnemyOrder
+				options.workers[i].CustomEnemyOrder = make([]string, len(enemyOrderCheckGroup.Selected))
+				copy(options.workers[i].CustomEnemyOrder, enemyOrderCheckGroup.Selected)
 			}
+			d.Hide()
 		})
+
+		leaveButton := widget.NewButton("Leave", func() {
+			enemyOrderCheckGroup.Selected = tempSelected
+			enemyOrderBindingStr.Set(strings.Join(enemyOrderCheckGroup.Selected, separator))
+			d.Hide()
+		})
+
+		d.SetButtons([]fyne.CanvasObject{applyButton, leaveButton})
 		d.Show()
 	})
 	enemyOrderButton.Importance = widget.HighImportance
