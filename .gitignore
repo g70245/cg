@@ -1,3 +1,4 @@
 .vscode/
 go.sum
-cg.exe
+*.exe
+v2.png

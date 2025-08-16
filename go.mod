@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	fyne.io/fyne/v2 v2.4.0
 	github.com/faiface/beep v1.1.0
-	github.com/g70245/win v0.0.0-20230926211218-882ac9c102fe
+	github.com/g70245/win v0.0.0-20250117095612-913c9f118832
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/text v0.13.0
 )
