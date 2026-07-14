@@ -111,10 +111,35 @@ go install fyne.io/tools/cmd/fyne@v1.7.2
 
 ## Current limitations
 
-- `go.sum` is currently absent and ignored by `.gitignore`. Dependency checksums are therefore not version-controlled yet.
-- No Fyne CLI version, application icon, metadata, build script, or CI build is currently supplied.
+- The project has no CI build yet; its Windows build is currently verified manually.
+- `scripts/package.ps1` still needs the required Windows `--app-id` argument before it can complete successfully with Fyne CLI `v1.7.2`.
 - The repository has no automated tests. A successful `go build .` establishes compile success only.
 - The program itself is Windows-specific because it invokes Win32 APIs.
+
+## Verified environment and packaging findings
+
+The following was verified on the development machine on 2026-07-15:
+
+- Go `1.21.13` for `windows/amd64`.
+- MSYS2 MinGW-w64 GCC `16.1.0`.
+- `scripts/build.ps1` completed successfully and produced `dist\cg.exe`.
+- Fyne CLI `v1.7.2` successfully produced a Windows release executable when invoked with an explicit app ID.
+
+The verified direct Fyne command is:
+
+```powershell
+fyne package --target windows --src . --name CG --icon app.png --app-id com.github.g70245.cg --release
+```
+
+### Important output-location distinction
+
+The direct `fyne package` command writes `CG.exe` to the repository root. In contrast, `scripts/build.ps1` writes the ordinary Go build to `dist\cg.exe`.
+
+These are different files. If Explorer displays the icon for `dist\cg.exe` after only running the direct Fyne command, it is displaying the ordinary Go build rather than the newly packaged executable. Move the packaged root `CG.exe` to `dist\CG.exe` to replace it; Windows treats `CG.exe` and `cg.exe` as the same file name.
+
+### Current packaging-script gap
+
+Fyne CLI `v1.7.2` requires `--app-id` for Windows packaging. The current `scripts/package.ps1` has not yet been updated with `--app-id com.github.g70245.cg`, so it fails before it can move the packaged executable into `dist`. This script change remains pending.
 
 ## Troubleshooting information to collect
 
