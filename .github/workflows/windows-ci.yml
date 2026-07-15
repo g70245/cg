@@ -1,0 +1,60 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      CGO_ENABLED: "1"
+      CC: gcc
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.21.x"
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Show toolchain
+        shell: pwsh
+        run: |
+          go version
+          gcc --version
+          go env GOOS GOARCH CGO_ENABLED CC
+
+      - name: Build application
+        shell: pwsh
+        run: .\scripts\build.ps1
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath '.\dist\cg.exe')) {
+              throw 'Expected build output was not produced: dist\cg.exe'
+          }
+
+      - name: Test packages
+        shell: pwsh
+        run: go test ./...
+
+      - name: Vet packages
+        shell: pwsh
+        run: go vet ./...

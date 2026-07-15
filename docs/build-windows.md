@@ -85,6 +85,12 @@ It verifies that Go and GCC are available, checks the tracked `go.sum` dependenc
 .\scripts\build.ps1 -SkipDependencyDownload
 ```
 
+### Windows CI
+
+GitHub Actions runs the verified build path on `windows-2022` for pushes and pull requests targeting `dev` or `main`, and it also supports manual runs. The workflow sets up Go `1.21.x`, enables CGO with GCC, runs `scripts/build.ps1`, verifies `dist\cg.exe`, and then runs `go test ./...` and `go vet ./...`.
+
+The CI workflow is defined in `.github/workflows/windows-ci.yml`. It validates compilation and static checks only; it does not launch the GUI, interact with a game client, or create a Fyne release package.
+
 ## Package a Windows release with Fyne
 
 The project pins the packaging CLI at `fyne.io/tools v1.7.2`. The packaging script downloads it through Go when necessary, so a globally installed `fyne` command is not required.
@@ -111,7 +117,6 @@ go install fyne.io/tools/cmd/fyne@v1.7.2
 
 ## Current limitations
 
-- The project has no CI build yet; its Windows build is currently verified manually.
 - The repository has no automated tests. A successful `go build .` establishes compile success only.
 - The program itself is Windows-specific because it invokes Win32 APIs.
 

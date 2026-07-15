@@ -121,11 +121,12 @@ cg/
 | `utils/helpers.go` | Contains ad hoc diagnostics for coordinates, colors, handles, and goroutines. | Most helpers are unexported and are not called by the application entry path. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
 | `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
+| `.github/workflows/windows-ci.yml` | Runs the verified Windows build, package compilation checks, and vetting on GitHub Actions. | Uses `windows-2022`, Go `1.21.x`, CGO, and GCC. |
 | `app.png` | Repository-owned package icon. | Used only by `scripts/package.ps1`. |
 | `example.png` | Screenshot of the battle UI. | Referenced by `README.md`; not embedded into the executable. |
 | `dist/` | Generated build output. | `*.exe` is ignored by `.gitignore`. |
 
-There are no repository configuration files for CI, linting, installers, runtime settings, or persisted user preferences.
+There are no repository configuration files for standalone linting, installers, runtime settings, or persisted user preferences. GitHub Actions CI is configured in `.github/workflows/windows-ci.yml`.
 
 ## 4. Overall System Architecture
 
@@ -531,7 +532,13 @@ go vet ./...
 
 The script prints the absolute output path and throws on detected failures. It does not run `go test`, `go vet`, formatting checks, race detection, or UI smoke tests.
 
-### 11.3 Packaging
+### 11.3 Continuous integration
+
+`.github/workflows/windows-ci.yml` runs on pushes and pull requests targeting `dev` or `main`, with manual dispatch available. It uses the fixed `windows-2022` runner image, Go `1.21.x`, `CGO_ENABLED=1`, and `CC=gcc`.
+
+The workflow calls `scripts/build.ps1`, verifies `dist\cg.exe`, and runs `go test ./...` and `go vet ./...`. It does not launch the GUI, interact with a game client, package a release, or upload build artifacts.
+
+### 11.4 Packaging
 
 `scripts/package.ps1` invokes:
 
@@ -543,9 +550,9 @@ It targets Windows, uses `app.png`, sets name `CG`, enables release mode, option
 
 The currently verified Fyne CLI requires `--app-id com.github.g70245.cg`, and the script passes that application ID. Direct packaging with the same app ID is documented in `docs/build-windows.md`.
 
-There is no installer, code signing, update mechanism, release workflow, or CI configuration. Cross-compilation is neither scripted nor verified. Because the target uses CGO and Windows-specific APIs, cross-compilation would require an appropriate Windows C toolchain and remains **To be confirmed**.
+There is no installer, code signing, update mechanism, or release workflow. Cross-compilation is neither scripted nor verified. Because the target uses CGO and Windows-specific APIs, cross-compilation would require an appropriate Windows C toolchain and remains **To be confirmed**.
 
-### 11.4 Resource handling
+### 11.5 Resource handling
 
 - `app.png` is supplied to Fyne CLI for release packaging; it is not referenced by application Go code.
 - `example.png` is documentation-only.
