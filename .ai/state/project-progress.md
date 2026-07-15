@@ -4,7 +4,7 @@ Last updated: 2026-07-15
 
 ## Current objective
 
-Establish `.ai/` as the repository-owned, agent-agnostic source of truth for AI-assisted development while retaining thin adapters for the agents actually used by the project.
+Add Windows CI for dependency resolution and builds, using the verified local Windows toolchain and repository build workflow as the baseline.
 
 ## Completed work
 
@@ -14,6 +14,9 @@ Establish `.ai/` as the repository-owned, agent-agnostic source of truth for AI-
 - Added session startup, planning authorization, branch safety, completion, and commit-approval rules.
 - Added project-local `implementation-plan`, `commit-changes`, and `session-handoff` skills.
 - Selected `.ai/` as a project-owned, agent-agnostic workspace convention; it is not presented as an industry standard.
+- Committed the `.ai/` workspace migration in `f0d86f0` and verified Codex adapter discovery and canonical skill loading in a new session.
+- Updated `scripts/package.ps1` to pass `--app-id com.github.g70245.cg` and committed the focused fix in `031e52e`.
+- Ran the corrected packaging script successfully and verified that it produces `dist\CG.exe`.
 
 ## Current repository facts
 
@@ -21,21 +24,20 @@ Establish `.ai/` as the repository-owned, agent-agnostic source of truth for AI-
 - The application is Windows-only and uses Go, Fyne, CGO, MinGW-w64 GCC, and direct Win32 integration.
 - `scripts/build.ps1` successfully produces `dist\cg.exe` in the verified environment.
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
+- `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
 - The repository has no automated test files.
 
 ## Outstanding work
 
-1. Review and commit the uncommitted `.ai/` workspace migration after explicit approval.
-2. Confirm Codex adapter discovery and canonical skill loading in a new session after the migration is committed.
-3. Update `scripts/package.ps1` to pass `--app-id com.github.g70245.cg`.
-4. Run the corrected packaging script and verify `dist\CG.exe`.
-5. Add Windows CI for dependency resolution and builds.
-6. Add baseline quality checks and tests as suitable seams become available.
+1. Add Windows CI for dependency resolution and builds.
+2. Add baseline quality checks and tests as suitable seams become available.
 
 ## Current handoff
 
-- The `.ai/` migration is a documentation and agent-workflow change; it does not alter Go application behavior.
-- The migration is currently uncommitted and includes the new neutral workspace, three canonical skills, a session lifecycle, thin Codex adapters, and the move from `docs/agent-progress.md` to this file.
+- The `.ai/` migration and Windows packaging app-ID fix are committed on `dev`; the working tree was clean before this handoff update.
+- Codex discovered all three project-local adapters and loaded their corresponding canonical `.ai/skills/` instructions successfully.
+- The corrected packaging script completed with Fyne CLI v1.7.2 and produced `dist\CG.exe`; generated executables remain ignored.
+- The safest next implementation step is a repository-grounded Windows CI workflow for dependency resolution and builds.
 - Formal product documentation remains under `docs/`.
 - Project working state belongs in `.ai/state/` and must not be shared as actual content across unrelated projects.
 - No distribution method such as Copier, Cruft, submodule, subtree, or a separate specification repository has been selected.
