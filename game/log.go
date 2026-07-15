@@ -2,11 +2,22 @@ package game
 
 import (
 	"cg/internal"
+	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
+
+func ValidateLogDirectory(gameDir string) error {
+	if gameDir == "" {
+		return errors.New("game directory is not selected")
+	}
+
+	_, err := internal.GetLastLines(filepath.Join(gameDir, "Log"), 1)
+	return err
+}
 
 var (
 	PH_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
@@ -61,7 +72,10 @@ func IsProductionStatusOK(name, gameDir string, before time.Duration) bool {
 
 func doesPhraseExist(gameDir string, lineCount int, before time.Duration, phrases []string) bool {
 	logDir := fmt.Sprintf("%s/Log", gameDir)
-	lines := internal.GetLastLines(logDir, lineCount)
+	lines, err := internal.GetLastLines(logDir, lineCount)
+	if err != nil {
+		return false
+	}
 	now := time.Now()
 	for i := range lines {
 		if len(lines[i]) < 9 {

@@ -2,6 +2,8 @@ package internal
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,13 +13,29 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func GetLastLine(fileDir string) string {
-	path, _, _ := findLastModifiedFileBefore(fileDir, time.Now().Add(10*time.Second))
-	return getLastLinesWithSeek(path, 1)[0]
+var ErrNoLogFiles = errors.New("no log files found")
+
+func GetLastLine(fileDir string) (string, error) {
+	lines, err := GetLastLines(fileDir, 1)
+	if err != nil || len(lines) == 0 {
+		return "", err
+	}
+	return lines[0], nil
 }
 
-func GetLastLines(logDir string, lineCount int) []string {
-	path, _, _ := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+func GetLastLines(logDir string, lineCount int) ([]string, error) {
+	if lineCount <= 0 {
+		return []string{}, nil
+	}
+
+	path, _, err := findLastModifiedFileBefore(logDir, time.Now().Add(10*time.Second))
+	if err != nil {
+		return nil, fmt.Errorf("find latest log file in %q: %w", logDir, err)
+	}
+	if path == "" {
+		return nil, fmt.Errorf("find latest log file in %q: %w", logDir, ErrNoLogFiles)
+	}
+
 	return getLastLinesWithSeek(path, lineCount)
 }
 
@@ -47,44 +65,59 @@ func findLastModifiedFileBefore(dir string, t time.Time) (path string, info os.F
 	return
 }
 
-func getLastLinesWithSeek(filepath string, lineNumber int) []string {
-	fileHandle, err := os.Open(filepath)
+func getLastLinesWithSeek(path string, lineCount int) ([]string, error) {
+	fileHandle, err := os.Open(path)
 	if err != nil {
-		panic("Cannot open file")
+		return nil, fmt.Errorf("open log file %q: %w", path, err)
 	}
 	defer fileHandle.Close()
 
-	lines := make([]string, 0)
-	var buffer []byte
-
-	var cursor int64 = -2
-	stat, _ := fileHandle.Stat()
-	filesize := stat.Size()
-	for {
-		cursor--
-		fileHandle.Seek(cursor, io.SeekEnd)
-
-		char := make([]byte, 1)
-		fileHandle.Read(char)
-
-		if cursor != -1 && (char[0] == 10 || char[0] == 13) {
-			lines = append(lines, byteToString(buffer))
-			if len(lines) == lineNumber {
-				break
-			} else {
-				cursor--
-			}
-		}
-
-		buffer = append([]byte{char[0]}, buffer...)
-
-		if cursor == -filesize { // stop if we are at the begining
-			break
-		}
-
+	stat, err := fileHandle.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("stat log file %q: %w", path, err)
+	}
+	if stat.Size() == 0 || lineCount <= 0 {
+		return []string{}, nil
 	}
 
-	return lines
+	const chunkSize int64 = 4096
+	position := stat.Size()
+	var tail []byte
+	for position > 0 {
+		readSize := min(chunkSize, position)
+		position -= readSize
+
+		chunk := make([]byte, readSize)
+		if _, err := fileHandle.ReadAt(chunk, position); err != nil && err != io.EOF {
+			return nil, fmt.Errorf("read log file %q: %w", path, err)
+		}
+		tail = append(chunk, tail...)
+
+		normalized := normalizeLineEndings(tail)
+		if bytes.Count(normalized, []byte{'\n'}) > lineCount {
+			break
+		}
+	}
+
+	normalized := normalizeLineEndings(tail)
+	rawLines := bytes.Split(normalized, []byte{'\n'})
+	for len(rawLines) > 0 && len(rawLines[len(rawLines)-1]) == 0 {
+		rawLines = rawLines[:len(rawLines)-1]
+	}
+	if len(rawLines) > lineCount {
+		rawLines = rawLines[len(rawLines)-lineCount:]
+	}
+
+	lines := make([]string, 0, len(rawLines))
+	for _, line := range rawLines {
+		lines = append(lines, byteToString(line))
+	}
+	return lines, nil
+}
+
+func normalizeLineEndings(data []byte) []byte {
+	data = bytes.ReplaceAll(data, []byte{'\r', '\n'}, []byte{'\n'})
+	return bytes.ReplaceAll(data, []byte{'\r'}, []byte{'\n'})
 }
 
 func byteToString(buffer []byte) string {

@@ -101,6 +101,9 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
+			if !validateLogConfig("About Production") {
+				return
+			}
 			worker.Work()
 			turn(theme.MediaStopIcon(), switchButton)
 		case theme.MediaStopIcon():

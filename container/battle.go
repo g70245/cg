@@ -957,6 +957,9 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
 		case theme.CheckButtonIcon():
+			if !validateLogConfig("About Teleport & Resource Checker") {
+				return
+			}
 			for i := range options.workers {
 				options.workers[i].StartTeleportAndResourceChecker()
 			}
@@ -975,6 +978,9 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
 		case theme.CheckButtonIcon():
+			if !validateLogConfig("About Activities Checker") {
+				return
+			}
 			for i := range options.workers {
 				options.workers[i].ActivityCheckerEnabled = true
 			}
@@ -1230,12 +1236,20 @@ func notifyBeeperConfig(title string) {
 }
 
 func notifyLogConfig(title string) {
-	if *r.gameDir == "" {
+	if game.ValidateLogDirectory(*r.gameDir) != nil {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dialog.NewInformation(title, "Remember to setup the log directory!!!", window).Show()
 		}()
 	}
+}
+
+func validateLogConfig(title string) bool {
+	if err := game.ValidateLogDirectory(*r.gameDir); err != nil {
+		dialog.NewInformation(title, fmt.Sprintf("Select a game directory containing a readable Log folder.\n\n%v", err), window).Show()
+		return false
+	}
+	return true
 }
 
 func notifyBeeperAndLogConfig(title string) {
