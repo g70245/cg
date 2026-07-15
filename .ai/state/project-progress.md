@@ -18,6 +18,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Updated `scripts/package.ps1` to pass `--app-id com.github.g70245.cg` and committed the focused fix in `031e52e`.
 - Ran the corrected packaging script successfully and verified that it produces `dist\CG.exe`.
 - Added Windows CI for dependency resolution and builds in `f132665`.
+- Added the first baseline table-driven tests around `game/enum.GenericEnum.GetOptions`; `go test ./...` and `go vet ./...` pass.
 
 ## Current repository facts
 
@@ -30,7 +31,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 
 ## Active tasks
 
-- [`baseline-quality-checks`](tasks/baseline-quality-checks.md): planned; identify a pure-logic seam and add the first baseline tests and quality checks.
+- None.
 
 ## Important decisions
 

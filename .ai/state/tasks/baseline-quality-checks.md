@@ -1,6 +1,6 @@
 # Baseline Quality Checks
 
-Status: planned
+Status: completed
 Owner: unassigned
 Branch: dev
 Last updated: 2026-07-15
@@ -21,13 +21,13 @@ Identify a pure-logic seam, add focused tests that do not depend on a live game 
 
 ## Completed work
 
-- No implementation work has started.
+- Selected `game/enum.GenericEnum.GetOptions` as the first pure-logic seam.
+- Added table-driven coverage for stringer values, primitive values, and empty input.
+- Added coverage confirming that returned options do not alias the enum's source list.
 
 ## Next steps
 
-1. Identify a suitable pure-logic seam for the first baseline test.
-2. Add focused table-driven tests beside that logic.
-3. Run `go test ./...` and `go vet ./...` in the verified Windows environment.
+- Add focused tests around other pure-logic seams as their behavior changes.
 
 ## Blockers
 
@@ -35,4 +35,6 @@ Identify a pure-logic seam, add focused tests that do not depend on a live game 
 
 ## Validation
 
-- Not started.
+- `go test ./game/enum` passed on 2026-07-15.
+- `go test ./...` passed on 2026-07-15.
+- `go vet ./...` passed on 2026-07-15.
