@@ -1,5 +1,24 @@
 # Repository Guidelines
 
+## Session Startup
+
+At the start of each work session:
+
+1. Read `docs/agent-progress.md`.
+2. Run `git status --short` to confirm the current working tree state.
+3. Based on the progress document and Git status, briefly summarize:
+   - The current objective
+   - Completed work
+   - Outstanding work
+   - The recommended next step
+4. Do not modify any files until the user confirms.
+5. After completing an independent unit of work:
+   - Run the necessary tests.
+   - Provide a diff summary.
+   - Do not create a commit automatically.
+6. Create a commit only after the user explicitly says "可以 commit".
+7. Do not run `git push`.
+
 ## Project Structure & Module Organization
 
 This is a Windows-only Go/Fyne desktop application for automating compatible game windows. `app.go` is the entry point. Keep UI composition in `container/`, game behavior in `game/`, and Win32/file primitives in `internal/`. Battle and production workflows live in `game/battle/` and `game/production/`. Reusable enumerations and item definitions belong in `game/enum/` and `game/items/`; alerts and diagnostics belong in `utils/`.

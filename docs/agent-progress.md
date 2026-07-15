@@ -15,6 +15,9 @@ Last updated: 2026-07-15
 - Installed Fyne CLI `v1.7.2` and verified direct Windows release packaging.
 - Verified `scripts/build.ps1` successfully produces `dist\cg.exe` on the current machine.
 - Created commit `3362348 chore: add reproducible Windows build tooling` for the reviewed build-tooling changes.
+- Added session startup, validation, commit-approval, and no-push rules to `AGENTS.md`; this change is not yet committed.
+- Installed Python `3.13.14`, the Python Launcher, pip `26.1.2`, and PyYAML `6.0.3` for local skill tooling.
+- Added the project-local `.codex/skills/session-handoff` skill and validated it with the official skill validator; this change is not yet committed.
 
 ## Project architecture summary
 
@@ -56,11 +59,18 @@ The application controls compatible game windows through Win32 messages and fixe
 
 - The direct Fyne command writes `CG.exe` in the repository root. This is distinct from the ordinary Go build at `dist\cg.exe`; inspecting the latter after a direct package command will not show the newly embedded icon.
 
+## Current handoff
+
+- The working tree contains the uncommitted `AGENTS.md` session startup rules and the untracked `.codex/skills/session-handoff` skill.
+- The new skill contains `SKILL.md` plus `agents/openai.yaml` and requires no bundled scripts, references, or assets.
+- The official skill validator reported `Skill is valid!`, and `git diff --check` passed.
+- No Go application code changed, so application tests were not run for this documentation and skill-only work.
+
 ## Next steps
 
-1. Update `scripts/package.ps1` to pass `--app-id com.github.g70245.cg`.
-2. Run the corrected packaging script and confirm it moves the packaged executable to `dist\CG.exe`, replacing the ordinary build artifact.
-3. Review the current documentation changes and commit them only after explicit approval.
+1. Review the uncommitted `AGENTS.md`, `.codex/skills/session-handoff`, and handoff-document changes; commit them only after explicit approval.
+2. Update `scripts/package.ps1` to pass `--app-id com.github.g70245.cg`.
+3. Run the corrected packaging script and confirm it moves the packaged executable to `dist\CG.exe`, replacing the ordinary build artifact.
 4. Add a Windows CI workflow that verifies dependency resolution and runs the build script in a clean environment.
 5. Add baseline quality checks (`go vet`, tests when available, and formatting checks) to the local and CI workflows.
 
@@ -74,4 +84,5 @@ The application controls compatible game windows through Win32 messages and fixe
 - The Windows app ID selected for Fyne packaging is `com.github.g70245.cg`.
 - `app.png` is the repository-owned Windows packaging icon.
 - Build output is `dist\cg.exe`; packaged output should replace that file in the same directory.
+- Project-specific Codex skills are stored under `.codex/skills/`; `session-handoff` records evidence-based end-of-session progress without committing or pushing.
 - Git commit messages must be written in English, and commits require explicit user approval after diff review.
