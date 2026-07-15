@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-## Session Startup
+## Session Workflow
 
 At the start of each work session:
 
@@ -11,13 +11,48 @@ At the start of each work session:
    - Completed work
    - Outstanding work
    - The recommended next step
-4. Do not modify any files until the user confirms.
-5. After completing an independent unit of work:
-   - Run the necessary tests.
-   - Provide a diff summary.
-   - Do not create a commit automatically.
-6. Create a commit only after the user explicitly says "可以 commit".
-7. Do not run `git push`.
+4. Do not modify any files until the user authorizes execution under the rules
+   below.
+
+For ordinary implementation requests, the user's confirmation of the startup
+summary authorizes work within the requested scope.
+
+When the user asks for an implementation plan, execution steps, design proposal,
+impact analysis, or requests that no code be changed yet:
+
+1. Enter planning mode.
+2. Inspect the repository using read-only operations.
+3. Produce a repository-grounded implementation plan.
+4. Do not modify files, apply patches, install dependencies, run migrations,
+   or otherwise change project state.
+5. Stop after presenting the plan.
+
+Remain in planning mode until the user gives an explicit and unambiguous
+execution instruction, such as:
+
+- 執行
+- 開始執行
+- 照計畫執行
+- 開始實作
+- Proceed
+- Implement the plan
+
+General approval, discussion, corrections, questions, or phrases such as
+“OK”, “看起來可以”, or “繼續” do not authorize implementation of a plan. This
+plan-first authorization rule takes precedence over ordinary startup
+confirmation. After explicit authorization, execute only the latest revised
+plan and its approved scope.
+
+After completing an independent unit of work:
+
+1. Run the necessary tests.
+2. Provide a diff summary.
+3. Do not create a commit automatically.
+
+Repository history and remote operations follow these rules:
+
+1. Create a commit only after the user explicitly says "commit".
+2. Do not run `git push`.
 
 ## Project Structure & Module Organization
 
