@@ -120,7 +120,7 @@ cg/
 | `utils/beeper.go` | Owns global looping MP3 playback. | Uses a goroutine and unbuffered control channels. |
 | `utils/helpers.go` | Contains ad hoc diagnostics for coordinates, colors, handles, and goroutines. | Most helpers are unexported and are not called by the application entry path. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
-| `scripts/package.ps1` | Runs pinned Fyne packaging and moves `CG.exe` to `dist\CG.exe`. | Currently omits the required `--app-id`. |
+| `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
 | `app.png` | Repository-owned package icon. | Used only by `scripts/package.ps1`. |
 | `example.png` | Screenshot of the battle UI. | Referenced by `README.md`; not embedded into the executable. |
 | `dist/` | Generated build output. | `*.exe` is ignored by `.gitignore`. |
@@ -541,7 +541,7 @@ go run fyne.io/tools/cmd/fyne@v1.7.2 package
 
 It targets Windows, uses `app.png`, sets name `CG`, enables release mode, optionally adds `--app-version`, expects root `CG.exe`, and moves it to `dist\CG.exe`.
 
-The currently verified Fyne CLI requires `--app-id com.github.g70245.cg`, but the script does not pass it. Therefore the repository's packaging script is presently expected to fail before producing/moving the executable. Direct packaging with the app ID was previously verified and is documented in `docs/build-windows.md`.
+The currently verified Fyne CLI requires `--app-id com.github.g70245.cg`, and the script passes that application ID. Direct packaging with the same app ID is documented in `docs/build-windows.md`.
 
 There is no installer, code signing, update mechanism, release workflow, or CI configuration. Cross-compilation is neither scripted nor verified. Because the target uses CGO and Windows-specific APIs, cross-compilation would require an appropriate Windows C toolchain and remains **To be confirmed**.
 
@@ -622,7 +622,6 @@ No issue is classified as confirmed Critical from repository evidence alone. Run
 | Production completion has no timeout/cancellation | `game/production/worker.go:produce` | Unexpected pixels can trap the worker in a sleep/poll loop. | Live client state is inherently variable. | Measure normal duration and define cancellable timeout behavior. |
 | Errors are silently ignored or fatal | `container/battle.go`, `internal/*`, `utils/beeper.go` | Users receive little actionable feedback; some recoverable failures terminate the process. | File/native/audio boundaries are expected failure points. | Inventory current error boundaries and introduce consistent user-visible reporting incrementally. |
 | `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
-| Packaging script is known incomplete | `scripts/package.ps1` | Release packaging fails because `--app-id` is missing. | Ordinary build works, but documented release path does not. | Apply and verify the already selected app ID in a separate focused change. |
 | UI calls may occur from background goroutines | `container/battle.go:notify*Config` | **Inference:** Dialog creation/showing may violate Fyne threading expectations. | Behavior depends on exact Fyne version/driver semantics. | Confirm Fyne `v2.4.0` requirements and exercise under race/debug tooling. |
 
 ### Low

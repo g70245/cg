@@ -30,6 +30,7 @@ $packageArguments = @(
     '--src', $repositoryRoot,
     '--name', 'CG',
     '--icon', $icon,
+    '--app-id', 'com.github.g70245.cg',
     '--release'
 )
 if ($AppVersion) {
