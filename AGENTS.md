@@ -9,12 +9,15 @@ unrelated commands, or modifying files:
 
 1. Read the canonical startup files listed below in order.
 2. Run `git branch --show-current` and `git status --short`.
-3. Present the startup summary required by `.ai/workflows/session-lifecycle.md`.
-4. Stop and wait for user authorization before modifying files.
+3. Read the relevant indexed task state when the request identifies one.
+4. Report repository and task context as required by `.ai/workflows/session-lifecycle.md`.
+5. Stop and wait for user authorization before modifying files.
 
-The only work allowed before presenting the startup summary is reading the
-startup files and inspecting the branch and working-tree status. Do not begin
-task investigation first.
+The only work allowed before the startup inspection is complete is reading the
+startup files and relevant task state, then inspecting the branch and
+working-tree status. Do not begin task investigation first. The complete
+inspection is loaded as session context; only context relevant to the request
+or requiring user attention must be presented.
 
 Canonical startup files:
 

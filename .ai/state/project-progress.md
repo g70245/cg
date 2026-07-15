@@ -2,9 +2,9 @@
 
 Last updated: 2026-07-15
 
-## Current objective
+## Project direction
 
-Add baseline quality checks and tests around suitable pure-logic seams.
+Maintain a reliable Windows build and packaging path while incrementally adding quality checks and tests around suitable pure-logic seams.
 
 ## Completed work
 
@@ -28,21 +28,9 @@ Add baseline quality checks and tests around suitable pure-logic seams.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
 - The repository has no automated test files.
 
-## Outstanding work
+## Active tasks
 
-1. Add baseline quality checks and tests as suitable seams become available.
-
-## Current handoff
-
-- The `.ai/` migration, Windows packaging app-ID fix, and Windows CI workflow are committed on `dev`.
-- Codex discovered all three project-local adapters and loaded their corresponding canonical `.ai/skills/` instructions successfully.
-- The corrected packaging script completed with Fyne CLI v1.7.2 and produced `dist\CG.exe`; generated executables remain ignored.
-- The root adapter now states the mandatory startup gate directly so a new thread must present its startup summary before task investigation; the correction is committed in `3f45b0e`.
-- The working tree was clean before this handoff update.
-- The safest next implementation step is to identify a pure-logic seam for the first baseline test and quality check.
-- Formal product documentation remains under `docs/`.
-- Project working state belongs in `.ai/state/` and must not be shared as actual content across unrelated projects.
-- No distribution method such as Copier, Cruft, submodule, subtree, or a separate specification repository has been selected.
+- [`baseline-quality-checks`](tasks/baseline-quality-checks.md): planned; identify a pure-logic seam and add the first baseline tests and quality checks.
 
 ## Important decisions
 
@@ -50,4 +38,6 @@ Add baseline quality checks and tests around suitable pure-logic seams.
 - Only adapters for agents actually in use should be added.
 - Empty `prompts/`, `templates/`, `memory/`, and `references/` directories are not created until real content exists.
 - Reusable workspace content may be distributed later, but project-owned state must not be overwritten by template updates.
+- Project-level direction and cross-task decisions belong here; task-specific progress and handoff belong in `.ai/state/tasks/`.
+- Repository-owned task state is the portable source of truth. External issue trackers may link to it but are not required.
 - Commits require an explicit reviewed proposal and approval. Never run `git push` automatically.

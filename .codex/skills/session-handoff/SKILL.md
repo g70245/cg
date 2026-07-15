@@ -5,4 +5,4 @@ description: Codex adapter for the repository's agent-agnostic session handoff s
 
 # Codex Adapter
 
-Read and follow `.ai/skills/session-handoff/SKILL.md` as the canonical skill. Update `.ai/state/project-progress.md`, not a vendor-specific state file. This file exists only for Codex skill discovery.
+Read and follow `.ai/skills/session-handoff/SKILL.md` as the canonical skill. Keep handoff state under `.ai/state/`, not in a vendor-specific state file. This file exists only for Codex skill discovery.

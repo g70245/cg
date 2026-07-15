@@ -27,9 +27,21 @@ The convention is independent of how reusable content may eventually be distribu
 | `memory/` | Durable project knowledge absent from better sources | Domain rules, glossary, stable conventions | Current task, backlog, or facts already maintained in code/docs | Structure only; content is usually project-specific | Yes |
 | `references/` | Curated supporting material | Official API notes, internal guidelines, framework constraints | Unreviewed dumps or temporary research | Sometimes | Yes |
 | `specs/` | Repository-level AI workspace rules | This specification, writing standards, adapter rules | Current task status | Usually | Yes |
-| `state/` | Project-owned working state | Current objective, completed work, pending work, blockers, handoff | Reusable templates or cross-project defaults | No actual content | Yes |
+| `state/` | Project-owned working state | Project direction, active task state, blockers, and handoff context | Reusable templates or cross-project defaults | No actual content | Yes |
 
 Directories without real content should not be created solely as placeholders.
+
+## Project and task state
+
+Project-level state and task-level state serve different purposes:
+
+- `state/project-progress.md` records project direction, major milestones, stable repository facts, cross-task decisions, and an index of active tasks.
+- `state/tasks/<task-id>.md` records the evidence-based working state for one planned, active, or blocked task. Task IDs use stable kebab-case names.
+- `templates/task-state.md` defines the shared task-state structure without containing project-specific values.
+
+Task files may identify an owner or branch for coordination, but those fields do not lock files or reserve work. Git remains authoritative for branches, commits, and working-tree state. Repository-owned state is portable and versioned, but it does not provide real-time presence or expose work that has not been committed and shared.
+
+When a task is complete, preserve its durable result in code, product documentation, or project milestones, remove it from the active-task index, and delete its task-state file. Git history remains the record of the completed task; `state/tasks/` is not a second issue archive.
 
 ## Adapter contract
 

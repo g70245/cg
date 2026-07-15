@@ -12,7 +12,8 @@ At the beginning of a work session, read:
 1. [`workflows/session-lifecycle.md`](workflows/session-lifecycle.md)
 2. [`specs/repository-guidelines.md`](specs/repository-guidelines.md)
 3. [`state/project-progress.md`](state/project-progress.md)
-4. Relevant product documentation under [`../docs/`](../docs/)
+4. The relevant active task under [`state/tasks/`](state/tasks/) when the request identifies or clearly matches one
+5. Relevant product documentation under [`../docs/`](../docs/)
 
 Agent-specific entry points such as `AGENTS.md` and `.codex/` are adapters. They may explain how a tool loads this workspace, but canonical instructions and workflows belong here.
 
@@ -21,7 +22,8 @@ Agent-specific entry points such as `AGENTS.md` and `.codex/` are adapters. They
 - `specs/` defines the workspace convention and repository engineering rules.
 - `skills/` contains independently invocable, reusable task procedures.
 - `workflows/` contains multi-stage repository processes.
-- `state/` contains current working state owned by this project.
+- `state/project-progress.md` contains project-level direction and the active-task index.
+- `state/tasks/` contains portable working state for individual planned, active, or blocked tasks.
 
 The following reserved categories should be created only when the repository has real content for them:
 
@@ -32,7 +34,7 @@ The following reserved categories should be created only when the repository has
 
 ## Knowledge and state
 
-Durable product documentation remains in `docs/`. Current task progress, pending work, and session handoff information belong in `state/`. State is committed with this project but must not be copied as actual content into another project.
+Durable product documentation remains in `docs/`. Project direction belongs in `state/project-progress.md`; task progress, blockers, and handoff information belong in `state/tasks/`. State is committed with this project but must not be copied as actual content into another project.
 
 ## Adapters
 
