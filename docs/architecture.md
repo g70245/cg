@@ -216,7 +216,7 @@ sequenceDiagram
     Worker-->>Worker: Start ticker-driven goroutine
     User->>UI: Close application window
     UI-->>App: ShowAndRun returns
-    Note over App,Worker: Explicit worker/audio cleanup on window close is not registered; To be confirmed
+    Note over App,Worker: Worker and audio cleanup on window close is not registered and remains to be confirmed
 ```
 
 ### 5.2 Configuration initialization
