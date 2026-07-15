@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Handoff"
+  short_description: "Prepare a concise, verifiable session handoff"
+  default_prompt: "Use $session-handoff to update the project handoff before ending this session."

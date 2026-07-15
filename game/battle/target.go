@@ -20,7 +20,7 @@ var (
 
 	PLAYER_L_1_C = game.CheckTarget{X: 329, Y: 431, Color: game.COLOR_ANY}
 	PLAYER_L_2_C = game.CheckTarget{X: 394, Y: 396, Color: game.COLOR_ANY}
-	PLAYER_L_3_C = game.CheckTarget{X: 460, Y: 361, Color: game.COLOR_ANY}
+	PLAYER_L_3_C = game.CheckTarget{X: 459, Y: 361, Color: game.COLOR_ANY}
 	PLAYER_L_4_C = game.CheckTarget{X: 524, Y: 326, Color: game.COLOR_ANY}
 	PLAYER_L_5_C = game.CheckTarget{X: 589, Y: 291, Color: game.COLOR_ANY}
 	PLAYER_L_1_P = game.CheckTarget{X: 269, Y: 386, Color: game.COLOR_ANY}
