@@ -37,7 +37,8 @@ Add baseline quality checks and tests around suitable pure-logic seams.
 - The `.ai/` migration, Windows packaging app-ID fix, and Windows CI workflow are committed on `dev`.
 - Codex discovered all three project-local adapters and loaded their corresponding canonical `.ai/skills/` instructions successfully.
 - The corrected packaging script completed with Fyne CLI v1.7.2 and produced `dist\CG.exe`; generated executables remain ignored.
-- The root adapter now states the mandatory startup gate directly so a new thread must present its startup summary before task investigation.
+- The root adapter now states the mandatory startup gate directly so a new thread must present its startup summary before task investigation; the correction is committed in `3f45b0e`.
+- The working tree was clean before this handoff update.
 - The safest next implementation step is to identify a pure-logic seam for the first baseline test and quality check.
 - Formal product documentation remains under `docs/`.
 - Project working state belongs in `.ai/state/` and must not be shared as actual content across unrelated projects.
