@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementation Plan"
+  short_description: "Create a repository-grounded implementation plan"
+  default_prompt: "Use $implementation-plan to inspect this repository and produce a concrete implementation plan without making changes."
