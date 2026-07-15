@@ -5,17 +5,25 @@
 At the start of each work session:
 
 1. Read `docs/agent-progress.md`.
-2. Run `git status --short` to confirm the current working tree state.
-3. Based on the progress document and Git status, briefly summarize:
-   - The current objective
-   - Completed work
-   - Outstanding work
-   - The recommended next step
+2. Run the following read-only commands:
+
+   * `git branch --show-current`
+   * `git status --short`
+3. Briefly summarize:
+
+   * The current branch
+   * The current objective
+   * Completed work
+   * Outstanding work
+   * Uncommitted or staged changes
+   * The recommended next step
 4. Do not modify any files until the user authorizes execution under the rules
    below.
 
 For ordinary implementation requests, the user's confirmation of the startup
 summary authorizes work within the requested scope.
+
+### Planning Mode
 
 When the user asks for an implementation plan, execution steps, design proposal,
 impact analysis, or requests that no code be changed yet:
@@ -24,35 +32,99 @@ impact analysis, or requests that no code be changed yet:
 2. Inspect the repository using read-only operations.
 3. Produce a repository-grounded implementation plan.
 4. Do not modify files, apply patches, install dependencies, run migrations,
-   or otherwise change project state.
+   create branches, switch branches, create commits, or otherwise change
+   project state.
 5. Stop after presenting the plan.
 
 Remain in planning mode until the user gives an explicit and unambiguous
 execution instruction, such as:
 
-- 執行
-- 開始執行
-- 照計畫執行
-- 開始實作
-- Proceed
-- Implement the plan
+* 執行
+* 開始執行
+* 照計畫執行
+* 開始實作
+* Proceed
+* Implement the plan
 
 General approval, discussion, corrections, questions, or phrases such as
-“OK”, “看起來可以”, or “繼續” do not authorize implementation of a plan. This
-plan-first authorization rule takes precedence over ordinary startup
+“OK”, “看起來可以”, or “繼續” do not authorize implementation of a plan.
+
+This plan-first authorization rule takes precedence over ordinary startup
 confirmation. After explicit authorization, execute only the latest revised
 plan and its approved scope.
 
+### Branch Safety
+
+Implementation work should normally be performed on the `dev` branch.
+
+Before modifying any file:
+
+1. Run `git branch --show-current`.
+2. If the current branch is `dev`, continue.
+3. If the current branch is not `dev`, stop and ask the user whether to:
+
+   * Switch to `dev`
+   * Create a new branch from `dev`
+   * Continue on the current branch
+4. Clearly report any uncommitted changes before asking.
+5. Do not switch, create, merge, rebase, reset, or delete branches without
+   explicit user authorization.
+6. Never switch branches automatically when the working tree contains
+   uncommitted changes.
+
+Do not assume that a branch used in an earlier session is still active. Verify
+the current branch again at the start of every session and immediately before
+the first file modification.
+
+### Completion Workflow
+
 After completing an independent unit of work:
 
-1. Run the necessary tests.
-2. Provide a diff summary.
-3. Do not create a commit automatically.
+1. Run the necessary tests and static checks.
+2. Run `git status --short`.
+3. Provide:
 
-Repository history and remote operations follow these rules:
+   * A concise summary of the changes
+   * Validation performed and its result
+   * Remaining concerns or unverified behavior
+   * The files changed
+4. Do not create a commit automatically.
+5. Mention that the work is ready for commit, but do not require the user to
+   commit immediately.
 
-1. Create a commit only after the user explicitly says "commit".
-2. Do not run `git push`.
+### Commit and Remote Operations
+
+Treat commit preparation as a separate workflow that can be performed in the
+same session or a later session.
+
+1. Create a commit only after the user explicitly requests commit preparation
+   or invokes the `commit-changes` skill.
+2. Do not rely on summaries from an earlier conversation. Reconstruct the
+   current state from Git.
+3. Before proposing a commit, inspect:
+
+   * The current branch
+   * Working-tree and staged changes
+   * Relevant diffs
+   * Recent commit-message conventions
+4. Never include unrelated changes in a commit without explicit approval.
+5. Before creating the commit:
+
+   * Show a concise diff summary
+   * Identify the exact files that will be committed
+   * Propose the commit message
+   * Obtain explicit approval for that commit
+6. After approval, stage only the approved files and create exactly one commit
+   unless the user approved multiple commits.
+7. After committing, report:
+
+   * The commit hash
+   * The commit subject
+   * The committed files
+   * The remaining working-tree state
+8. Do not amend, squash, reset, rebase, merge, tag, or push unless the user
+   explicitly requests that specific operation.
+9. Never run `git push` automatically.
 
 ## Project Structure & Module Organization
 
