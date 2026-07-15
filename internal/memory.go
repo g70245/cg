@@ -11,6 +11,24 @@ import (
 	"golang.org/x/text/transform"
 )
 
+const processAllAccess = 0x1F0FFF
+
+type memoryOperations struct {
+	getWindowThreadProcessID func(win.HWND, *uint32) uint32
+	openProcess              func(uint32, bool, uint32) (win.HWND, error)
+	readProcessMemory        func(win.HWND, uint32, uint) []byte
+	closeHandle              func(win.HANDLE) bool
+}
+
+func newMemoryOperations() memoryOperations {
+	return memoryOperations{
+		getWindowThreadProcessID: win.GetWindowThreadProcessId,
+		openProcess:              win.OpenProcess,
+		readProcessMemory:        win.ReadProcessMemory,
+		closeHandle:              win.CloseHandle,
+	}
+}
+
 func ReadMemoryString(hWnd win.HWND, lpBaseAddress uint32, size uint) string {
 	data := readMemory(hWnd, lpBaseAddress, size)
 	for i, v := range data {
@@ -31,8 +49,18 @@ func ReadMemoryFloat32(hWnd win.HWND, lpBaseAddress uint32, size uint) float32 {
 }
 
 func readMemory(hWnd win.HWND, lpBaseAddress uint32, size uint) []byte {
-	lpdwProcessId := new(uint32)
-	win.GetWindowThreadProcessId(hWnd, lpdwProcessId)
-	readMemoryHandle, _ := win.OpenProcess(0x1F0FFF, false, uint32(*lpdwProcessId))
-	return win.ReadProcessMemory(readMemoryHandle, lpBaseAddress, size)
+	return readMemoryWith(newMemoryOperations(), hWnd, lpBaseAddress, size)
+}
+
+func readMemoryWith(operations memoryOperations, hWnd win.HWND, lpBaseAddress uint32, size uint) []byte {
+	processID := new(uint32)
+	operations.getWindowThreadProcessID(hWnd, processID)
+
+	readMemoryHandle, _ := operations.openProcess(processAllAccess, false, *processID)
+	if readMemoryHandle == 0 {
+		return make([]byte, size)
+	}
+	defer operations.closeHandle(win.HANDLE(readMemoryHandle))
+
+	return operations.readProcessMemory(readMemoryHandle, lpBaseAddress, size)
 }

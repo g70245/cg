@@ -19,6 +19,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Ran the corrected packaging script successfully and verified that it produces `dist\CG.exe`.
 - Added Windows CI for dependency resolution and builds in `f132665`.
 - Added the first baseline table-driven tests around `game/enum.GenericEnum.GetOptions`; `go test ./...` and `go vet ./...` pass.
+- Closed process handles after repeated memory reads and added focused ownership tests; `go test ./...` and `go vet ./...` pass.
 
 ## Current repository facts
 
