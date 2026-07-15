@@ -2,7 +2,21 @@
 
 This repository uses `.ai/` as its agent-agnostic source of truth.
 
-Before working in this repository, read these files in order:
+## Mandatory startup gate
+
+At the beginning of every new thread, before investigating the request, running
+unrelated commands, or modifying files:
+
+1. Read the canonical startup files listed below in order.
+2. Run `git branch --show-current` and `git status --short`.
+3. Present the startup summary required by `.ai/workflows/session-lifecycle.md`.
+4. Stop and wait for user authorization before modifying files.
+
+The only work allowed before presenting the startup summary is reading the
+startup files and inspecting the branch and working-tree status. Do not begin
+task investigation first.
+
+Canonical startup files:
 
 1. `.ai/README.md`
 2. `.ai/workflows/session-lifecycle.md`

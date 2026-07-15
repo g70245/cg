@@ -4,7 +4,7 @@ Last updated: 2026-07-15
 
 ## Current objective
 
-Add Windows CI for dependency resolution and builds, using the verified local Windows toolchain and repository build workflow as the baseline.
+Add baseline quality checks and tests around suitable pure-logic seams.
 
 ## Completed work
 
@@ -17,6 +17,7 @@ Add Windows CI for dependency resolution and builds, using the verified local Wi
 - Committed the `.ai/` workspace migration in `f0d86f0` and verified Codex adapter discovery and canonical skill loading in a new session.
 - Updated `scripts/package.ps1` to pass `--app-id com.github.g70245.cg` and committed the focused fix in `031e52e`.
 - Ran the corrected packaging script successfully and verified that it produces `dist\CG.exe`.
+- Added Windows CI for dependency resolution and builds in `f132665`.
 
 ## Current repository facts
 
@@ -29,15 +30,15 @@ Add Windows CI for dependency resolution and builds, using the verified local Wi
 
 ## Outstanding work
 
-1. Add Windows CI for dependency resolution and builds.
-2. Add baseline quality checks and tests as suitable seams become available.
+1. Add baseline quality checks and tests as suitable seams become available.
 
 ## Current handoff
 
-- The `.ai/` migration and Windows packaging app-ID fix are committed on `dev`; the working tree was clean before this handoff update.
+- The `.ai/` migration, Windows packaging app-ID fix, and Windows CI workflow are committed on `dev`.
 - Codex discovered all three project-local adapters and loaded their corresponding canonical `.ai/skills/` instructions successfully.
 - The corrected packaging script completed with Fyne CLI v1.7.2 and produced `dist\CG.exe`; generated executables remain ignored.
-- The safest next implementation step is a repository-grounded Windows CI workflow for dependency resolution and builds.
+- The root adapter now states the mandatory startup gate directly so a new thread must present its startup summary before task investigation.
+- The safest next implementation step is to identify a pure-logic seam for the first baseline test and quality check.
 - Formal product documentation remains under `docs/`.
 - Project working state belongs in `.ai/state/` and must not be shared as actual content across unrelated projects.
 - No distribution method such as Copier, Cruft, submodule, subtree, or a separate specification repository has been selected.
