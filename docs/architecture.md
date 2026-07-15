@@ -115,9 +115,9 @@ cg/
 | `internal/window.go` | Enumerates game windows by class-name regex. | Calls Win32 through `github.com/g70245/win`. |
 | `internal/message.go` | Sends mouse and keyboard window messages with fixed sleeps. | Uses a dot import of the Win32 package. |
 | `internal/color.go` | Reads a pixel from a target window device context. | Pairs `GetDC` with `ReleaseDC`. |
-| `internal/memory.go` | Reads strings and `float32` values from another process. | Opens a process on every read and does not close the returned handle. |
-| `internal/file.go` | Finds the newest log file, reads trailing lines, and decodes Big5. | Uses panic and ignored errors on several failure paths. |
-| `utils/beeper.go` | Owns global looping MP3 playback. | Uses a goroutine and unbuffered control channels. |
+| `internal/memory.go` | Reads strings and `float32` values from another process. | Opens and closes a process handle around every read; open failures return zero-filled data. |
+| `internal/file.go` | Finds the newest log file, reads trailing lines, and decodes Big5. | Returns contextual errors for missing or unreadable logs and safely handles empty files. |
+| `utils/beeper.go` | Owns global looping MP3 playback. | Uses a synchronized audio-session lifecycle with error-returning initialization and fake-session test seams. |
 | `utils/helpers.go` | Contains ad hoc diagnostics for coordinates, colors, handles, and goroutines. | Most helpers are unexported and are not called by the application entry path. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
 | `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
@@ -342,9 +342,9 @@ Failures generally set `ManualMode = true` and log a message. A later audible-cu
 
 **Trigger:** The user selects an MP3 file, or a worker detects a condition requiring attention.
 
-`container.App` calls `utils.Beeper.Init(path)`. `Init` starts a goroutine, closes any prior player, opens and decodes the MP3, initializes the global speaker, and loops on unbuffered pause/done channels. `Play`, `Stop`, and `Close` send control values to those channels. `Ctrl+0` invokes `Stop`.
+`container.App` calls `utils.Beeper.Init(path)`. `Init` serializes lifecycle changes, closes any prior session, opens and decodes the MP3, initializes the global speaker, and installs a paused looping session. `Play` and `Stop` update the session under synchronization, `Close` is idempotent, and `Ctrl+0` invokes `Stop`.
 
-Open/decode errors call `log.Fatal`. `Beeper.Play()` does not check `isReady`; calling it before the playback goroutine is ready leaves the caller blocked on `pausedChan`. Access to `isReady` and channel lifecycle is not synchronized.
+Open, decode, speaker-initialization, and cleanup failures return contextual errors. The file-selection callback shows initialization errors and changes the music icon only after success. Calling `Play`, `Stop`, or `Close` before initialization is safe, and cancelling the file dialog preserves the current session.
 
 ## 7. Package and Module Dependencies
 
@@ -435,7 +435,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 | --- | --- |
 | `battle.Worker.Work` | Starts one select-loop goroutine and resets three reusable tickers. Exits only after receiving from `sharedStopChan`; stopped tickers leave it blocked. |
 | `production.Worker.Work` | Starts one select-loop goroutine and resets four reusable tickers. Exits after receiving from its stop channel. |
-| `utils.Beeper.Init` | Starts an audio-control goroutine that exits after receiving from `doneChan`. |
+| `utils.Beeper` | Does not start an application-owned control goroutine; synchronized methods manage one process-global speaker session. The speaker dependency owns its playback goroutine. |
 | `activateDialogs` | Starts a goroutine that waits for UI dialog-close signals on `selectorDialogEnableChan`; it also starts a final drain goroutine. |
 | `notify*Config` | Starts a goroutine, sleeps 200 ms, then shows a Fyne information dialog. |
 
@@ -443,7 +443,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 
 The following are evidence-based risk assessments; actual failure frequency requires runtime testing.
 
-- **Inference — data races:** UI callbacks write checker flags, movement mode, action state, directory pointers, and beeper state while worker/audio goroutines read or write them without mutexes or atomics.
+- **Inference — data races:** UI callbacks write checker flags, movement mode, action state, and directory pointers while worker goroutines read or write them without mutexes or atomics. Beeper session state is synchronized separately.
 - **Inference — duplicate workers:** Repeated `Work()` calls can create multiple goroutines selecting on the same ticker fields and stop channel. The UI icon reduces normal accidental repetition but does not enforce a worker lifecycle state.
 - **Inference — goroutine retention:** Calling `StopTickers` stops events but does not terminate worker goroutines. They remain blocked until a stop-channel signal or later ticker reset.
 - **Inference — dialog goroutine retention:** `activateDialogs` depends on every expected dialog closure sending to the channel. Unexpected UI lifecycle paths may leave a goroutine waiting.
@@ -474,9 +474,9 @@ The project uses several inconsistent error strategies:
 - File dialog callback errors are ignored.
 - JSON/file load failures are silently ignored.
 - `.ac` write failure uses `log.Fatalf`, which terminates the process.
-- MP3 open/decode failure uses `log.Fatal` inside the audio goroutine, also terminating the process.
-- Missing game log files can reach `panic("Cannot open file")`.
-- Big5 conversion, `Seek`, `Read`, `Stat`, and memory-read errors are ignored.
+- Audio initialization returns errors to the file-selection UI rather than terminating the process.
+- Missing or unreadable game logs return errors at the filesystem boundary; runtime phrase checks treat unavailable logs as no match.
+- Big5 conversion and process-memory read failures are not fully surfaced to users.
 
 Fyne information dialogs are used only as pre-operation reminders for missing audio/log configuration. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
@@ -489,11 +489,11 @@ The standard `log` package writes to its default destination, normally standard 
 | Window enumeration and class lookup | Return values ignored | Missing games appear as an empty list without diagnostics. |
 | Message injection | `PostMessage` results ignored | Failed input is inferred indirectly from pixels, if at all. |
 | Pixel/DC reads | `GetPixel` result consumed directly | Invalid handles/DCs can resemble unexpected colors. |
-| Process open/read | Errors ignored; data returned directly | Incorrect state, excessive access failures, and handle leaks are not surfaced. |
-| Log directory/file reads | Walk error discarded by callers; open failure panics | A bad path can terminate the application. |
+| Process open/read | Open failure returns zero-filled data; read errors are not exposed by the Win32 wrapper | Handles are closed, but access failures can still resemble zero-valued state. |
+| Log directory/file reads | Contextual errors returned; runtime phrase checks safely return no match | Invalid paths no longer terminate the application; runtime loss of logs is not surfaced in the UI. |
 | `.ac` load | Dialog, open, read, and JSON errors mostly ignored | User sees no reason a setting failed to load. |
 | `.ac` save | Marshal error ignored; write error calls `log.Fatalf` | Either silent failure or whole-process termination. |
-| Audio initialization | Open/decode errors call `log.Fatal` | Invalid audio selection terminates the application. |
+| Audio initialization | Open/decode/speaker errors return to a Fyne error dialog | Invalid audio selection leaves Beeper unconfigured without terminating the application. |
 | Production completion polling | No timeout or cancellation check in loop | Worker may remain stuck indefinitely. |
 
 Logs include numeric window handles, coordinates, map names, and action status. They do not intentionally log credentials, but captured logs can contain process-specific handles and game-derived names. Logs should be treated as machine/session-specific diagnostic data.
@@ -563,13 +563,14 @@ There is no installer, code signing, update mechanism, or release workflow. Cros
 
 ### 12.1 Existing automated coverage
 
-There are no `_test.go` files. The repository contains no unit, integration, UI, end-to-end, or Windows-native test suite.
+The repository contains focused unit tests for enum option conversion, process-handle ownership, log/filesystem behavior, log-directory validation, and the synchronized audio lifecycle. These tests use pure values, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
 
-The following commands passed during the architecture review on 2026-07-15:
+The following commands passed in the verified Windows environment on 2026-07-16:
 
 ```text
-go test ./...  # all packages compiled; every package reported [no test files]
-go vet ./...   # passed with no reported findings
+go test ./...
+go test -race ./utils
+go vet ./...
 ```
 
 The existing documented build verification is `scripts/build.ps1`, which has produced `dist\cg.exe` in the current Windows environment. That proves dependency resolution and compilation in one configured environment, not runtime correctness.
@@ -613,7 +614,6 @@ No issue is classified as confirmed Critical from repository evidence alone. Run
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
-| Audio control can block or terminate the process | `utils/beeper.go` | `Play` sends on an unbuffered channel even when no receiver is ready; open/decode failures call `log.Fatal`. | Alerts are invoked from worker failure paths, including when configuration may be missing. | Reproduce unconfigured/concurrent alerts and define non-blocking, error-returning lifecycle behavior. |
 | Shared worker state is unsynchronized | `game/battle/worker.go`, `game/production/worker.go`, `container/*.go`, `utils/beeper.go` | **Inference:** UI and multiple goroutines access flags, pointers, action state, shared bools, and audio state concurrently, creating race and inconsistent-lifecycle risk. | Automation is long-running and multi-window by design. | Run targeted `-race` tests with fakes after introducing test seams; document allowed state transitions. |
 | Compatibility assumptions are hard-coded and unvalidated | `game/constant.go`, `game/battle/*`, `game/production/*`, `internal/window.go` | A client update, DPI/layout change, or memory-layout change can cause wrong clicks, false detections, or invalid reads. | Fixed coordinates/colors/addresses are the core automation mechanism. | Establish supported client/UI matrix and add a startup compatibility diagnostic before automation. |
 
@@ -650,7 +650,7 @@ The application is a compact Windows-specific desktop program with direct packag
 - `ActionState` contains both battle configuration and runtime state-machine execution.
 - `game` and subpackages encode client-specific coordinates, colors, timings, phrases, and memory addresses.
 - `internal` provides direct Win32/filesystem primitives without interfaces.
-- Shared singleton/pointer/channel state coordinates workers and alerts.
+- Shared singleton and pointer state coordinates workers; the global alert session uses explicit synchronization.
 - `.ac` JSON is the only persisted application configuration.
 
 This structure is understandable for the repository's size and avoids an unnecessary framework or service container. Its main costs are testability, lifecycle clarity, and inconsistent error boundaries rather than a lack of architectural patterns.
@@ -659,7 +659,7 @@ This structure is understandable for the repository's size and avoids an unneces
 
 Improvements should be incremental and driven by observed failures:
 
-1. **Stabilize error and resource boundaries first.** Return errors from memory/log/audio/file operations, close process handles, and replace process-wide `panic`/`log.Fatal` behavior at recoverable boundaries.
+1. **Continue stabilizing error and resource boundaries.** Process handles, log reads, and audio initialization now have explicit ownership or error handling; propagate remaining memory, Win32, `.ac`, and UI errors without process-wide termination.
 2. **Make worker lifecycle explicit.** Define start, pause, stop, restart, and shutdown semantics; use one idempotent termination path per worker and one application-level shutdown path.
 3. **Introduce narrow test seams around volatile I/O.** Small function fields or focused interfaces for pixels, input, memory, logs, clock/tickers, and alerts would enable table-driven state-machine tests without designing a broad abstraction hierarchy.
 4. **Separate persisted battle configuration from runtime state when compatibility work requires it.** Add schema validation/versioning before considering broader model restructuring.

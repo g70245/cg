@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 ## Project direction
 
@@ -21,6 +21,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added the first baseline table-driven tests around `game/enum.GenericEnum.GetOptions`; `go test ./...` and `go vet ./...` pass.
 - Closed process handles after repeated memory reads and added focused ownership tests; `go test ./...` and `go vet ./...` pass.
 - Prevented missing or unreadable game logs from crashing checker workflows and added preflight validation plus filesystem tests.
+- Stabilized audio initialization and playback controls with an explicit synchronized lifecycle, UI-visible errors, and race-tested fake sessions.
 
 ## Current repository facts
 
@@ -29,7 +30,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - `scripts/build.ps1` successfully produces `dist\cg.exe` in the verified environment.
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
-- The repository has no automated test files.
+- Automated tests cover selected enum, process-memory ownership, log/filesystem, and audio lifecycle behavior.
 
 ## Active tasks
 

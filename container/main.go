@@ -3,6 +3,7 @@ package container
 import (
 	"cg/game"
 	"cg/utils"
+	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -65,13 +66,19 @@ func App(title, gameDir string, width, height float32) {
 	var alertDialogButton *widget.Button
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
 		alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
-			if uc != nil {
-				utils.Beeper.Init(uc.URI().Path())
-				alertDialogButton.SetIcon(theme.MediaMusicIcon())
-			} else {
-				utils.Beeper.Close()
-				alertDialogButton.SetIcon(theme.FolderIcon())
+			if err != nil {
+				dialog.NewError(fmt.Errorf("select alert music: %w", err), window).Show()
+				return
 			}
+			if uc == nil {
+				return
+			}
+			if err := utils.Beeper.Init(uc.URI().Path()); err != nil {
+				alertDialogButton.SetIcon(theme.FolderIcon())
+				dialog.NewError(err, window).Show()
+				return
+			}
+			alertDialogButton.SetIcon(theme.MediaMusicIcon())
 		}, window)
 		alertDialog.SetLocation(listableURI)
 		alertDialog.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))

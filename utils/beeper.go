@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"log"
+	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/faiface/beep"
@@ -10,76 +11,131 @@ import (
 	"github.com/faiface/beep/speaker"
 )
 
+type audioSession interface {
+	Play()
+	Stop()
+	Close() error
+}
+
+type audioSessionFactory func(string) (audioSession, error)
+
 type beeper struct {
-	isReady              bool
-	pausedChan, doneChan chan bool
+	lifecycleMu sync.Mutex
+	mu          sync.RWMutex
+	session     audioSession
+	newSession  audioSessionFactory
 }
 
-var Beeper beeper
+var Beeper = newBeeper(newSpeakerSession)
 
-func init() {
-	if Beeper == (beeper{}) {
-		Beeper = beeper{pausedChan: make(chan bool), doneChan: make(chan bool)}
+func newBeeper(factory audioSessionFactory) *beeper {
+	return &beeper{newSession: factory}
+}
+
+func (b *beeper) Init(path string) error {
+	b.lifecycleMu.Lock()
+	defer b.lifecycleMu.Unlock()
+
+	if err := b.closeCurrentSession(); err != nil {
+		return fmt.Errorf("close current alert music: %w", err)
 	}
-}
 
-func (b *beeper) Init(path string) {
+	session, err := b.newSession(path)
+	if err != nil {
+		return fmt.Errorf("initialize alert music: %w", err)
+	}
 
-	go func() {
-		b.Close()
-
-		f, err := os.Open(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		streamer, format, err := mp3.Decode(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-		ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
-		speaker.Play(ctrl)
-
-		b.isReady = true
-
-		defer streamer.Close()
-		defer speaker.Clear()
-
-		for {
-			select {
-			case paused := <-b.pausedChan:
-				speaker.Lock()
-				ctrl.Paused = paused
-				speaker.Unlock()
-			case <-b.doneChan:
-				speaker.Lock()
-				ctrl.Paused = true
-				speaker.Unlock()
-				return
-			}
-		}
-	}()
+	b.mu.Lock()
+	b.session = session
+	b.mu.Unlock()
+	return nil
 }
 
 func (b *beeper) Play() {
-	b.pausedChan <- false
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	if b.session != nil {
+		b.session.Play()
+	}
 }
 
 func (b *beeper) Stop() {
-	if b.isReady {
-		b.pausedChan <- true
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	if b.session != nil {
+		b.session.Stop()
 	}
 }
 
-func (b *beeper) Close() {
-	if b.isReady {
-		b.doneChan <- true
-		b.isReady = false
-	}
+func (b *beeper) Close() error {
+	b.lifecycleMu.Lock()
+	defer b.lifecycleMu.Unlock()
+	return b.closeCurrentSession()
 }
 
 func (b *beeper) IsReady() bool {
-	return b.isReady
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.session != nil
+}
+
+func (b *beeper) closeCurrentSession() error {
+	b.mu.Lock()
+	session := b.session
+	b.session = nil
+	b.mu.Unlock()
+
+	if session == nil {
+		return nil
+	}
+	return session.Close()
+}
+
+type speakerSession struct {
+	streamer beep.StreamSeekCloser
+	control  *beep.Ctrl
+}
+
+func newSpeakerSession(path string) (audioSession, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open MP3 file %q: %w", path, err)
+	}
+
+	streamer, format, err := mp3.Decode(file)
+	if err != nil {
+		if closeErr := file.Close(); closeErr != nil {
+			return nil, fmt.Errorf("decode MP3 file %q: %w (close file: %v)", path, err, closeErr)
+		}
+		return nil, fmt.Errorf("decode MP3 file %q: %w", path, err)
+	}
+
+	if err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10)); err != nil {
+		if closeErr := streamer.Close(); closeErr != nil {
+			return nil, fmt.Errorf("initialize speaker: %w (close MP3 stream: %v)", err, closeErr)
+		}
+		return nil, fmt.Errorf("initialize speaker: %w", err)
+	}
+
+	control := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: true}
+	speaker.Play(control)
+	return &speakerSession{streamer: streamer, control: control}, nil
+}
+
+func (s *speakerSession) Play() {
+	speaker.Lock()
+	s.control.Paused = false
+	speaker.Unlock()
+}
+
+func (s *speakerSession) Stop() {
+	speaker.Lock()
+	s.control.Paused = true
+	speaker.Unlock()
+}
+
+func (s *speakerSession) Close() error {
+	s.Stop()
+	speaker.Clear()
+	return s.streamer.Close()
 }
