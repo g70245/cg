@@ -429,7 +429,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 - `r.actionDir` is a string copied at startup and does not change with the Game Folder selector.
 - `ActionState` JSON saves exported action slices and fields. Runtime fields use `json:"-"` or are unexported.
 - Loading a group setting deep-copies one unmarshaled `ActionState` into each worker's synchronized configuration.
-- There is no schema version, validation pass, migration policy, or atomic write for `.ac` files.
+- There is no schema version, semantic validation pass, migration policy, or atomic write for `.ac` files. These files are personal, UI-generated settings that can be rebuilt when damaged, so compatibility machinery is not currently required.
 
 ### 9.3 Goroutines, channels, and timers
 
@@ -620,7 +620,6 @@ No remaining issue is currently classified as High.
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
 | Native and UI errors are still ignored | `container/*`, `internal/*` | Some failed dialogs, Win32 calls, pixel reads, and memory reads resemble empty or unexpected state instead of actionable errors. | Native and UI boundaries are expected failure points. | Introduce contextual reporting incrementally when a specific operation next changes. |
-| `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
 | UI calls may occur from background goroutines | `container/battle.go:notify*Config` | **Inference:** Dialog creation/showing may violate Fyne threading expectations. | Behavior depends on exact Fyne version/driver semantics. | Confirm Fyne `v2.4.0` requirements and exercise under race/debug tooling. |
 
 ### Low
@@ -628,6 +627,7 @@ No remaining issue is currently classified as High.
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
 | No explicit shutdown hook | `container/main.go` | Workers/audio are stopped on refresh/removal but not on normal window close; the process currently exits with the last Fyne window, and operators commonly stop active work first. | No user-visible shutdown failure is confirmed, so adding lifecycle machinery now would be speculative. | Reassess if shutdown must persist state, wait for workers, or release resources before process exit. |
+| `.ac` format is unversioned and weakly validated | `container/action_config.go`, `game/battle/action.go` | Syntactically valid JSON with invalid action values can load, but the files are personal, generated through the UI, and inexpensive to rebuild. | Public compatibility and migration guarantees are not required for the current workflow. | Reassess if files are shared, distributed, manually edited, or become expensive to recreate. |
 | UI and coordination are concentrated in one large file | `container/battle.go` | Action configuration, persistence, presentation, and lifecycle changes are difficult to review independently. | The file is over 1,200 lines and changes can cross concerns. | Split only along stable functional boundaries when making related changes; avoid framework-heavy abstractions. |
 | Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
 | Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
@@ -657,7 +657,7 @@ Improvements should be incremental and driven by observed failures:
 1. **Continue stabilizing error and resource boundaries.** Process handles, log reads, audio initialization, and `.ac` I/O now have explicit ownership or error handling; propagate remaining memory, Win32, and UI errors incrementally.
 2. **Make worker lifecycle explicit.** Define start, pause, stop, restart, and shutdown semantics; use one idempotent termination path per worker and one application-level shutdown path.
 3. **Introduce narrow test seams around volatile I/O.** Small function fields or focused interfaces for pixels, input, memory, logs, clock/tickers, and alerts would enable table-driven state-machine tests without designing a broad abstraction hierarchy.
-4. **Separate persisted battle configuration from runtime state when compatibility work requires it.** Add schema validation/versioning before considering broader model restructuring.
+4. **Separate persisted battle configuration from runtime state only if compatibility becomes a real requirement.** The current personal `.ac` workflow does not justify schema-versioning or migration machinery.
 5. **Reduce UI coupling opportunistically.** Extract action-file load/save and stable action-editor helpers when those areas next change. Keep Fyne-specific code in `container`; do not introduce controllers or repositories without a concrete need.
 6. **Automate the verified build path.** Fix packaging, add Windows CI for module verification/build/vet/tests, and add targeted tests as seams become available.
 
@@ -680,12 +680,11 @@ These directions favor KISS and YAGNI: retain the existing packages, add abstrac
 13. Should worker Play be restartable after an alert, and should repeated Start calls be rejected?
 14. Should closing the main window wait for all worker and audio goroutines to exit?
 15. Are aliases expected to persist between sessions?
-16. Are `.ac` files already distributed to users? If so, what compatibility guarantees and representative fixtures exist?
-17. Are all character/pet actions in the enum still supported? `character.Steal` and `pet.Protect` are defined but are not fully represented in the current UI/execution switches.
-18. Are the hard-coded item colors and bomb names complete for supported clients?
-19. Which Windows versions and CPU architectures are supported in practice?
-20. Is the application distributed as a standalone executable, a Fyne package, or through an external installer?
-21. Is code signing required for releases?
-22. Is cross-compilation a requirement, or is native Windows x64 building sufficient?
-23. Are `utils/helpers.go` and the empty `game/map.go` still intentionally retained?
-24. Which current behaviors are temporary workarounds for client-specific issues?
+16. Are all character/pet actions in the enum still supported? `character.Steal` and `pet.Protect` are defined but are not fully represented in the current UI/execution switches.
+17. Are the hard-coded item colors and bomb names complete for supported clients?
+18. Which Windows versions and CPU architectures are supported in practice?
+19. Is the application distributed as a standalone executable, a Fyne package, or through an external installer?
+20. Is code signing required for releases?
+21. Is cross-compilation a requirement, or is native Windows x64 building sufficient?
+22. Are `utils/helpers.go` and the empty `game/map.go` still intentionally retained?
+23. Which current behaviors are temporary workarounds for client-specific issues?

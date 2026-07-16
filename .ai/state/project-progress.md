@@ -32,6 +32,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Simplified log-directory validation dialogs to concise reasons without exposing or repeating long machine-specific paths.
 - Standardized audio, action-configuration, game-directory, setup-reminder, and action-ID messages as concise actionable English without low-level details.
 - Standardized user-facing navigation, dialogs, monitoring controls, production controls, and enum labels while preserving action markers and configuration compatibility.
+- Reclassified `.ac` schema versioning and semantic validation as low priority because the settings are personal, UI-generated, and inexpensive to rebuild.
 
 ## Current repository facts
 
@@ -61,4 +62,5 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Worker alert handling is a pause-and-acknowledge workflow: scheduled events stop, the alert plays, and the worker goroutine remains until the operator presses Stop before any later restart.
 - Production completion time varies by item type and level, so polling remains unbounded by a fixed timeout but must always remain cancellable through Stop.
 - Failed `.ac` loads preserve the current action configuration, and `.ac` I/O failures are reported without terminating the application; schema versioning remains a separate concern.
+- `.ac` schema versioning and semantic validation are deferred unless the personal settings become shared, distributed, manually maintained, or expensive to recreate.
 - User-facing file, audio, and setup errors omit machine-specific paths and low-level provider details; subsystem errors retain detailed context for diagnostics.
