@@ -3,7 +3,6 @@ package container
 import (
 	"cg/game"
 	"cg/utils"
-	"fmt"
 	"sync"
 
 	"fyne.io/fyne/v2"
@@ -69,7 +68,7 @@ func App(title, gameDir string, width, height float32) {
 	alertDialogButton = widget.NewButtonWithIcon("Alert Music", theme.FolderIcon(), func() {
 		alertDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if err != nil {
-				dialog.NewError(fmt.Errorf("select alert music: %w", err), window).Show()
+				showErrorMessage(alertMusicSelectionError)
 				return
 			}
 			if uc == nil {
@@ -77,7 +76,7 @@ func App(title, gameDir string, width, height float32) {
 			}
 			if err := utils.Beeper.Init(uc.URI().Path()); err != nil {
 				alertDialogButton.SetIcon(theme.FolderIcon())
-				dialog.NewError(err, window).Show()
+				showErrorMessage(alertMusicInitializationError)
 				return
 			}
 			alertDialogButton.SetIcon(theme.MediaMusicIcon())
@@ -91,13 +90,15 @@ func App(title, gameDir string, width, height float32) {
 	var gameDirDialogButton *widget.Button
 	gameDirDialogButton = widget.NewButtonWithIcon("Game Directory", theme.FolderIcon(), func() {
 		gameDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
-			if lu != nil {
-				r.setGameDir(lu.Path())
-				gameDirDialogButton.SetIcon(theme.FolderOpenIcon())
-			} else {
-				r.setGameDir("")
-				gameDirDialogButton.SetIcon(theme.FolderIcon())
+			if err != nil {
+				showErrorMessage(gameDirectorySelectionError)
+				return
 			}
+			if lu == nil {
+				return
+			}
+			r.setGameDir(lu.Path())
+			gameDirDialogButton.SetIcon(theme.FolderOpenIcon())
 		}, window)
 		gameDirDialog.SetLocation(listableURI)
 		gameDirDialog.Show()

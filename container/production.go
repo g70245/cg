@@ -57,7 +57,7 @@ func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorker
 		})
 		gamesSelectorDialog.Show()
 
-		notifyBeeperAndLogConfig("About Production")
+		notifyBeeperAndLogConfig("Production setup")
 	})
 
 	main := container.NewBorder(nil, newProductionButton, nil, nil, productionsContainer)
@@ -101,7 +101,7 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
-			if !validateLogConfig("About Production") {
+			if !validateLogConfig("Production setup") {
 				return
 			}
 			if worker.Work() {

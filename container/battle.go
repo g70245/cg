@@ -12,7 +12,6 @@ import (
 	"cg/game/enum/threshold"
 	"cg/game/items"
 	"cg/utils"
-	"errors"
 	"image/color"
 	"math"
 	"strconv"
@@ -225,12 +224,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		activateJumpDialog := func(totalActions int, callback func(jumpId int)) {
 			jumpEntry := widget.NewEntry()
 			jumpEntry.Validator = func(jumpIdStr string) error {
-				if jumpId, err := strconv.Atoi(jumpIdStr); err != nil {
-					return err
-				} else if jumpId >= totalActions-1 || jumpId < 1 {
-					return errors.New("not a valid offset")
-				}
-				return nil
+				return validateActionID(jumpIdStr, totalActions-2)
 			}
 
 			jumpDialog := dialog.NewForm("Enter next action id", "Ok", "Dismiss", []*widget.FormItem{widget.NewFormItem("Action Id", jumpEntry)}, func(isValid bool) {
@@ -437,7 +431,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 
-				notifyLogConfig("About Catch")
+				notifyLogConfig("Catch setup")
 			})
 			catchButton.Importance = widget.SuccessImportance
 
@@ -775,7 +769,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Catch) })
 				refreshActionViewer()
 
-				notifyLogConfig("About Catch")
+				notifyLogConfig("Catch setup")
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(role.Pet),
@@ -807,7 +801,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 			fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 				if err != nil {
-					showActionConfigurationError("Load", fmt.Errorf("select file: %w", err))
+					showErrorMessage(actionConfigSelectionError)
 					return
 				}
 				if uc == nil {
@@ -816,7 +810,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 				actionState, err := loadActionConfiguration(uc)
 				if err != nil {
-					showActionConfigurationError("Load", err)
+					showErrorMessage(actionConfigLoadError)
 					return
 				}
 				worker.ReplaceActionState(actionState)
@@ -833,7 +827,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		saveSettingButton := widget.NewButtonWithIcon("Save", theme.DownloadIcon(), func() {
 			fileSaveDialog := dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
 				if err != nil {
-					showActionConfigurationError("Save", fmt.Errorf("select destination: %w", err))
+					showErrorMessage(actionConfigDestinationError)
 					return
 				}
 				if uc == nil {
@@ -841,7 +835,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 
 				if err := saveActionConfiguration(uc, worker.ActionStateSnapshot()); err != nil {
-					showActionConfigurationError("Save", err)
+					showErrorMessage(actionConfigSaveError)
 				}
 			}, window)
 			listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
@@ -901,14 +895,14 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", options.manaChecker.Get()), func() {
 		manaCheckerSelectorDialog.Show()
 
-		notifyBeeperConfig("About Mana Checker")
+		notifyBeeperConfig("Mana Checker setup")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
 	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if err != nil {
-				showActionConfigurationError("Load", fmt.Errorf("select file: %w", err))
+				showErrorMessage(actionConfigSelectionError)
 				return
 			}
 			if uc == nil {
@@ -917,7 +911,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 
 			actionState, err := loadActionConfiguration(uc)
 			if err != nil {
-				showActionConfigurationError("Load", err)
+				showErrorMessage(actionConfigLoadError)
 				return
 			}
 			for i := range options.workers {
@@ -981,7 +975,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
 		case theme.CheckButtonIcon():
-			if !validateLogConfig("About Teleport & Resource Checker") {
+			if !validateLogConfig("Teleport & Resource Checker setup") {
 				return
 			}
 			for i := range options.workers {
@@ -989,7 +983,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
 
-			notifyBeeperAndLogConfig("About Teleport & Resource Checker")
+			notifyBeeperAndLogConfig("Teleport & Resource Checker setup")
 		}
 	})
 	teleportAndResourceCheckerButton.Importance = widget.HighImportance
@@ -1002,7 +996,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
 		case theme.CheckButtonIcon():
-			if !validateLogConfig("About Activities Checker") {
+			if !validateLogConfig("Activities Checker setup") {
 				return
 			}
 			for i := range options.workers {
@@ -1010,7 +1004,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
 
-			notifyBeeperAndLogConfig("About Activities Checker")
+			notifyBeeperAndLogConfig("Activities Checker setup")
 		}
 	})
 	activitiesCheckerButton.Importance = widget.HighImportance
@@ -1028,7 +1022,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), inventoryCheckerButton)
 
-			notifyBeeperConfig("About Inventory Checker")
+			notifyBeeperConfig("Inventory Checker setup")
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
@@ -1250,40 +1244,32 @@ func (bgs *BattleGroups) stopAll() {
 }
 
 func notifyBeeperConfig(title string) {
-	if !utils.Beeper.IsReady() {
-		go func() {
-			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to setup the alert music!!!", window).Show()
-		}()
-	}
-}
-
-func showActionConfigurationError(operation string, err error) {
-	dialog.NewError(fmt.Errorf("%s action configuration: %w", operation, err), window).Show()
+	notifySetupConfig(title, !utils.Beeper.IsReady(), false)
 }
 
 func notifyLogConfig(title string) {
-	if game.ValidateLogDirectory(r.getGameDir()) != nil {
-		go func() {
-			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to setup the log directory!!!", window).Show()
-		}()
-	}
+	notifySetupConfig(title, false, game.ValidateLogDirectory(r.getGameDir()) != nil)
 }
 
 func validateLogConfig(title string) bool {
 	if err := game.ValidateLogDirectory(r.getGameDir()); err != nil {
-		dialog.NewInformation(title, fmt.Sprintf("Log setup failed: %v", err), window).Show()
+		dialog.NewInformation(title, err.Error(), window).Show()
 		return false
 	}
 	return true
 }
 
 func notifyBeeperAndLogConfig(title string) {
-	if !utils.Beeper.IsReady() || r.getGameDir() == "" {
-		go func() {
-			time.Sleep(200 * time.Millisecond)
-			dialog.NewInformation(title, "Remember to setup the alert music and log directory!!!", window).Show()
-		}()
+	notifySetupConfig(title, !utils.Beeper.IsReady(), game.ValidateLogDirectory(r.getGameDir()) != nil)
+}
+
+func notifySetupConfig(title string, alertMusicMissing, logAccessMissing bool) {
+	message := setupReminderMessage(alertMusicMissing, logAccessMissing)
+	if message == "" {
+		return
 	}
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		dialog.NewInformation(title, message, window).Show()
+	}()
 }

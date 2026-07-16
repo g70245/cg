@@ -222,7 +222,7 @@ sequenceDiagram
 
 ### 5.2 Configuration initialization
 
-There is no general configuration file. `app.go` reads `%USERPROFILE%` and derives `%USERPROFILE%\Documents\CG` as the initial game/action directory without creating it. The user may replace `r.gameDir` through a folder dialog, but `r.actionDir` remains the initial default. Battle action settings are loaded only when the user selects an `.ac` file. Audio is initialized only after the user selects an MP3 file.
+There is no general configuration file. `app.go` reads `%USERPROFILE%` and derives `%USERPROFILE%\Documents\CG` as the initial game/action directory without creating it. The user may replace `r.gameDir` through a folder dialog; cancelling or failing that selection preserves the current directory, while `r.actionDir` remains the initial default. Battle action settings are loaded only when the user selects an `.ac` file. Audio is initialized only after the user selects an MP3 file.
 
 ### 5.3 Background startup and shutdown
 
@@ -346,7 +346,7 @@ Failures generally set `ManualMode = true` and log a message. A later audible-cu
 
 `container.App` calls `utils.Beeper.Init(path)`. `Init` serializes lifecycle changes, closes any prior session, opens and decodes the MP3, initializes the global speaker, and installs a paused looping session. `Play` and `Stop` update the session under synchronization, `Close` is idempotent, and `Ctrl+0` invokes `Stop`.
 
-Open, decode, speaker-initialization, and cleanup failures return contextual errors. The file-selection callback shows initialization errors and changes the music icon only after success. Calling `Play`, `Stop`, or `Close` before initialization is safe, and cancelling the file dialog preserves the current session.
+Open, decode, speaker-initialization, and cleanup failures return contextual errors inside the audio subsystem. The file-selection callback maps them to a concise path-free initialization message and changes the music icon only after success. Calling `Play`, `Stop`, or `Close` before initialization is safe, and cancelling the file dialog preserves the current session.
 
 ## 7. Package and Module Dependencies
 
@@ -473,13 +473,13 @@ The project uses several inconsistent error strategies:
 
 - Detection and state-machine failures usually return `bool` and produce `log.Printf` output.
 - Many Win32 return values and errors are ignored.
-- Some file-dialog callback errors remain ignored; action-configuration and audio-selection errors are shown to the user.
-- Action-configuration read, JSON, write, and close failures return contextual errors to Fyne dialogs.
+- Game-directory, action-configuration, and audio-selection callback errors are shown with concise user-facing messages; file-dialog initial-location errors remain ignored.
+- Action-configuration read, JSON, write, and close failures retain contextual subsystem errors while Fyne dialogs show operation-level guidance without paths or decoder details.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
 - Missing or unreadable game logs return path-rich errors at the filesystem boundary; preflight validation maps them to concise path-free UI reasons, while runtime phrase checks treat unavailable logs as no match.
 - Big5 conversion and process-memory read failures are not fully surfaced to users.
 
-Fyne information dialogs are used as pre-operation reminders for missing audio/log configuration, and error dialogs report action-configuration and audio-selection failures. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
+Fyne information dialogs use feature-specific setup titles and report only the missing audio/log requirements. Error dialogs report game-directory, action-configuration, and audio-selection failures with concise actionable text. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
 The standard `log` package writes to its default destination, normally standard error. The repository does not configure a log file, structured logging, rotation, severity fields, or redaction.
 
@@ -492,9 +492,9 @@ The standard `log` package writes to its default destination, normally standard 
 | Pixel/DC reads | `GetPixel` result consumed directly | Invalid handles/DCs can resemble unexpected colors. |
 | Process open/read | Open failure returns zero-filled data; read errors are not exposed by the Win32 wrapper | Handles are closed, but access failures can still resemble zero-valued state. |
 | Log directory/file reads | Filesystem helpers retain contextual paths; preflight validation reports path-free missing/unreadable or empty-folder reasons; runtime phrase checks safely return no match | Invalid paths no longer terminate the application or produce unreadably long dialogs; runtime loss of logs is not surfaced in the UI. |
-| `.ac` load | Dialog, read, JSON, and close errors are shown; state changes only after a successful decode | Invalid files leave the current action configuration unchanged. |
-| `.ac` save | Dialog, JSON, write, short-write, and close errors are shown | Save failures no longer terminate the application. |
-| Audio initialization | Open/decode/speaker errors return to a Fyne error dialog | Invalid audio selection leaves Beeper unconfigured without terminating the application. |
+| `.ac` load | Reader and JSON failures retain contextual errors; the dialog reports that the selected file could not be loaded and may not be a valid `.ac` file; state changes only after a successful decode | Invalid files leave the current action configuration unchanged without exposing technical details. |
+| `.ac` save | Encode, write, short-write, and close failures retain contextual errors; the dialog reports that the file could not be saved | Save failures no longer terminate the application or expose provider details. |
+| Audio initialization | Open/decode/speaker errors remain contextual internally and map to one path-free dialog with MP3 and output-device guidance | Invalid audio selection leaves Beeper unconfigured without terminating the application. |
 | Production completion polling | No fixed timeout because duration varies by item; Stop is received inside the polling loop | The operator can cancel an unexpected or prolonged wait. |
 
 Logs include numeric window handles, coordinates, map names, and action status. They do not intentionally log credentials, but captured logs can contain process-specific handles and game-derived names. Logs should be treated as machine/session-specific diagnostic data.
@@ -564,7 +564,7 @@ There is no installer, code signing, update mechanism, or release workflow. Cros
 
 ### 12.1 Existing automated coverage
 
-The repository contains focused unit tests for enum option conversion, process-handle ownership, log/filesystem behavior, log-directory validation, and the synchronized audio lifecycle. These tests use pure values, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
+The repository contains focused unit tests for enum option conversion, process-handle ownership, log/filesystem behavior, log-directory validation, user-facing setup messages and action-ID validation, action-configuration I/O, and the synchronized audio lifecycle. These tests use pure values, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
 
 The following commands passed in the verified Windows environment on 2026-07-16:
 

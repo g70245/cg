@@ -30,6 +30,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Made production completion polling respond to Stop without imposing a fixed timeout on item-dependent production durations.
 - Replaced fatal and silent `.ac` load/save failures with contextual UI errors, explicit stream ownership, and focused I/O tests.
 - Simplified log-directory validation dialogs to concise reasons without exposing or repeating long machine-specific paths.
+- Standardized audio, action-configuration, game-directory, setup-reminder, and action-ID messages as concise actionable English without low-level details.
 
 ## Current repository facts
 
@@ -38,7 +39,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - `scripts/build.ps1` successfully produces `dist\cg.exe` in the verified environment.
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
-- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, action-configuration I/O, synchronized worker configuration, and duplicate worker-start prevention.
+- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, user-facing setup messages and action-ID validation, action-configuration I/O, synchronized worker configuration, and duplicate worker-start prevention.
 
 ## Active tasks
 
@@ -59,4 +60,4 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Worker alert handling is a pause-and-acknowledge workflow: scheduled events stop, the alert plays, and the worker goroutine remains until the operator presses Stop before any later restart.
 - Production completion time varies by item type and level, so polling remains unbounded by a fixed timeout but must always remain cancellable through Stop.
 - Failed `.ac` loads preserve the current action configuration, and `.ac` I/O failures are reported without terminating the application; schema versioning remains a separate concern.
-- User-facing log-directory validation errors omit machine-specific paths; filesystem helpers retain detailed path context for diagnostics.
+- User-facing file, audio, and setup errors omit machine-specific paths and low-level provider details; subsystem errors retain detailed context for diagnostics.

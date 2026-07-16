@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	errGameDirectoryNotSelected = errors.New("game directory is not selected")
-	errLogDirectoryUnavailable  = errors.New("Log folder is missing or unreadable")
-	errNoLogFiles               = errors.New("no log files were found")
+	errGameDirectoryNotSelected = errors.New("Select a game directory first.")
+	errLogDirectoryUnavailable  = errors.New("The selected game directory does not contain a readable Log folder.")
+	errNoLogFiles               = errors.New("The Log folder does not contain any log files.")
 )
 
 func ValidateLogDirectory(gameDir string) error {
