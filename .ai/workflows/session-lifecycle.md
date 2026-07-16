@@ -18,7 +18,27 @@ Startup inspection builds repository context after the user sends the first mess
 
 If the user asks to resume without identifying a task and multiple active tasks could apply, list the candidates and ask which task to continue. Do not infer a repository-wide next step. Git is authoritative for branches, commits, and working-tree state; task files provide portable coordination context but not real-time presence or unshared work.
 
-For ordinary implementation requests, confirmation of the relevant startup report authorizes work within the requested scope. Contextual reporting and execution authorization are separate concerns; a full repository report is not required for authorization.
+Startup confirmation acknowledges repository and task context only; it does not authorize implementation. New project changes must pass through the change proposal gate below. An already reviewed plan may be resumed only when the user gives an explicit execution instruction.
+
+## Change proposal gate
+
+Treat every new request to change project source, configuration, documentation, architecture, or Git-tracked state as a proposal rather than implementation authorization.
+
+1. Discuss the objective, relevant impact, and material choices when they are not already clear. Read-only repository inspection is allowed.
+2. When the request is sufficiently defined, use `.ai/skills/implementation-plan/SKILL.md` even if the user did not explicitly ask for a plan.
+3. Produce the repository-grounded plan and stop without modifying project or Git state.
+4. Implement only after the user gives an unambiguous execution instruction for that plan, such as `Execute the plan`, `Start implementation`, `Proceed`, `Implement the plan`, or `執行計畫`.
+
+An idea, requested outcome, startup confirmation, general approval, or instruction to continue discussion does not skip this gate. Before a plan exists, responses such as `continue`, `繼續`, `OK`, `looks good`, or `符合` mean to continue discussion or planning, not to implement. After a plan is presented, only wording that unambiguously directs execution authorizes modification. Do not produce a duplicate plan when the user is explicitly executing an existing reviewed plan.
+
+The following are not new change implementation and continue to use their applicable authorization and workflow rules without requiring an implementation plan:
+
+- answering questions, explaining code, reporting status, and read-only diagnosis;
+- explicitly requested tests, builds, packaging, or launching an existing artifact;
+- commit preparation and commit creation under the commit workflow; and
+- session handoff under the handoff workflow.
+
+If one of these operations reveals that a project change is needed, return to the change proposal gate before modifying files.
 
 ## Planning gate
 
