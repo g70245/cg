@@ -10,13 +10,25 @@ import (
 	"time"
 )
 
+var (
+	errGameDirectoryNotSelected = errors.New("game directory is not selected")
+	errLogDirectoryUnavailable  = errors.New("Log folder is missing or unreadable")
+	errNoLogFiles               = errors.New("no log files were found")
+)
+
 func ValidateLogDirectory(gameDir string) error {
 	if gameDir == "" {
-		return errors.New("game directory is not selected")
+		return errGameDirectoryNotSelected
 	}
 
 	_, err := internal.GetLastLines(filepath.Join(gameDir, "Log"), 1)
-	return err
+	if errors.Is(err, internal.ErrNoLogFiles) {
+		return errNoLogFiles
+	}
+	if err != nil {
+		return errLogDirectoryUnavailable
+	}
+	return nil
 }
 
 var (

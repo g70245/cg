@@ -3,24 +3,25 @@ package game
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestValidateLogDirectory(t *testing.T) {
 	tests := []struct {
-		name    string
-		setup   func(t *testing.T) string
-		wantErr bool
+		name       string
+		setup      func(t *testing.T) string
+		wantReason string
 	}{
 		{
-			name:    "not selected",
-			setup:   func(t *testing.T) string { return "" },
-			wantErr: true,
+			name:       "not selected",
+			setup:      func(t *testing.T) string { return "" },
+			wantReason: "game directory is not selected",
 		},
 		{
-			name:    "missing Log directory",
-			setup:   func(t *testing.T) string { return t.TempDir() },
-			wantErr: true,
+			name:       "missing Log directory",
+			setup:      func(t *testing.T) string { return t.TempDir() },
+			wantReason: "Log folder is missing or unreadable",
 		},
 		{
 			name: "empty Log directory",
@@ -31,7 +32,7 @@ func TestValidateLogDirectory(t *testing.T) {
 				}
 				return root
 			},
-			wantErr: true,
+			wantReason: "no log files were found",
 		},
 		{
 			name: "readable log file",
@@ -51,8 +52,19 @@ func TestValidateLogDirectory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateLogDirectory(tt.setup(t)); (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateLogDirectory() error = %v, wantErr %v", err, tt.wantErr)
+			gameDir := tt.setup(t)
+			err := ValidateLogDirectory(gameDir)
+			if tt.wantReason == "" {
+				if err != nil {
+					t.Fatalf("ValidateLogDirectory() error = %v, want nil", err)
+				}
+				return
+			}
+			if err == nil || err.Error() != tt.wantReason {
+				t.Fatalf("ValidateLogDirectory() error = %v, want %q", err, tt.wantReason)
+			}
+			if gameDir != "" && strings.Contains(err.Error(), gameDir) {
+				t.Fatalf("ValidateLogDirectory() error contains game directory %q: %v", gameDir, err)
 			}
 		})
 	}

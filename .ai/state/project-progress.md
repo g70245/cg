@@ -29,6 +29,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Clarified that alert paths intentionally pause scheduled worker events and retain one goroutine until the operator acknowledges the condition with Stop.
 - Made production completion polling respond to Stop without imposing a fixed timeout on item-dependent production durations.
 - Replaced fatal and silent `.ac` load/save failures with contextual UI errors, explicit stream ownership, and focused I/O tests.
+- Simplified log-directory validation dialogs to concise reasons without exposing or repeating long machine-specific paths.
 
 ## Current repository facts
 
@@ -58,3 +59,4 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Worker alert handling is a pause-and-acknowledge workflow: scheduled events stop, the alert plays, and the worker goroutine remains until the operator presses Stop before any later restart.
 - Production completion time varies by item type and level, so polling remains unbounded by a fixed timeout but must always remain cancellable through Stop.
 - Failed `.ac` loads preserve the current action configuration, and `.ac` I/O failures are reported without terminating the application; schema versioning remains a separate concern.
+- User-facing log-directory validation errors omit machine-specific paths; filesystem helpers retain detailed path context for diagnostics.

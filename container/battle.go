@@ -1273,7 +1273,7 @@ func notifyLogConfig(title string) {
 
 func validateLogConfig(title string) bool {
 	if err := game.ValidateLogDirectory(r.getGameDir()); err != nil {
-		dialog.NewInformation(title, fmt.Sprintf("Select a game directory containing a readable Log folder.\n\n%v", err), window).Show()
+		dialog.NewInformation(title, fmt.Sprintf("Log setup failed: %v", err), window).Show()
 		return false
 	}
 	return true

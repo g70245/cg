@@ -476,7 +476,7 @@ The project uses several inconsistent error strategies:
 - Some file-dialog callback errors remain ignored; action-configuration and audio-selection errors are shown to the user.
 - Action-configuration read, JSON, write, and close failures return contextual errors to Fyne dialogs.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
-- Missing or unreadable game logs return errors at the filesystem boundary; runtime phrase checks treat unavailable logs as no match.
+- Missing or unreadable game logs return path-rich errors at the filesystem boundary; preflight validation maps them to concise path-free UI reasons, while runtime phrase checks treat unavailable logs as no match.
 - Big5 conversion and process-memory read failures are not fully surfaced to users.
 
 Fyne information dialogs are used as pre-operation reminders for missing audio/log configuration, and error dialogs report action-configuration and audio-selection failures. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
@@ -491,7 +491,7 @@ The standard `log` package writes to its default destination, normally standard 
 | Message injection | `PostMessage` results ignored | Failed input is inferred indirectly from pixels, if at all. |
 | Pixel/DC reads | `GetPixel` result consumed directly | Invalid handles/DCs can resemble unexpected colors. |
 | Process open/read | Open failure returns zero-filled data; read errors are not exposed by the Win32 wrapper | Handles are closed, but access failures can still resemble zero-valued state. |
-| Log directory/file reads | Contextual errors returned; runtime phrase checks safely return no match | Invalid paths no longer terminate the application; runtime loss of logs is not surfaced in the UI. |
+| Log directory/file reads | Filesystem helpers retain contextual paths; preflight validation reports path-free missing/unreadable or empty-folder reasons; runtime phrase checks safely return no match | Invalid paths no longer terminate the application or produce unreadably long dialogs; runtime loss of logs is not surfaced in the UI. |
 | `.ac` load | Dialog, read, JSON, and close errors are shown; state changes only after a successful decode | Invalid files leave the current action configuration unchanged. |
 | `.ac` save | Dialog, JSON, write, short-write, and close errors are shown | Save failures no longer terminate the application. |
 | Audio initialization | Open/decode/speaker errors return to a Fyne error dialog | Invalid audio selection leaves Beeper unconfigured without terminating the application. |
