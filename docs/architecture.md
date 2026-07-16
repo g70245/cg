@@ -454,7 +454,9 @@ The following are evidence-based risk assessments; actual failure frequency requ
 
 ### 9.5 Fyne thread model
 
-Most widget changes occur in Fyne callbacks. Worker goroutines do not directly update widgets. However, `notifyBeeperConfig`, `notifyLogConfig`, and `notifyBeeperAndLogConfig` create/show dialogs from background goroutines after sleeping. Whether this is safe under the exact Fyne `v2.4.0` driver behavior is **To be confirmed**; it should not be described as guaranteed UI-thread-safe from repository evidence alone.
+Most widget changes occur in Fyne callbacks. Worker goroutines do not directly update widgets. `notifySetupConfig` creates/shows dialogs from a background goroutine after sleeping, while `activateDialogs` reconfigures a shared radio selector and shows sequenced dialogs from another background goroutine.
+
+Fyne `v2.4.0` predates the single-UI-goroutine model and public `fyne.Do` API introduced in `v2.6.0`. The pinned desktop driver's window operations queue work through `runOnMain`, while overlay stacks and refresh queues use internal synchronization. No runtime failure is confirmed for the current dialog flows. Direct selector-field changes in `activateDialogs` remain a low-confidence concurrency concern, and both paths must be reassessed before upgrading to Fyne `v2.6.0` or later, where application-owned goroutines must dispatch Fyne calls through `fyne.Do` or `fyne.DoAndWait`.
 
 ### 9.6 Native and application resource cleanup
 
@@ -620,7 +622,6 @@ No remaining issue is currently classified as High.
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
 | Native and UI errors are still ignored | `container/*`, `internal/*` | Some failed dialogs, Win32 calls, pixel reads, and memory reads resemble empty or unexpected state instead of actionable errors. | Native and UI boundaries are expected failure points. | Introduce contextual reporting incrementally when a specific operation next changes. |
-| UI calls may occur from background goroutines | `container/battle.go:notify*Config` | **Inference:** Dialog creation/showing may violate Fyne threading expectations. | Behavior depends on exact Fyne version/driver semantics. | Confirm Fyne `v2.4.0` requirements and exercise under race/debug tooling. |
 
 ### Low
 
@@ -628,6 +629,7 @@ No remaining issue is currently classified as High.
 | --- | --- | --- | --- | --- |
 | No explicit shutdown hook | `container/main.go` | Workers/audio are stopped on refresh/removal but not on normal window close; the process currently exits with the last Fyne window, and operators commonly stop active work first. | No user-visible shutdown failure is confirmed, so adding lifecycle machinery now would be speculative. | Reassess if shutdown must persist state, wait for workers, or release resources before process exit. |
 | `.ac` format is unversioned and weakly validated | `container/action_config.go`, `game/battle/action.go` | Syntactically valid JSON with invalid action values can load, but the files are personal, generated through the UI, and inexpensive to rebuild. | Public compatibility and migration guarantees are not required for the current workflow. | Reassess if files are shared, distributed, manually edited, or become expensive to recreate. |
+| Background dialog sequencing relies on Fyne v2.4 concurrency behavior | `container/battle.go:activateDialogs`, `container/battle.go:notifySetupConfig` | Dialogs are shown from application-owned goroutines, and `activateDialogs` directly reconfigures selector fields; no runtime failure is confirmed under the pinned pre-v2.6 toolkit. | Fyne v2.6 introduced a different single-UI-goroutine model and requires `fyne.Do` for background UI calls. | Reassess both paths during a Fyne upgrade or if a dialog race becomes observable; do not add a custom dispatcher for v2.4. |
 | UI and coordination are concentrated in one large file | `container/battle.go` | Action configuration, persistence, presentation, and lifecycle changes are difficult to review independently. | The file is over 1,200 lines and changes can cross concerns. | Split only along stable functional boundaries when making related changes; avoid framework-heavy abstractions. |
 | Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
 | Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
