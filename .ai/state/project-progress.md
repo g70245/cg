@@ -22,6 +22,11 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Closed process handles after repeated memory reads and added focused ownership tests; `go test ./...` and `go vet ./...` pass.
 - Prevented missing or unreadable game logs from crashing checker workflows and added preflight validation plus filesystem tests.
 - Stabilized audio initialization and playback controls with an explicit synchronized lifecycle, UI-visible errors, and race-tested fake sessions.
+- Synchronized shared battle and production worker state while preserving the turn-based party wait that prevents a leader from moving before every party window leaves battle.
+- Changed the default game and action directory to `%USERPROFILE%\Documents\CG` without exposing a machine-specific username.
+- Defined the supported display environment as 1920×1080 with Windows display scaling at 100% and a 640×480 game-client coordinate layout; other resolution and scaling combinations remain unsupported.
+- Added atomic worker running gates so repeated `Work` calls cannot create duplicate goroutines, while preserving restart after a completed stop.
+- Clarified that alert paths intentionally pause scheduled worker events and retain one goroutine until the operator acknowledges the condition with Stop.
 
 ## Current repository facts
 
@@ -30,7 +35,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - `scripts/build.ps1` successfully produces `dist\cg.exe` in the verified environment.
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
-- Automated tests cover selected enum, process-memory ownership, log/filesystem, and audio lifecycle behavior.
+- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, synchronized worker configuration, and duplicate worker-start prevention.
 
 ## Active tasks
 
@@ -45,3 +50,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Project-level direction and cross-task decisions belong here; task-specific progress and handoff belong in `.ai/state/tasks/`.
 - Repository-owned task state is the portable source of truth. External issue trackers may link to it but are not required.
 - Commits require an explicit reviewed proposal and approval. Never run `git push` automatically.
+- New project changes are discussed and planned before implementation; `Proceed` is an accepted explicit execution instruction after a reviewed plan.
+- Magic Baby uses random encounters and turn-based party battles. Group movement must continue waiting until every party window has left battle so the leader cannot trigger a new encounter early.
+- Fixed game coordinates, colors, and memory addresses are supported-client constraints rather than targets for broad compatibility abstraction. The validated display environment is 1920×1080 at 100% Windows scaling.
+- Worker alert handling is a pause-and-acknowledge workflow: scheduled events stop, the alert plays, and the worker goroutine remains until the operator presses Stop before any later restart.
