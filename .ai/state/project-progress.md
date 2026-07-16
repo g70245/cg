@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-07-16
+Last updated: 2026-07-17
 
 ## Project direction
 
@@ -27,6 +27,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Defined the supported display environment as 1920×1080 with Windows display scaling at 100% and a 640×480 game-client coordinate layout; other resolution and scaling combinations remain unsupported.
 - Added atomic worker running gates so repeated `Work` calls cannot create duplicate goroutines, while preserving restart after a completed stop.
 - Clarified that alert paths intentionally pause scheduled worker events and retain one goroutine until the operator acknowledges the condition with Stop.
+- Made production completion polling respond to Stop without imposing a fixed timeout on item-dependent production durations.
 
 ## Current repository facts
 
@@ -54,3 +55,4 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Magic Baby uses random encounters and turn-based party battles. Group movement must continue waiting until every party window has left battle so the leader cannot trigger a new encounter early.
 - Fixed game coordinates, colors, and memory addresses are supported-client constraints rather than targets for broad compatibility abstraction. The validated display environment is 1920×1080 at 100% Windows scaling.
 - Worker alert handling is a pause-and-acknowledge workflow: scheduled events stop, the alert plays, and the worker goroutine remains until the operator presses Stop before any later restart.
+- Production completion time varies by item type and level, so polling remains unbounded by a fixed timeout but must always remain cancellable through Stop.

@@ -90,7 +90,10 @@ func (w *Worker) Work() bool {
 			case <-w.workerTicker.C:
 				if !w.gatheringMode.Load() {
 					w.prepareMaterials()
-					w.produce()
+					if stopped := w.produce(); stopped {
+						log.Printf("Handle %d Production ended\n", w.hWnd)
+						return
+					}
 					w.tidyInventory()
 				}
 			case <-w.logCheckerTicker.C:
@@ -187,10 +190,10 @@ func (w *Worker) prepareMaterials() {
 	}
 }
 
-func (w *Worker) produce() {
+func (w *Worker) produce() (stopped bool) {
 
 	if w.manualMode.Load() {
-		return
+		return false
 	}
 
 	log.Printf("Production %d is producing\n", w.hWnd)
@@ -199,7 +202,7 @@ func (w *Worker) produce() {
 	if !ok {
 		log.Printf("Production %d cannot find the position of production window\n", w.hWnd)
 		w.manualMode.Store(true)
-		return
+		return false
 	}
 
 	internal.LeftClick(w.hWnd, px-270, py+180)
@@ -215,19 +218,30 @@ func (w *Worker) produce() {
 	if !w.canProduce(px, py) {
 		log.Printf("Production %d is out of mana or has insufficient materials\n", w.hWnd)
 		w.manualMode.Store(true)
-		return
+		return false
 	}
 
 	internal.LeftClick(w.hWnd, px-270, py+180)
 	if !w.isProducing(px, py) {
 		log.Printf("Production %d missed the producing button\n", w.hWnd)
 		w.manualMode.Store(true)
-		return
+		return false
 	}
 
-	for !w.isProducingSuccessful(px, py) {
-		time.Sleep(DURATION_PRODUCING)
+	return waitForProductionCompletion(w.stopChan, DURATION_PRODUCING, func() bool {
+		return w.isProducingSuccessful(px, py)
+	})
+}
+
+func waitForProductionCompletion(stopChan <-chan bool, interval time.Duration, isSuccessful func() bool) (stopped bool) {
+	for !isSuccessful() {
+		select {
+		case <-stopChan:
+			return true
+		case <-time.After(interval):
+		}
 	}
+	return false
 }
 
 func (w *Worker) tidyInventory() {

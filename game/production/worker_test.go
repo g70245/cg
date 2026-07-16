@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestWorkerConcurrentConfigurationAccess(t *testing.T) {
@@ -73,5 +74,22 @@ func TestWorkerCanBeginWorkAgainAfterFinish(t *testing.T) {
 	worker.finishWork()
 	if !worker.beginWork() {
 		t.Fatal("beginWork() after finishWork() = false, want true")
+	}
+}
+
+func TestWaitForProductionCompletionReturnsWhenAlreadySuccessful(t *testing.T) {
+	stopped := waitForProductionCompletion(make(chan bool), time.Hour, func() bool { return true })
+	if stopped {
+		t.Fatal("waitForProductionCompletion() = stopped, want completed")
+	}
+}
+
+func TestWaitForProductionCompletionConsumesStopSignal(t *testing.T) {
+	stopChan := make(chan bool, 1)
+	stopChan <- true
+
+	stopped := waitForProductionCompletion(stopChan, time.Hour, func() bool { return false })
+	if !stopped {
+		t.Fatal("waitForProductionCompletion() = completed, want stopped")
 	}
 }

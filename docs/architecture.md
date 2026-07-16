@@ -336,7 +336,7 @@ container.newProductionContainer
 
 `prepareMaterials` opens the inventory, finds the inventory pivot by pixel color, and double-clicks material stacks from the bottom row into empty top-row slots. `produce` finds the production inventory, transfers candidate inputs, checks the production button color, starts production, and polls until the success pixel appears. `tidyInventory` compacts occupied slots leftward across two rows.
 
-Failures generally set `ManualMode = true` and log a message. A later audible-cue tick stops all tickers and calls `utils.Beeper.Play()`. Inventory-full and log-check failures stop tickers immediately and alert. `produce` has no timeout while waiting for `isProducingSuccessful`; if the expected pixel never appears, that worker goroutine remains in the polling loop until the condition changes.
+Failures generally set `ManualMode = true` and log a message. A later audible-cue tick stops all tickers and calls `utils.Beeper.Play()`. Inventory-full and log-check failures stop tickers immediately and alert. Production duration varies by item type and level, so completion polling has no fixed timeout. The polling loop also receives the worker stop channel, allowing the operator to cancel a production wait whose expected pixel never appears.
 
 **Output:** Game-window input, process logs, optional audio alerts, and Play/Stop icon changes initiated by the UI callback. Worker failures do not update the button icon automatically.
 
@@ -620,7 +620,6 @@ No remaining issue is currently classified as High.
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
-| Production completion has no timeout/cancellation | `game/production/worker.go:produce` | Unexpected pixels can trap the worker in a sleep/poll loop. | Live client state is inherently variable. | Measure normal duration and define cancellable timeout behavior. |
 | Errors are silently ignored or fatal | `container/battle.go`, `internal/*`, `utils/beeper.go` | Users receive little actionable feedback; some recoverable failures terminate the process. | File/native/audio boundaries are expected failure points. | Inventory current error boundaries and introduce consistent user-visible reporting incrementally. |
 | `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
 | UI calls may occur from background goroutines | `container/battle.go:notify*Config` | **Inference:** Dialog creation/showing may violate Fyne threading expectations. | Behavior depends on exact Fyne version/driver semantics. | Confirm Fyne `v2.4.0` requirements and exercise under race/debug tooling. |
