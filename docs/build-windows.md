@@ -13,13 +13,11 @@ Install the following before building:
 1. Git, to clone the repository.
 2. Go 1.21.x. The project declares `go 1.21.1` in `go.mod`; use that release line until a newer Go version is explicitly verified.
 3. MSYS2 with the MinGW-w64 x64 C/C++ toolchain. Fyne requires a C compiler for its Windows graphics integration.
-4. The Fyne command-line tool, only when producing a packaged executable with an embedded icon.
 
 The following must be available in the Windows `PATH`:
 
 - `go`
 - `gcc` (normally supplied by `C:\msys64\mingw64\bin`)
-- `%USERPROFILE%\go\bin` after installing the Fyne CLI
 
 ## Install the C toolchain
 
@@ -89,11 +87,11 @@ It verifies that Go and GCC are available, checks the tracked `go.sum` dependenc
 
 GitHub Actions runs the verified build path on `windows-2022` for pushes and pull requests targeting `dev` or `main`, and it also supports manual runs. The workflow sets up Go `1.21.x`, enables CGO with GCC, runs `scripts/build.ps1`, verifies `dist\cg.exe`, and then runs `go test ./...` and `go vet ./...`.
 
-The CI workflow is defined in `.github/workflows/windows-ci.yml`. It validates compilation and static checks only; it does not launch the GUI, interact with a game client, or create a Fyne release package.
+The CI workflow is defined in `.github/workflows/windows-ci.yml`. It validates the build, automated tests, and static analysis; it does not launch the GUI, interact with a game client, or create a Fyne release package.
 
 ## Package a Windows release with Fyne
 
-The project pins the packaging CLI at `fyne.io/tools v1.7.2`. The packaging script downloads it through Go when necessary, so a globally installed `fyne` command is not required.
+The project pins the packaging CLI at `fyne.io/tools v1.7.2`. The packaging script runs it through Go, so a globally installed `fyne` command is not required. The first packaging run requires access to the configured Go module proxy unless that module is already cached locally.
 
 Use the repository-owned `app.png` icon and run:
 
@@ -117,7 +115,7 @@ go install fyne.io/tools/cmd/fyne@v1.7.2
 
 ## Current limitations
 
-- The repository has no automated tests. A successful `go build .` establishes compile success only.
+- Automated tests cover selected package logic and filesystem boundaries, but they do not exercise a live game window, process memory, audio device, real game logs, or GUI workflows. Those integrations still require supervised manual testing.
 - The program itself is Windows-specific because it invokes Win32 APIs.
 
 ## Verified environment and packaging findings

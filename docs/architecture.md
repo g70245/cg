@@ -633,7 +633,6 @@ No remaining issue is currently classified as Medium.
 | Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
 | Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
 | Empty source file | `game/map.go` | No runtime impact. | It may imply abandoned or planned functionality. | Confirm intent; remove only in a separate cleanup if truly unused. |
-| README build/package guidance is older than repository scripts | `README.md` | New maintainers may use incomplete packaging commands. | `docs/build-windows.md` is more accurate. | Align documentation after the packaging script is fixed. |
 
 ## 14. Current Architecture and Potential Future Direction
 
