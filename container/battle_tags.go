@@ -7,13 +7,14 @@ import (
 	"cg/game/enum/threshold"
 	"fmt"
 	"image/color"
-	"math"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 )
+
+const tagMinimumWidth float32 = 48
 
 func generateTags(actionState battle.ActionState) (tagContaines []fyne.CanvasObject) {
 	tagContaines = createTagContainers(actionState, role.Character)
@@ -22,13 +23,24 @@ func generateTags(actionState battle.ActionState) (tagContaines []fyne.CanvasObj
 }
 
 var (
-	characterFinishingTagColor   = color.RGBA{235, 206, 100, uint8(math.Round(1 * 255))}
-	characterConditionalTagColor = color.RGBA{100, 206, 235, uint8(math.Round(1 * 255))}
-	characterSpecialTagColor     = color.RGBA{206, 235, 100, uint8(math.Round(1 * 255))}
-	petFinishingTagColor         = color.RGBA{245, 79, 0, uint8(math.Round(0.8 * 255))}
-	petConditionalTagColor       = color.RGBA{0, 79, 245, uint8(math.Round(0.8 * 255))}
-	petSpecialTagColor           = color.RGBA{79, 245, 0, uint8(math.Round(0.8 * 255))}
+	characterFinishingTagColor   = color.RGBA{0x33, 0x4E, 0x9A, 0xFF}
+	characterConditionalTagColor = color.RGBA{0x00, 0x6B, 0x78, 0xFF}
+	characterSpecialTagColor     = color.RGBA{0x45, 0x5A, 0x64, 0xFF}
+	petFinishingTagColor         = color.RGBA{0x9A, 0x34, 0x12, 0xFF}
+	petConditionalTagColor       = color.RGBA{0x8A, 0x5A, 0x00, 0xFF}
+	petSpecialTagColor           = color.RGBA{0x7A, 0x3E, 0x5D, 0xFF}
 )
+
+func newTagContainer(tag string, tagColor color.Color) *fyne.Container {
+	tagCanvas := canvas.NewRectangle(tagColor)
+	tagCanvas.SetMinSize(fyne.NewSize(tagMinimumWidth, 0))
+
+	tagTextCanvas := canvas.NewText(tag, color.White)
+	tagTextCanvas.Alignment = fyne.TextAlignCenter
+	tagTextCanvas.TextStyle = fyne.TextStyle{Bold: true, Italic: true, TabWidth: 1}
+
+	return container.NewStack(tagCanvas, container.NewPadded(tagTextCanvas))
+}
 
 func createTagContainers(actionState battle.ActionState, r role.Role) (tagContainers []fyne.CanvasObject) {
 	var tag string
@@ -66,10 +78,6 @@ func createTagContainers(actionState battle.ActionState, r role.Role) (tagContai
 				tagColor = petSpecialTagColor
 			}
 		}
-
-		tagCanvas := canvas.NewRectangle(tagColor)
-		tagCanvas.SetMinSize(fyne.NewSize(60, 22))
-		tagContainer := container.NewStack(tagCanvas)
 
 		if r == role.Character {
 			if offset := action.(battle.CharacterAction).Offset; offset != 0 {
@@ -132,11 +140,7 @@ func createTagContainers(actionState battle.ActionState, r role.Role) (tagContai
 			tag = tag + ":"
 		}
 
-		tagTextCanvas := canvas.NewText(tag, color.White)
-		tagTextCanvas.Alignment = fyne.TextAlignCenter
-		tagTextCanvas.TextStyle = fyne.TextStyle{Bold: true, Italic: true, TabWidth: 1}
-		tagContainer.Add(tagTextCanvas)
-		tagContainers = append(tagContainers, tagContainer)
+		tagContainers = append(tagContainers, newTagContainer(tag, tagColor))
 	}
 	return
 }

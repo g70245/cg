@@ -752,10 +752,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		workerMenuContainer.Add(loadSettingButton)
 		workerMenuContainer.Add(saveSettingButton)
 
-		actionViewer = container.NewAdaptiveGrid(6, generateTags(worker.ActionStateSnapshot())...)
+		actionViewer = container.NewHBox(generateTags(worker.ActionStateSnapshot())...)
 		actionViewers = append(actionViewers, actionViewer)
 
-		workerContainer := container.NewVBox(workerMenuContainer, actionViewer)
+		actionViewerScroll := container.NewHScroll(actionViewer)
+		workerContainer := container.NewVBox(workerMenuContainer, actionViewerScroll)
 		gameWidget.Add(workerContainer)
 	}
 
