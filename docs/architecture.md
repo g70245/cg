@@ -123,7 +123,7 @@ cg/
 | `internal/memory.go` | Reads strings and `float32` values from another process. | Opens and closes a process handle around every read; open failures return zero-filled data. |
 | `internal/file.go` | Finds the newest log file, reads trailing lines, and decodes Big5. | Returns contextual errors for missing or unreadable logs and safely handles empty files. |
 | `utils/beeper.go` | Owns global looping MP3 playback. | Uses a synchronized audio-session lifecycle with error-returning initialization and fake-session test seams. |
-| `utils/helpers.go` | Contains ad hoc diagnostics for coordinates, colors, handles, and goroutines. | Most helpers are unexported and are not called by the application entry path. |
+| `utils/helpers.go` | Provides a developer-only scratchpad for manually checking coordinates, pixel colors, window handles, hotkeys, and goroutines. | Machine/session-specific values are intentional test inputs; the helpers are not part of the application entry path. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
 | `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
 | `.github/workflows/windows-ci.yml` | Runs the verified Windows build, package compilation checks, and vetting on GitHub Actions. | Uses `windows-2022`, Go `1.21.x`, CGO, and GCC. |
@@ -393,7 +393,7 @@ Go's compiler-enforced import graph is acyclic. The current graph has no import 
 - `game/battle` combines scheduling, state-machine policy, detection, input operations, log checking, audio alerts, and group coordination.
 - `game/production` combines scheduling, UI-state inference, input operations, and alert policy.
 - `game` depends on `internal` directly; there are no interfaces separating game behavior from Win32, memory, pixels, time, or filesystem access.
-- `utils` depends upward on `game` and `internal` because `utils/helpers.go` contains game diagnostics. This does not create a cycle today, but it broadens the utility package's dependency surface.
+- `utils` depends upward on `game` and `internal` because the intentionally retained developer diagnostics in `utils/helpers.go` inspect live game state. This does not create a cycle today, but it broadens the utility package's dependency surface.
 - Windows integration is physically isolated in `internal`, but its concrete functions are called directly. It is a package boundary, not a replaceable abstraction.
 
 ## 8. Key Types and Components
@@ -635,7 +635,6 @@ No remaining issue is currently classified as Medium.
 | `.ac` format is unversioned and weakly validated | `container/action_config.go`, `game/battle/action.go` | Syntactically valid JSON with invalid action values can load, but the files are personal, generated through the UI, and inexpensive to rebuild. | Public compatibility and migration guarantees are not required for the current workflow. | Reassess if files are shared, distributed, manually edited, or become expensive to recreate. |
 | Background dialog sequencing relies on Fyne v2.4 concurrency behavior | `container/battle_action_editor.go:activateDialogs`, `container/setup_config.go:notifySetupConfig` | Dialogs are shown from application-owned goroutines, and `activateDialogs` directly reconfigures selector fields; no runtime failure is confirmed under the pinned pre-v2.6 toolkit. | Fyne v2.6 introduced a different single-UI-goroutine model and requires `fyne.Do` for background UI calls. | Reassess both paths during a Fyne upgrade or if a dialog race becomes observable; do not add a custom dispatcher for v2.4. |
 | Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
-| Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
 | Empty source file | `game/map.go` | No runtime impact. | It may imply abandoned or planned functionality. | Confirm intent; remove only in a separate cleanup if truly unused. |
 
 ## 14. Current Architecture and Potential Future Direction
@@ -690,5 +689,5 @@ These directions favor KISS and YAGNI: retain the existing packages, add abstrac
 19. Is the application distributed as a standalone executable, a Fyne package, or through an external installer?
 20. Is code signing required for releases?
 21. Is cross-compilation a requirement, or is native Windows x64 building sufficient?
-22. Are `utils/helpers.go` and the empty `game/map.go` still intentionally retained?
+22. Is the empty `game/map.go` still intentionally retained?
 23. Which current behaviors are temporary workarounds for client-specific issues?
