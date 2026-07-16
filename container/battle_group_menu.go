@@ -4,6 +4,7 @@ import (
 	"cg/game"
 	"cg/game/battle"
 	"fmt"
+	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -26,29 +27,61 @@ type menuWidgetOptions struct {
 	destroy          func()
 }
 
+func currentManaCheckerOptions(games, allGames game.Games) []string {
+	aliases := make([]string, 0, len(games))
+	for _, hWnd := range games.GetHWNDs() {
+		if alias := allGames.FindKey(hWnd); alias != "" {
+			aliases = append(aliases, alias)
+		}
+	}
+	sort.Strings(aliases)
+
+	return append([]string{battle.NO_MANA_CHECKER}, aliases...)
+}
+
+func currentManaCheckerAlias(manaChecker *battle.ManaChecker, allGames game.Games) string {
+	selectedHandle := manaChecker.Get()
+	if selectedHandle == battle.NO_MANA_CHECKER {
+		return battle.NO_MANA_CHECKER
+	}
+
+	for alias, hWnd := range allGames {
+		if fmt.Sprint(hWnd) == selectedHandle {
+			return alias
+		}
+	}
+	return battle.NO_MANA_CHECKER
+}
+
 func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) {
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
-	manaCheckerOptions := []string{battle.NO_MANA_CHECKER}
-	manaCheckerOptions = append(manaCheckerOptions, options.games.GetSortedKeys()...)
+	manaCheckerOptions := currentManaCheckerOptions(options.games, options.allGames)
 	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
 		if hWnd, ok := options.allGames[s]; ok {
 			options.manaChecker.Set(fmt.Sprint(hWnd))
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Monitor: %s", s))
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", s))
 		} else {
 			options.manaChecker.Set(battle.NO_MANA_CHECKER)
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Monitor: %s", options.manaChecker.Get()))
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", options.manaChecker.Get()))
 		}
 		manaCheckerSelectorDialog.Hide()
 	})
 	manaCheckerSelector.Required = true
 	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select Game for Mana Monitoring", manaCheckerSelector, window)
-	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Monitor: %s", options.manaChecker.Get()), func() {
+	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana: %s", options.manaChecker.Get()), func() {
 		manaCheckerSelectorDialog.Show()
 
 		notifyBeeperConfig("Mana Monitoring Setup")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
+	refreshManaCheckerSelector := func() {
+		selectedAlias := currentManaCheckerAlias(options.manaChecker, options.allGames)
+		manaCheckerSelector.Options = currentManaCheckerOptions(options.games, options.allGames)
+		manaCheckerSelector.Selected = selectedAlias
+		manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", selectedAlias))
+		manaCheckerSelector.Refresh()
+	}
 
 	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
@@ -177,8 +210,10 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
+	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window)
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
-		dialog.NewCustom("Monitoring", "Close", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window).Show()
+		refreshManaCheckerSelector()
+		monitoringDialog.Show()
 	})
 	checkersButton.Importance = widget.HighImportance
 
@@ -212,7 +247,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	})
 	enemyOrderButton.Importance = widget.HighImportance
 
-	menuWidget = container.NewGridWithColumns(6, manaCheckerSelectorButton, checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton)
+	menuWidget = container.NewGridWithColumns(5, checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton)
 	return
 }
 
