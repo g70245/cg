@@ -620,7 +620,6 @@ No remaining issue is currently classified as High.
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
-| No explicit shutdown hook | `container/main.go` | Workers/audio are explicitly stopped on refresh/removal but not on normal window close. | Clean resource ownership is unclear and complicates restart/exit behavior. | Verify Fyne close behavior, then define one idempotent application shutdown path. |
 | Production completion has no timeout/cancellation | `game/production/worker.go:produce` | Unexpected pixels can trap the worker in a sleep/poll loop. | Live client state is inherently variable. | Measure normal duration and define cancellable timeout behavior. |
 | Errors are silently ignored or fatal | `container/battle.go`, `internal/*`, `utils/beeper.go` | Users receive little actionable feedback; some recoverable failures terminate the process. | File/native/audio boundaries are expected failure points. | Inventory current error boundaries and introduce consistent user-visible reporting incrementally. |
 | `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
@@ -630,6 +629,7 @@ No remaining issue is currently classified as High.
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
+| No explicit shutdown hook | `container/main.go` | Workers/audio are stopped on refresh/removal but not on normal window close; the process currently exits with the last Fyne window, and operators commonly stop active work first. | No user-visible shutdown failure is confirmed, so adding lifecycle machinery now would be speculative. | Reassess if shutdown must persist state, wait for workers, or release resources before process exit. |
 | UI and coordination are concentrated in one large file | `container/battle.go` | Action configuration, persistence, presentation, and lifecycle changes are difficult to review independently. | The file is over 1,200 lines and changes can cross concerns. | Split only along stable functional boundaries when making related changes; avoid framework-heavy abstractions. |
 | Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
 | Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
