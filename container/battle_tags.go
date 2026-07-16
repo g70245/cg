@@ -23,12 +23,12 @@ func generateTags(actionState battle.ActionState) (tagContaines []fyne.CanvasObj
 }
 
 var (
-	characterFinishingTagColor   = color.RGBA{0x33, 0x4E, 0x9A, 0xFF}
-	characterConditionalTagColor = color.RGBA{0x00, 0x6B, 0x78, 0xFF}
-	characterSpecialTagColor     = color.RGBA{0x45, 0x5A, 0x64, 0xFF}
-	petFinishingTagColor         = color.RGBA{0x9A, 0x34, 0x12, 0xFF}
-	petConditionalTagColor       = color.RGBA{0x8A, 0x5A, 0x00, 0xFF}
-	petSpecialTagColor           = color.RGBA{0x7A, 0x3E, 0x5D, 0xFF}
+	characterFinishingTagColor   = color.RGBA{0x5B, 0x6F, 0xD8, 0xFF}
+	characterConditionalTagColor = color.RGBA{0x2F, 0x8F, 0x9D, 0xFF}
+	characterSpecialTagColor     = color.RGBA{0x79, 0x6F, 0xA8, 0xFF}
+	petFinishingTagColor         = color.RGBA{0xD8, 0x5A, 0x70, 0xFF}
+	petConditionalTagColor       = color.RGBA{0xD9, 0x82, 0x4B, 0xFF}
+	petSpecialTagColor           = color.RGBA{0xBD, 0x5F, 0x91, 0xFF}
 )
 
 func newTagContainer(tag string, tagColor color.Color) *fyne.Container {
