@@ -4,6 +4,7 @@ import (
 	"cg/game"
 	"cg/utils"
 	"fmt"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -22,7 +23,8 @@ var (
 
 type robot struct {
 	main      *fyne.Container
-	gameDir   *string
+	gameDirMu sync.RWMutex
+	gameDir   string
 	actionDir string
 	width     float32
 	height    float32
@@ -37,7 +39,7 @@ func App(title, gameDir string, width, height float32) {
 
 	r = robot{
 		games:     game.NewGames(),
-		gameDir:   &gameDir,
+		gameDir:   gameDir,
 		actionDir: gameDir,
 		width:     width,
 		height:    height,
@@ -90,10 +92,10 @@ func App(title, gameDir string, width, height float32) {
 	gameDirDialogButton = widget.NewButtonWithIcon("Game Directory", theme.FolderIcon(), func() {
 		gameDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 			if lu != nil {
-				*r.gameDir = lu.Path()
+				r.setGameDir(lu.Path())
 				gameDirDialogButton.SetIcon(theme.FolderOpenIcon())
 			} else {
-				*r.gameDir = ""
+				r.setGameDir("")
 				gameDirDialogButton.SetIcon(theme.FolderIcon())
 			}
 		}, window)
@@ -113,6 +115,18 @@ func App(title, gameDir string, width, height float32) {
 
 	window.SetContent(content)
 	window.ShowAndRun()
+}
+
+func (r *robot) getGameDir() string {
+	r.gameDirMu.RLock()
+	defer r.gameDirMu.RUnlock()
+	return r.gameDir
+}
+
+func (r *robot) setGameDir(gameDir string) {
+	r.gameDirMu.Lock()
+	r.gameDir = gameDir
+	r.gameDirMu.Unlock()
 }
 
 func (r *robot) refresh() {

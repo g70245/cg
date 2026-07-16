@@ -5,6 +5,8 @@ import (
 	"cg/internal"
 	"cg/utils"
 	"log"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/g70245/win"
@@ -25,12 +27,14 @@ const (
 
 type Worker struct {
 	hWnd     win.HWND
-	name     string
-	gameDir  *string
+	gameDir  func() string
 	stopChan chan bool
 
-	GatheringMode bool
-	ManualMode    bool
+	nameMu sync.RWMutex
+	name   string
+
+	gatheringMode atomic.Bool
+	manualMode    atomic.Bool
 
 	workerTicker           *time.Ticker
 	logCheckerTicker       *time.Ticker
@@ -38,7 +42,7 @@ type Worker struct {
 	audibleCueTicker       *time.Ticker
 }
 
-func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Worker {
+func NewWorker(hWnd win.HWND, gameDir func() string, stopChan chan bool) *Worker {
 	newWorkerTicker := time.NewTicker(time.Hour)
 	newLogCheckerTicker := time.NewTicker(time.Hour)
 	newInventoryCheckerTicker := time.NewTicker(time.Hour)
@@ -49,7 +53,7 @@ func NewWorker(hWnd win.HWND, gameDir *string, stopChan chan bool) Worker {
 	newInventoryCheckerTicker.Stop()
 	newAudibleCueTicker.Stop()
 
-	return Worker{
+	return &Worker{
 		hWnd:                   hWnd,
 		name:                   NO_WORKER_NAME,
 		gameDir:                gameDir,
@@ -78,13 +82,13 @@ func (w *Worker) Work() {
 		for {
 			select {
 			case <-w.workerTicker.C:
-				if !w.GatheringMode {
+				if !w.gatheringMode.Load() {
 					w.prepareMaterials()
 					w.produce()
 					w.tidyInventory()
 				}
 			case <-w.logCheckerTicker.C:
-				if game.IsProductionStatusOK(w.name, *w.gameDir, DURATION_PRODUCTION_CHECKER_LOG) {
+				if game.IsProductionStatusOK(w.Name(), w.gameDir(), DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", w.hWnd)
 					w.StopTickers()
 					utils.Beeper.Play()
@@ -96,7 +100,7 @@ func (w *Worker) Work() {
 					utils.Beeper.Play()
 				}
 			case <-w.audibleCueTicker.C:
-				if w.ManualMode {
+				if w.manualMode.Load() {
 					w.StopTickers()
 					utils.Beeper.Play()
 				}
@@ -117,18 +121,18 @@ func (w *Worker) StopTickers() {
 
 func (w *Worker) Stop() {
 	w.stopChan <- true
-	w.ManualMode = true
+	w.manualMode.Store(true)
 	utils.Beeper.Stop()
 }
 
 func (w *Worker) Reset() {
-	w.ManualMode = false
+	w.manualMode.Store(false)
 	utils.Beeper.Stop()
 }
 
 func (w *Worker) prepareMaterials() {
 
-	if w.ManualMode {
+	if w.manualMode.Load() {
 		return
 	}
 
@@ -140,7 +144,7 @@ func (w *Worker) prepareMaterials() {
 	nx, ny, ok := game.GetItemWindowPos(w.hWnd)
 	if !ok {
 		log.Printf("Production %d cannot find the position of item window\n", w.hWnd)
-		w.ManualMode = true
+		w.manualMode.Store(true)
 		return
 	}
 
@@ -149,7 +153,7 @@ func (w *Worker) prepareMaterials() {
 		if game.IsInventorySlotFree(w.hWnd, nx+i*game.ITEM_COL_LEN, ny) {
 			if game.IsInventorySlotFree(w.hWnd, nx+i*game.ITEM_COL_LEN, ny+3*game.ITEM_COL_LEN) {
 				log.Printf("Production %d has no materials\n", w.hWnd)
-				w.ManualMode = true
+				w.manualMode.Store(true)
 				return
 			}
 
@@ -158,7 +162,7 @@ func (w *Worker) prepareMaterials() {
 
 			if game.IsInventorySlotFree(w.hWnd, nx+i*game.ITEM_COL_LEN, ny) {
 				log.Printf("Production %d cannot unpack material\n", w.hWnd)
-				w.ManualMode = true
+				w.manualMode.Store(true)
 				return
 			}
 		}
@@ -167,7 +171,7 @@ func (w *Worker) prepareMaterials() {
 
 func (w *Worker) produce() {
 
-	if w.ManualMode {
+	if w.manualMode.Load() {
 		return
 	}
 
@@ -176,7 +180,7 @@ func (w *Worker) produce() {
 	px, py, ok := w.getInventoryPos()
 	if !ok {
 		log.Printf("Production %d cannot find the position of production window\n", w.hWnd)
-		w.ManualMode = true
+		w.manualMode.Store(true)
 		return
 	}
 
@@ -192,14 +196,14 @@ func (w *Worker) produce() {
 
 	if !w.canProduce(px, py) {
 		log.Printf("Production %d is out of mana or has insufficient materials\n", w.hWnd)
-		w.ManualMode = true
+		w.manualMode.Store(true)
 		return
 	}
 
 	internal.LeftClick(w.hWnd, px-270, py+180)
 	if !w.isProducing(px, py) {
 		log.Printf("Production %d missed the producing button\n", w.hWnd)
-		w.ManualMode = true
+		w.manualMode.Store(true)
 		return
 	}
 
@@ -210,7 +214,7 @@ func (w *Worker) produce() {
 
 func (w *Worker) tidyInventory() {
 
-	if w.ManualMode {
+	if w.manualMode.Load() {
 		return
 	}
 
@@ -219,7 +223,7 @@ func (w *Worker) tidyInventory() {
 	px, py, ok := w.getInventoryPos()
 	if !ok {
 		log.Printf("Production %d cannot find the position of production window\n", w.hWnd)
-		w.ManualMode = true
+		w.manualMode.Store(true)
 		return
 	}
 
@@ -239,5 +243,17 @@ func (w *Worker) tidyInventory() {
 }
 
 func (w *Worker) SetName(name string) {
+	w.nameMu.Lock()
 	w.name = name
+	w.nameMu.Unlock()
+}
+
+func (w *Worker) Name() string {
+	w.nameMu.RLock()
+	defer w.nameMu.RUnlock()
+	return w.name
+}
+
+func (w *Worker) SetGatheringMode(enabled bool) {
+	w.gatheringMode.Store(enabled)
 }

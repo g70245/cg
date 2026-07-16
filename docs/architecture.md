@@ -265,10 +265,12 @@ Failure handling is minimal: Win32 return values are not checked, regex compilat
    - `sharedStopChan`
    - `sharedWaitGroup`
    - `sharedInventoryStatus`
-   - a selected `manaChecker` string
-3. `generateGameWidget` lets the user mutate each worker's `MovementState.Mode`, `CustomEnemyOrder`, and `ActionState`.
+   - a synchronized `ManaChecker` selection
+3. `generateGameWidget` updates synchronized worker configuration for movement, enemy order, and actions. Each `Work` call uses a deep action snapshot so UI edits cannot mutate an executing state machine.
 4. Character and pet actions are appended in UI order. Optional parameters, offsets, thresholds, success/failure `ControlUnit` values, and jump IDs are collected through sequenced dialogs.
-5. Save marshals exported `ActionState` fields as JSON; load unmarshals JSON and restores runtime-only `HWND`, `GameDir`, and `ManaChecker` references.
+5. Save marshals an `ActionState` snapshot; load unmarshals JSON and replaces worker configuration through its synchronized API. Runtime-only dependencies are attached to the execution snapshot.
+
+Magic Baby uses random encounters on normal maps and turn-based party battles. Party windows can leave the battle scene at different times. `sharedWaitGroup` deliberately tracks party members still executing battle actions: a character already back in the normal scene waits before moving so the leader cannot trigger another encounter while teammates remain in battle.
 
 **Execution flow:**
 
@@ -401,13 +403,13 @@ Go's compiler-enforced import graph is acyclic. The current graph has no import 
 | `ActionState` | `game/battle` | Stores ordered character/pet actions and executes the battle state machines. | `game`, enums, items, `internal`, logs, `utils.Beeper` | `battle.Worker`, `container/battle.go` | Mixes persisted configuration with transient execution state. |
 | `CharacterAction` | `game/battle` | Configures one character action and its control transitions. | Action/offset/threshold/control enums | `ActionState`, UI JSON load/save | Exported fields are serialized without an explicit version field. |
 | `PetAction` | `game/battle` | Configures one pet action and its control transitions. | Action/offset/threshold/control enums | `ActionState`, UI JSON load/save | Same compatibility concern as `CharacterAction`. |
-| `Worker` | `game/battle` | Schedules battle, movement, inventory, and log/memory checks for one window. | `ActionState`, `MovementState`, tickers, shared pointers/channel/WaitGroup | `container/battle.go` | `Work` can start a new goroutine each time it is called. |
-| `Workers` | `game/battle` | Slice of battle workers. | `Worker` | Battle-group UI | Workers are values; UI takes addresses of slice elements. |
+| `Worker` | `game/battle` | Schedules battle, movement, inventory, and log/memory checks for one window. | `ActionState`, `MovementState`, tickers, synchronized group state, shared channel/WaitGroup | `container/battle.go` | Configuration is synchronized and each run owns an action snapshot; `Work` can still start a new goroutine each time it is called. |
+| `Workers` | `game/battle` | Slice of battle worker pointers. | `Worker` | Battle-group UI | Pointer identity prevents copying mutex and atomic fields after use. |
 | `MovementState` | `game/battle` | Chooses a movement click based on mode, origin, and current memory position. | `game.GetCurrentGamePos`, `internal.LeftClick` | `battle.Worker` | `origin` and `hWnd` are unexported runtime state. |
-| `Worker` | `game/production` | Schedules production, log, inventory, and manual-attention checks for one window. | `game`, `internal`, tickers, `utils.Beeper` | `container/production.go` | `ManualMode` and `GatheringMode` are shared mutable fields. |
+| `Worker` | `game/production` | Schedules production, log, inventory, and manual-attention checks for one window. | `game`, `internal`, tickers, `utils.Beeper` | `container/production.go` | Name access is mutex-protected; manual and gathering flags are atomic. |
 | `Item` and `Bombs` | `game/items` | Associate item labels with detection colors. | `enum.GenericEnum`, `win.COLORREF` | Battle action configuration and item lookup | Potion is represented only by a color constant. |
 | `GenericEnum[T]` | `game/enum` | Converts typed enum lists into UI option strings. | `fmt.Sprint` | Battle UI and item definitions | Minimal generic UI adapter. |
-| `beeper` / `Beeper` | `utils` | Own global looping MP3 playback and control channels. | `beep`, `mp3`, `speaker` | UI, battle workers, production workers | Global mutable singleton with unsynchronized state. |
+| `beeper` / `Beeper` | `utils` | Own global looping MP3 playback and control channels. | `beep`, `mp3`, `speaker` | UI, battle workers, production workers | Session and lifecycle state are synchronized. |
 
 There are no repository/service interfaces, controllers, or repository objects in the conventional application-architecture sense. File, memory, and Win32 access are package functions.
 
@@ -423,10 +425,10 @@ There are no repository/service interfaces, controllers, or repository objects i
 
 ### 9.2 Configuration state
 
-- `r.gameDir` is a pointer to the `gameDir` variable local to `container.App`; workers share that pointer and observe folder-dialog changes.
+- `r.gameDir` is protected by `robot` getter/setter methods; workers receive the synchronized getter and observe folder-dialog changes without sharing a raw string pointer.
 - `r.actionDir` is a string copied at startup and does not change with the Game Directory selector.
 - `ActionState` JSON saves exported action slices and fields. Runtime fields use `json:"-"` or are unexported.
-- Loading a group setting reuses one unmarshaled `ActionState` value across assignments, then restores per-worker handles and shared pointers.
+- Loading a group setting deep-copies one unmarshaled `ActionState` into each worker's synchronized configuration.
 - There is no schema version, validation pass, migration policy, or atomic write for `.ac` files.
 
 ### 9.3 Goroutines, channels, and timers
@@ -443,12 +445,12 @@ There are no repository/service interfaces, controllers, or repository objects i
 
 The following are evidence-based risk assessments; actual failure frequency requires runtime testing.
 
-- **Inference — data races:** UI callbacks write checker flags, movement mode, action state, and directory pointers while worker goroutines read or write them without mutexes or atomics. Beeper session state is synchronized separately.
+- Worker checker/stop flags and the group inventory status use atomics. Movement, enemy-order, action, mana-checker, game-directory, and production-name access use synchronized APIs. Battle execution uses a deep action snapshot rather than UI-owned slices.
 - **Inference — duplicate workers:** Repeated `Work()` calls can create multiple goroutines selecting on the same ticker fields and stop channel. The UI icon reduces normal accidental repetition but does not enforce a worker lifecycle state.
 - **Inference — goroutine retention:** Calling `StopTickers` stops events but does not terminate worker goroutines. They remain blocked until a stop-channel signal or later ticker reset.
 - **Inference — dialog goroutine retention:** `activateDialogs` depends on every expected dialog closure sending to the channel. Unexpected UI lifecycle paths may leave a goroutine waiting.
-- `sharedWaitGroup.Add(1)` occurs inside a worker goroutine while other workers may call `Wait()`. Go's `WaitGroup` contract requires careful ordering; current group coordination has no higher-level synchronization.
-- `sharedInventoryStatus` is a plain shared `*bool` accessed by multiple battle workers.
+- `sharedWaitGroup` intentionally represents party windows still in Magic Baby's turn-based battle scene. A party member back in the normal scene waits before moving, preventing the leader from starting another random encounter while teammates are still leaving battle. `Done` is deferred around each grouped action so the count is released on every action return path.
+- `sharedInventoryStatus` is a shared `atomic.Bool`.
 
 ### 9.5 Fyne thread model
 
@@ -614,7 +616,6 @@ No issue is classified as confirmed Critical from repository evidence alone. Run
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
-| Shared worker state is unsynchronized | `game/battle/worker.go`, `game/production/worker.go`, `container/*.go`, `utils/beeper.go` | **Inference:** UI and multiple goroutines access flags, pointers, action state, shared bools, and audio state concurrently, creating race and inconsistent-lifecycle risk. | Automation is long-running and multi-window by design. | Run targeted `-race` tests with fakes after introducing test seams; document allowed state transitions. |
 | Compatibility assumptions are hard-coded and unvalidated | `game/constant.go`, `game/battle/*`, `game/production/*`, `internal/window.go` | A client update, DPI/layout change, or memory-layout change can cause wrong clicks, false detections, or invalid reads. | Fixed coordinates/colors/addresses are the core automation mechanism. | Establish supported client/UI matrix and add a startup compatibility diagnostic before automation. |
 
 ### Medium

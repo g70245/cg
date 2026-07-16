@@ -67,7 +67,7 @@ func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorker
 
 func newProductionWorkerContainer(gameKey string, games game.Games, destroy func()) (*fyne.Container, chan bool) {
 	stopChan := make(chan bool, 1)
-	worker := production.NewWorker(games.Peek(gameKey), r.gameDir, stopChan)
+	worker := production.NewWorker(games.Peek(gameKey), r.getGameDir, stopChan)
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
@@ -89,10 +89,10 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 	isGatheringButton = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
 		switch isGatheringButton.Icon {
 		case theme.CheckButtonCheckedIcon():
-			worker.GatheringMode = false
+			worker.SetGatheringMode(false)
 			turn(theme.CheckButtonIcon(), isGatheringButton)
 		case theme.CheckButtonIcon():
-			worker.GatheringMode = true
+			worker.SetGatheringMode(true)
 			turn(theme.CheckButtonCheckedIcon(), isGatheringButton)
 		}
 	})

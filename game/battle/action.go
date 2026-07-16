@@ -73,18 +73,18 @@ type ActionState struct {
 	currentCU                controlunit.ControlUnit `json:"-"`
 	currentJumpId            int                     `json:"-"`
 
-	Enabled                bool               `json:"-"`
-	ActivityCheckerEnabled bool               `json:"-"`
-	EnemyOrder             enemy.Position     `json:"-"`
-	CustomEnemies          []game.CheckTarget `json:"-"`
+	EnemyOrder    enemy.Position     `json:"-"`
+	CustomEnemies []game.CheckTarget `json:"-"`
 
 	isOutOfHealth      bool `json:"-"`
 	isOutOfMana        bool `json:"-"`
 	isCharacterHanging bool `json:"-"`
 	isPetHanging       bool `json:"-"`
 
-	ManaChecker *string `json:"-"`
-	GameDir     *string `json:"-"`
+	enabled                func() bool
+	activityCheckerEnabled func() bool
+	gameDir                func() string
+	manaChecker            *ManaChecker
 
 	enemies         []game.CheckTarget `json:"-"`
 	trainingCounter int                `json:"-"`
@@ -93,7 +93,7 @@ type ActionState struct {
 func (s *ActionState) Act() {
 	log.Printf("# Handle %s's battle begins\n", fmt.Sprint(s.hWnd))
 
-	for game.IsBattleScene(s.hWnd) && s.Enabled {
+	for game.IsBattleScene(s.hWnd) && s.isEnabled() {
 		s.wait()
 		s.executeActivity()
 		s.detectEnemies()
@@ -113,15 +113,15 @@ func (s *ActionState) Act() {
 
 func (s *ActionState) executeActivity() {
 
-	if !s.ActivityCheckerEnabled {
+	if !s.isActivityCheckerEnabled() {
 		return
 	}
 
-	if game.DoesEncounterActivityMonsters(*s.GameDir) {
+	if game.DoesEncounterActivityMonsters(s.gameDir()) {
 		s.logH("encounters the activity monster")
 		utils.Beeper.Play()
 
-		for game.IsBattleScene(s.hWnd) && s.Enabled {
+		for game.IsBattleScene(s.hWnd) && s.isEnabled() {
 			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 		}
 	}
@@ -129,7 +129,7 @@ func (s *ActionState) executeActivity() {
 
 func (s *ActionState) executeCharacterStateMachine() {
 
-	for s.currentCharacterActionId < len(s.CharacterActions) && game.IsBattleScene(s.hWnd) && s.isCharacterStageStable() && s.Enabled {
+	for s.currentCharacterActionId < len(s.CharacterActions) && game.IsBattleScene(s.hWnd) && s.isCharacterStageStable() && s.isEnabled() {
 
 		s.resetCurrentControlUnit()
 		s.endPetHanging()
@@ -496,7 +496,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 
 func (s *ActionState) executePetStateMachiine() {
 
-	for s.currentPetActionId < len(s.PetActions) && game.IsBattleScene(s.hWnd) && s.isPetStageStable() && s.Enabled {
+	for s.currentPetActionId < len(s.PetActions) && game.IsBattleScene(s.hWnd) && s.isPetStageStable() && s.isEnabled() {
 
 		s.resetCurrentControlUnit()
 		s.endCharacterHanging()
@@ -738,7 +738,7 @@ func (s *ActionState) updateCurrentActionId(r role.Role) {
 }
 
 func (s ActionState) isManaChecker() bool {
-	return *s.ManaChecker == fmt.Sprint(s.hWnd)
+	return s.manaChecker.Get() == fmt.Sprint(s.hWnd)
 }
 
 func (s *ActionState) enableBattleCommandAttack() {
@@ -827,7 +827,7 @@ func (s *ActionState) logP(message string) {
 	)
 }
 
-func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) ActionState {
+func CreateNewBattleActionState(hWnd win.HWND) ActionState {
 	return ActionState{
 		hWnd: hWnd,
 		CharacterActions: []CharacterAction{
@@ -844,9 +844,31 @@ func CreateNewBattleActionState(hWnd win.HWND, gameDir, manaChecker *string) Act
 				FailureControlUnit: controlunit.Continue,
 			},
 		},
-		GameDir:     gameDir,
-		ManaChecker: manaChecker,
 	}
+}
+
+func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, gameDir func() string, manaChecker *ManaChecker) {
+	s.enabled = enabled
+	s.activityCheckerEnabled = activityCheckerEnabled
+	s.gameDir = gameDir
+	s.manaChecker = manaChecker
+}
+
+func (s *ActionState) isEnabled() bool {
+	return s.enabled == nil || s.enabled()
+}
+
+func (s *ActionState) isActivityCheckerEnabled() bool {
+	return s.activityCheckerEnabled != nil && s.activityCheckerEnabled()
+}
+
+func (s ActionState) clone() ActionState {
+	clone := s
+	clone.CharacterActions = append([]CharacterAction(nil), s.CharacterActions...)
+	clone.PetActions = append([]PetAction(nil), s.PetActions...)
+	clone.CustomEnemies = append([]game.CheckTarget(nil), s.CustomEnemies...)
+	clone.enemies = append([]game.CheckTarget(nil), s.enemies...)
+	return clone
 }
 
 func (s *ActionState) GetHWND() win.HWND {
@@ -950,7 +972,7 @@ func (s *ActionState) GetPetActions() []PetAction {
 
 func (s *ActionState) detectEnemies() {
 
-	if !game.IsBattleScene(s.hWnd) || !s.Enabled {
+	if !game.IsBattleScene(s.hWnd) || !s.isEnabled() {
 		return
 	}
 
@@ -1003,7 +1025,7 @@ func (s *ActionState) endPetHanging() {
 
 func (s *ActionState) checkCharacterMana() {
 
-	if !game.IsBattleScene(s.hWnd) || !s.Enabled {
+	if !game.IsBattleScene(s.hWnd) || !s.isEnabled() {
 		return
 	}
 
@@ -1020,7 +1042,7 @@ func (s *ActionState) checkCharacterMana() {
 
 func (s *ActionState) wait() {
 
-	for game.IsBattleScene(s.hWnd) && s.Enabled && !s.isCharacterStageStable() && !s.isPetStageStable() {
+	for game.IsBattleScene(s.hWnd) && s.isEnabled() && !s.isCharacterStageStable() && !s.isPetStageStable() {
 		time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
 	}
 }
