@@ -127,7 +127,7 @@ func (w *Worker) Work() bool {
 
 	go func() {
 		defer w.finishWork()
-		defer w.stopTickers(&actionState)
+		defer w.pause(&actionState)
 
 		currentMapName := game.GetMapName(w.hWnd)
 		w.sharedInventoryStatus.Store(false)
@@ -172,7 +172,7 @@ func (w *Worker) Work() bool {
 					}
 
 					if isOutOfResource || w.sharedInventoryStatus.Load() || actionState.isOutOfHealth || actionState.isOutOfMana {
-						w.stopTickers(&actionState)
+						w.pause(&actionState)
 						utils.Beeper.Play()
 						break
 					}
@@ -192,12 +192,12 @@ func (w *Worker) Work() bool {
 				if w.activityCheckerEnabled.Load() && isInventoryFullForActivity(w.hWnd) {
 					log.Printf("Handle %d inventory is full\n", w.hWnd)
 					w.setSharedInventoryStatus(true)
-					w.stopTickers(&actionState)
+					w.pause(&actionState)
 					utils.Beeper.Play()
 				} else if isInventoryFull(w.hWnd) {
 					log.Printf("Handle %d inventory is full\n", w.hWnd)
 					w.setSharedInventoryStatus(true)
-					w.stopTickers(&actionState)
+					w.pause(&actionState)
 					utils.Beeper.Play()
 				}
 			case <-w.teleportAndResourceCheckerTicker.C:
@@ -214,12 +214,12 @@ func (w *Worker) Work() bool {
 
 				if newMapName := game.GetMapName(w.hWnd); currentMapName != newMapName || game.IsTeleported(w.gameDir()) {
 					log.Printf("Handle %d has been teleported to: %s\n", w.hWnd, newMapName)
-					w.stopTickers(&actionState)
+					w.pause(&actionState)
 					utils.Beeper.Play()
 				}
 				if isOutOfResource = game.IsOutOfResource(w.gameDir()); isOutOfResource {
 					log.Printf("Handle %d is out of resource\n", w.hWnd)
-					w.stopTickers(&actionState)
+					w.pause(&actionState)
 					utils.Beeper.Play()
 				}
 				if game.IsVerificationTriggered(w.gameDir()) {
@@ -244,7 +244,9 @@ func (w *Worker) finishWork() {
 	w.running.Store(false)
 }
 
-func (w *Worker) stopTickers(actionState *ActionState) {
+// pause stops scheduled work. Alert paths intentionally keep the select loop
+// alive until the operator acknowledges the condition with Stop.
+func (w *Worker) pause(actionState *ActionState) {
 	w.workerTicker.Stop()
 	w.inventoryCheckerTicker.Stop()
 	w.teleportAndResourceCheckerTicker.Stop()

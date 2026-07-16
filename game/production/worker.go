@@ -81,7 +81,7 @@ func (w *Worker) Work() bool {
 
 	go func() {
 		defer w.finishWork()
-		defer w.StopTickers()
+		defer w.pause()
 
 		w.Reset()
 
@@ -96,18 +96,18 @@ func (w *Worker) Work() bool {
 			case <-w.logCheckerTicker.C:
 				if game.IsProductionStatusOK(w.Name(), w.gameDir(), DURATION_PRODUCTION_CHECKER_LOG) {
 					log.Printf("Production %d status check was not passed\n", w.hWnd)
-					w.StopTickers()
+					w.pause()
 					utils.Beeper.Play()
 				}
 			case <-w.inventoryCheckerTicker.C:
 				if game.IsInventoryFullWithoutClosingAllWindows(w.hWnd) {
 					log.Printf("Production %d inventory is full\n", w.hWnd)
-					w.StopTickers()
+					w.pause()
 					utils.Beeper.Play()
 				}
 			case <-w.audibleCueTicker.C:
 				if w.manualMode.Load() {
-					w.StopTickers()
+					w.pause()
 					utils.Beeper.Play()
 				}
 			case <-w.stopChan:
@@ -128,7 +128,9 @@ func (w *Worker) finishWork() {
 	w.running.Store(false)
 }
 
-func (w *Worker) StopTickers() {
+// pause stops scheduled work. Alert paths intentionally keep the select loop
+// alive until the operator acknowledges the condition with Stop.
+func (w *Worker) pause() {
 	w.workerTicker.Stop()
 	w.logCheckerTicker.Stop()
 	w.inventoryCheckerTicker.Stop()

@@ -283,7 +283,7 @@ flowchart TD
     Scene -->|BATTLE_SCENE| Act[ActionState.Act]
     Scene -->|NORMAL_SCENE| StopReason{resource, inventory, health, or mana stop?}
     StopReason -->|No| Move[MovementState.Move]
-    StopReason -->|Yes| Alert[StopTickers and utils.Beeper.Play]
+    StopReason -->|Yes| Alert[Pause worker and play alert]
     Scene -->|Unknown| Loop
 
     Act --> Activity[Optional activity log check]
@@ -446,8 +446,8 @@ There are no repository/service interfaces, controllers, or repository objects i
 The following are evidence-based risk assessments; actual failure frequency requires runtime testing.
 
 - Worker checker/stop flags and the group inventory status use atomics. Movement, enemy-order, action, mana-checker, game-directory, and production-name access use synchronized APIs. Battle execution uses a deep action snapshot rather than UI-owned slices.
-- **Inference — duplicate workers:** Repeated `Work()` calls can create multiple goroutines selecting on the same ticker fields and stop channel. The UI icon reduces normal accidental repetition but does not enforce a worker lifecycle state.
-- **Inference — goroutine retention:** Calling `StopTickers` stops events but does not terminate worker goroutines. They remain blocked until a stop-channel signal or later ticker reset.
+- Both worker types use an atomic running gate so repeated `Work()` calls cannot create duplicate goroutines for the same worker.
+- Pausing after an alert intentionally stops ticker events without terminating the worker goroutine. The goroutine remains available until the operator acknowledges the condition with Stop, handles it, and starts the worker again when ready.
 - **Inference — dialog goroutine retention:** `activateDialogs` depends on every expected dialog closure sending to the channel. Unexpected UI lifecycle paths may leave a goroutine waiting.
 - `sharedWaitGroup` intentionally represents party windows still in Magic Baby's turn-based battle scene. A party member back in the normal scene waits before moving, preventing the leader from starting another random encounter while teammates are still leaving battle. `Done` is deferred around each grouped action so the count is released on every action return path.
 - `sharedInventoryStatus` is a shared `atomic.Bool`.
@@ -621,7 +621,6 @@ No remaining issue is currently classified as High.
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
 | No explicit shutdown hook | `container/main.go` | Workers/audio are explicitly stopped on refresh/removal but not on normal window close. | Clean resource ownership is unclear and complicates restart/exit behavior. | Verify Fyne close behavior, then define one idempotent application shutdown path. |
-| Stopping tickers does not stop worker goroutines | Both worker packages | Goroutines can remain blocked after an alert until another start or stop-channel event. | Retained goroutines complicate lifecycle and state reasoning. | Distinguish pause from terminate and verify expected restart semantics. |
 | Production completion has no timeout/cancellation | `game/production/worker.go:produce` | Unexpected pixels can trap the worker in a sleep/poll loop. | Live client state is inherently variable. | Measure normal duration and define cancellable timeout behavior. |
 | Errors are silently ignored or fatal | `container/battle.go`, `internal/*`, `utils/beeper.go` | Users receive little actionable feedback; some recoverable failures terminate the process. | File/native/audio boundaries are expected failure points. | Inventory current error boundaries and introduce consistent user-visible reporting incrementally. |
 | `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
