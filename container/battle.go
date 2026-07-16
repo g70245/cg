@@ -12,13 +12,9 @@ import (
 	"cg/game/enum/threshold"
 	"cg/game/items"
 	"cg/utils"
-	"encoding/json"
 	"errors"
 	"image/color"
-	"io"
-	"log"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -810,20 +806,21 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 			fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
-				if uc != nil {
-					var actionState battle.ActionState
-					file, openErr := os.Open(uc.URI().Path())
-
-					if openErr == nil {
-						defer file.Close()
-						if buffer, readErr := io.ReadAll(file); readErr == nil {
-							if json.Unmarshal(buffer, &actionState) == nil {
-								worker.ReplaceActionState(actionState)
-								refreshActionViewer()
-							}
-						}
-					}
+				if err != nil {
+					showActionConfigurationError("Load", fmt.Errorf("select file: %w", err))
+					return
 				}
+				if uc == nil {
+					return
+				}
+
+				actionState, err := loadActionConfiguration(uc)
+				if err != nil {
+					showActionConfigurationError("Load", err)
+					return
+				}
+				worker.ReplaceActionState(actionState)
+				refreshActionViewer()
 			}, window)
 
 			listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
@@ -835,13 +832,16 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 
 		saveSettingButton := widget.NewButtonWithIcon("Save", theme.DownloadIcon(), func() {
 			fileSaveDialog := dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
-				if uc != nil {
-					actionState := worker.ActionStateSnapshot()
-					if setting, marshalErr := json.Marshal(actionState); marshalErr == nil {
-						if writeErr := os.WriteFile(uc.URI().Path(), setting, 0644); writeErr != nil {
-							log.Fatalf("Cannot write to file: %s\n", uc.URI().Path())
-						}
-					}
+				if err != nil {
+					showActionConfigurationError("Save", fmt.Errorf("select destination: %w", err))
+					return
+				}
+				if uc == nil {
+					return
+				}
+
+				if err := saveActionConfiguration(uc, worker.ActionStateSnapshot()); err != nil {
+					showActionConfigurationError("Save", err)
 				}
 			}, window)
 			listableURI, _ := storage.ListerForURI(storage.NewFileURI(r.actionDir + `\actions`))
@@ -907,22 +907,23 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 
 	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
-			if uc != nil {
-				var actionState battle.ActionState
-				file, openErr := os.Open(uc.URI().Path())
+			if err != nil {
+				showActionConfigurationError("Load", fmt.Errorf("select file: %w", err))
+				return
+			}
+			if uc == nil {
+				return
+			}
 
-				if openErr == nil {
-					defer file.Close()
-					if buffer, readErr := io.ReadAll(file); readErr == nil {
-						if json.Unmarshal(buffer, &actionState) == nil {
-							for i := range options.workers {
-								options.workers[i].ReplaceActionState(actionState)
-								options.actionViewers[i].Objects = generateTags(options.workers[i].ActionStateSnapshot())
-								options.actionViewers[i].Refresh()
-							}
-						}
-					}
-				}
+			actionState, err := loadActionConfiguration(uc)
+			if err != nil {
+				showActionConfigurationError("Load", err)
+				return
+			}
+			for i := range options.workers {
+				options.workers[i].ReplaceActionState(actionState)
+				options.actionViewers[i].Objects = generateTags(options.workers[i].ActionStateSnapshot())
+				options.actionViewers[i].Refresh()
 			}
 		}, window)
 
@@ -1255,6 +1256,10 @@ func notifyBeeperConfig(title string) {
 			dialog.NewInformation(title, "Remember to setup the alert music!!!", window).Show()
 		}()
 	}
+}
+
+func showActionConfigurationError(operation string, err error) {
+	dialog.NewError(fmt.Errorf("%s action configuration: %w", operation, err), window).Show()
 }
 
 func notifyLogConfig(title string) {

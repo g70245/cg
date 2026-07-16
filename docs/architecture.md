@@ -304,9 +304,9 @@ Independent ticker cases check inventory, map/log teleport state, resource phras
 
 - Missing pixel pivots or action windows generally produce `log.Printf` messages and state-machine failure transitions.
 - Invalid or stale memory addresses produce no explicit error; the Win32 wrapper result is consumed directly.
-- Missing/invalid log paths may panic in `internal/file.go`.
-- MP3 playback may block or terminate the process depending on initialization and decoder errors.
-- Load/save dialog errors are mostly ignored; save failures call `log.Fatalf`, terminating the process.
+- Missing or invalid log paths return contextual filesystem errors and runtime phrase checks safely report no match.
+- MP3 open, decode, speaker-initialization, and cleanup failures return contextual errors; selection failures are shown without terminating the process.
+- Action-configuration load/save callbacks use the Fyne-provided streams, close them on every path, and show contextual errors without replacing the current state after a failed load or terminating the process after a failed save.
 - A stopped ticker does not itself terminate the goroutine; the worker remains blocked in `select` until a stop-channel event or a ticker is reset.
 
 **Output:** Window messages sent to game clients, logs written to the process logger, optional audio alerts, and action tags/configuration changes shown in the Fyne UI.
@@ -459,9 +459,9 @@ Most widget changes occur in Fyne callbacks. Worker goroutines do not directly u
 ### 9.6 Native and application resource cleanup
 
 - `internal.GetColor` correctly calls `ReleaseDC` after `GetDC`.
-- MP3 streamers and `speaker.Clear` are deferred inside the beeper goroutine.
-- Opened `.ac` files are closed with `defer` after a successful `os.Open`.
-- `internal.readMemory` does not call `win.CloseHandle` after `win.OpenProcess`, so repeated memory reads leak process handles until process exit.
+- Closing an audio session stops playback, clears the speaker, and closes the MP3 streamer.
+- Fyne-provided `.ac` readers and writers are closed by the action-configuration I/O helpers on success and failure paths.
+- `internal.readMemory` closes each process handle after its read attempt, including read-failure paths.
 - Tickers are stopped on worker-goroutine exit, but the ticker objects and worker goroutines can remain reachable through UI structures.
 - Normal window close has no explicit application-level worker/audio shutdown hook.
 
@@ -473,14 +473,13 @@ The project uses several inconsistent error strategies:
 
 - Detection and state-machine failures usually return `bool` and produce `log.Printf` output.
 - Many Win32 return values and errors are ignored.
-- File dialog callback errors are ignored.
-- JSON/file load failures are silently ignored.
-- `.ac` write failure uses `log.Fatalf`, which terminates the process.
+- Some file-dialog callback errors remain ignored; action-configuration and audio-selection errors are shown to the user.
+- Action-configuration read, JSON, write, and close failures return contextual errors to Fyne dialogs.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
 - Missing or unreadable game logs return errors at the filesystem boundary; runtime phrase checks treat unavailable logs as no match.
 - Big5 conversion and process-memory read failures are not fully surfaced to users.
 
-Fyne information dialogs are used only as pre-operation reminders for missing audio/log configuration. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
+Fyne information dialogs are used as pre-operation reminders for missing audio/log configuration, and error dialogs report action-configuration and audio-selection failures. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
 The standard `log` package writes to its default destination, normally standard error. The repository does not configure a log file, structured logging, rotation, severity fields, or redaction.
 
@@ -493,10 +492,10 @@ The standard `log` package writes to its default destination, normally standard 
 | Pixel/DC reads | `GetPixel` result consumed directly | Invalid handles/DCs can resemble unexpected colors. |
 | Process open/read | Open failure returns zero-filled data; read errors are not exposed by the Win32 wrapper | Handles are closed, but access failures can still resemble zero-valued state. |
 | Log directory/file reads | Contextual errors returned; runtime phrase checks safely return no match | Invalid paths no longer terminate the application; runtime loss of logs is not surfaced in the UI. |
-| `.ac` load | Dialog, open, read, and JSON errors mostly ignored | User sees no reason a setting failed to load. |
-| `.ac` save | Marshal error ignored; write error calls `log.Fatalf` | Either silent failure or whole-process termination. |
+| `.ac` load | Dialog, read, JSON, and close errors are shown; state changes only after a successful decode | Invalid files leave the current action configuration unchanged. |
+| `.ac` save | Dialog, JSON, write, short-write, and close errors are shown | Save failures no longer terminate the application. |
 | Audio initialization | Open/decode/speaker errors return to a Fyne error dialog | Invalid audio selection leaves Beeper unconfigured without terminating the application. |
-| Production completion polling | No timeout or cancellation check in loop | Worker may remain stuck indefinitely. |
+| Production completion polling | No fixed timeout because duration varies by item; Stop is received inside the polling loop | The operator can cancel an unexpected or prolonged wait. |
 
 Logs include numeric window handles, coordinates, map names, and action status. They do not intentionally log credentials, but captured logs can contain process-specific handles and game-derived names. Logs should be treated as machine/session-specific diagnostic data.
 
@@ -599,7 +598,7 @@ No repeatable manual test checklist or expected fixture data is stored in the re
 - Process-memory read errors and client-version changes.
 - Worker start/stop/restart, group coordination, refresh cleanup, and application shutdown.
 - Audio initialization, concurrent alerts, invalid files, and device failures.
-- `.ac` round trips, invalid JSON, incompatible schemas, and write errors.
+- `.ac` schema compatibility, semantic validation, and Fyne dialog integration.
 - Unsupported display resolutions or scaling percentages, minimized/covered windows, multiple monitors, and game UI variants.
 
 Tests for these behaviors cannot safely depend on a live game, process memory, or user log directory. Future tests would first require small seams around pixel, input, memory, clock, filesystem, and audio operations.
@@ -620,7 +619,7 @@ No remaining issue is currently classified as High.
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
-| Errors are silently ignored or fatal | `container/battle.go`, `internal/*`, `utils/beeper.go` | Users receive little actionable feedback; some recoverable failures terminate the process. | File/native/audio boundaries are expected failure points. | Inventory current error boundaries and introduce consistent user-visible reporting incrementally. |
+| Native and UI errors are still ignored | `container/*`, `internal/*` | Some failed dialogs, Win32 calls, pixel reads, and memory reads resemble empty or unexpected state instead of actionable errors. | Native and UI boundaries are expected failure points. | Introduce contextual reporting incrementally when a specific operation next changes. |
 | `.ac` format is unversioned and weakly validated | `container/battle.go`, `game/battle/action.go` | Invalid values or future struct changes can load silently and fail later. | Saved action files are the only persisted workflow configuration. | Capture representative files, document schema, and validate action/control references on load. |
 | UI calls may occur from background goroutines | `container/battle.go:notify*Config` | **Inference:** Dialog creation/showing may violate Fyne threading expectations. | Behavior depends on exact Fyne version/driver semantics. | Confirm Fyne `v2.4.0` requirements and exercise under race/debug tooling. |
 
@@ -655,7 +654,7 @@ This structure is understandable for the repository's size and avoids an unneces
 
 Improvements should be incremental and driven by observed failures:
 
-1. **Continue stabilizing error and resource boundaries.** Process handles, log reads, and audio initialization now have explicit ownership or error handling; propagate remaining memory, Win32, `.ac`, and UI errors without process-wide termination.
+1. **Continue stabilizing error and resource boundaries.** Process handles, log reads, audio initialization, and `.ac` I/O now have explicit ownership or error handling; propagate remaining memory, Win32, and UI errors incrementally.
 2. **Make worker lifecycle explicit.** Define start, pause, stop, restart, and shutdown semantics; use one idempotent termination path per worker and one application-level shutdown path.
 3. **Introduce narrow test seams around volatile I/O.** Small function fields or focused interfaces for pixels, input, memory, logs, clock/tickers, and alerts would enable table-driven state-machine tests without designing a broad abstraction hierarchy.
 4. **Separate persisted battle configuration from runtime state when compatibility work requires it.** Add schema validation/versioning before considering broader model restructuring.
