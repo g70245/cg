@@ -100,7 +100,7 @@ cg/
 
 | Path | Responsibility | Notes |
 | --- | --- | --- |
-| `app.go` | Calls `container.App`. | Hard-codes title `CG`, initial directory `D:\CG`, and window size `960×320`. |
+| `app.go` | Calls `container.App`. | Uses title `CG`, derives the initial directory from `%USERPROFILE%\Documents\CG`, and sets window size `960×320`. |
 | `container/main.go` | Creates the Fyne application, global window, root tabs, refresh controls, path/audio selectors, and shutdown closures used during refresh. | Contains package-level `window` and `r`. |
 | `container/battle.go` | Builds battle-group UI, edits action sequences, loads/saves `.ac` JSON, creates workers, and controls battle/checker lifecycles. | The largest UI file and a significant coordination point. |
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
@@ -181,12 +181,12 @@ flowchart TD
 
 ### 5.1 Confirmed sequence
 
-1. `main.main` calls `container.App("CG", "D:\\CG", 960, 320)`.
+1. `main.main` reads `%USERPROFILE%`, derives `%USERPROFILE%\Documents\CG`, and passes it to `container.App("CG", gameDir, 960, 320)`.
 2. `container.App` calls `app.New`, creates a Fyne window, and resizes it.
 3. It initializes the package-global `robot`:
    - `game.NewGames()` calls `internal.FindWindows()`.
    - `internal.FindWindows()` enumerates child windows under desktop handle `0` and keeps class names matching `CLASS_PATTERN`.
-   - `gameDir` points to the local `gameDir` argument; `actionDir` copies its initial value.
+   - `gameDir` stores the initial directory behind synchronized accessors; `actionDir` copies its initial value.
 4. `robot.generateRobotContainer` creates empty Battle and Produce tabs for the discovered games. No battle or production worker goroutine starts at this point.
 5. `container.App` creates Refresh, Alert Music, and Game Directory controls.
 6. It registers `Ctrl+0` as a desktop shortcut that calls `utils.Beeper.Stop()`.
@@ -202,7 +202,7 @@ sequenceDiagram
     participant User as User
     participant Worker as battle/production Worker
 
-    Main->>App: App("CG", "D:\\CG", 960, 320)
+    Main->>App: App("CG", defaultGameDir, 960, 320)
     App->>UI: app.New and NewWindow
     App->>Game: NewGames()
     Game->>Win: FindWindows()
@@ -222,7 +222,7 @@ sequenceDiagram
 
 ### 5.2 Configuration initialization
 
-There is no general configuration file or environment-variable loader. The initial game/action directory is hard-coded in `app.go`. The user may replace `*r.gameDir` through a folder dialog, but `r.actionDir` remains the original `D:\CG` value. Battle action settings are loaded only when the user selects an `.ac` file. Audio is initialized only after the user selects an MP3 file.
+There is no general configuration file. `app.go` reads `%USERPROFILE%` and derives `%USERPROFILE%\Documents\CG` as the initial game/action directory without creating it. The user may replace `r.gameDir` through a folder dialog, but `r.actionDir` remains the initial default. Battle action settings are loaded only when the user selects an `.ac` file. Audio is initialized only after the user selects an MP3 file.
 
 ### 5.3 Background startup and shutdown
 
@@ -635,7 +635,7 @@ No issue is classified as confirmed Critical from repository evidence alone. Run
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
 | UI and coordination are concentrated in one large file | `container/battle.go` | Action configuration, persistence, presentation, and lifecycle changes are difficult to review independently. | The file is over 1,200 lines and changes can cross concerns. | Split only along stable functional boundaries when making related changes; avoid framework-heavy abstractions. |
-| Initial path is hard-coded and path state is inconsistent | `app.go`, `container/main.go` | `gameDir` can change while `actionDir` remains `D:\CG`. | New machines may not have the directory and file dialogs may start in unexpected locations. | Confirm desired path policy and persist only if users need it. |
+| Game and action paths can diverge | `container/main.go` | `gameDir` can change while `actionDir` remains the initial `%USERPROFILE%\Documents\CG` value. | Game logs and saved actions may intentionally live under different selections, but the UI does not explain this. | Confirm desired path policy and persist only if users need it. |
 | Diagnostic helpers contain machine/session assumptions | `utils/helpers.go` | `getHWND` contains a specific handle string; `Test` exits the process. | They are not in the normal call path but can confuse maintenance. | Confirm whether helpers are still used before removing or relocating them. |
 | Empty source file | `game/map.go` | No runtime impact. | It may imply abandoned or planned functionality. | Confirm intent; remove only in a separate cleanup if truly unused. |
 | README build/package guidance is older than repository scripts | `README.md` | New maintainers may use incomplete packaging commands. | `docs/build-windows.md` is more accurate. | Align documentation after the packaging script is fixed. |
@@ -678,7 +678,7 @@ These directions favor KISS and YAGNI: retain the existing packages, add abstrac
 4. Are `MEMORY_MAP_NAME`, `MEMORY_MAP_POS_X`, and `MEMORY_MAP_POS_Y` valid for only one client version?
 5. Does the application require administrator privileges or the same Windows integrity level as the game client?
 6. Is broad process access mask `0x1F0FFF` intentional, or can memory access use narrower rights?
-7. Is `D:\CG` a deployment requirement or only a developer default?
+7. Should the action directory continue using the initial `%USERPROFILE%\Documents\CG` path after the user selects a different game directory?
 8. What is the expected directory layout under the selected game directory, especially `Log` and `actions`?
 9. Are game logs always Big5, timestamped as `[HH:MM:SS]`, and stored in files whose modification time identifies the active log?
 10. What are the expected log rotation, empty-log, and midnight behaviors?
