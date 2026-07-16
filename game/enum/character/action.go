@@ -49,15 +49,15 @@ func (a Action) String() string {
 	case HealSelf:
 		return "*Heal Self"
 	case HealOne:
-		return "*Heal One"
+		return "*Heal Ally"
 	case HealTShaped:
 		return "*Heal T-Shaped"
 	case HealMulti:
-		return "*Heal Multi"
+		return "*Heal Party"
 	case Ride:
 		return "*Ride"
 	case Hang:
-		return "Hang"
+		return "Wait"
 	case Steal:
 		return "Steal"
 	case Catch:

@@ -16,12 +16,12 @@ func TestValidateLogDirectory(t *testing.T) {
 		{
 			name:       "not selected",
 			setup:      func(t *testing.T) string { return "" },
-			wantReason: "Select a game directory first.",
+			wantReason: "Select a game folder first.",
 		},
 		{
 			name:       "missing Log directory",
 			setup:      func(t *testing.T) string { return t.TempDir() },
-			wantReason: "The selected game directory does not contain a readable Log folder.",
+			wantReason: "The selected game folder does not contain a readable Log folder.",
 		},
 		{
 			name: "empty Log directory",

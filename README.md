@@ -39,7 +39,7 @@ To run a packaged build:
 
 - Windows x64.
 - One or more compatible game-client windows.
-- A game directory containing readable logs when log-based checkers are used.
+- A game folder containing readable logs when log-based monitoring is used.
 - An MP3 file when audible alerts are used.
 
 To build from source:
@@ -76,13 +76,13 @@ The build script verifies the required tools and dependencies, then writes the e
 ## First-Run Setup
 
 1. Start the compatible game clients before launching CG.
-2. Launch CG and use **Refresh** if the expected windows are not listed.
-3. Select **Game Directory** and choose the client root containing the `Log` subdirectory.
+2. Launch CG and use **Refresh Games** if the expected windows are not listed.
+3. Select **Game Folder** and choose the client root containing the `Log` subdirectory.
 4. Select **Alert Music** and choose an MP3 file if audible alerts are needed.
 5. Create a battle group or production worker for the desired game windows.
 6. Configure actions and checkers before starting a workflow.
 
-Log-dependent battle and production checks will not start unless the selected game directory contains a readable `Log` directory. If multiple installations or Sandbox environments are in use, select the directory associated with the current client instance.
+Log-dependent battle and production monitoring will not start unless the selected game folder contains a readable `Log` directory. If multiple installations or Sandbox environments are in use, select the folder associated with the current client instance.
 
 ## Battle Workflow
 
@@ -92,7 +92,7 @@ Use the checker menu to enable only the monitoring required for the current work
 
 ## Production Workflow
 
-The Produce tab creates a worker for each selected game window. Production automation can prepare materials, interact with the production UI, wait for completion, and reorganize inventory slots. It relies on fixed client coordinates and pixel colors, so supervise the first run after any client or display change.
+The Production tab creates a worker for each selected game window. Production automation can prepare materials, interact with the production UI, wait for completion, and reorganize inventory slots. It relies on fixed client coordinates and pixel colors, so supervise the first run after any client or display change.
 
 ## Alerts
 

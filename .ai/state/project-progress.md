@@ -31,6 +31,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Replaced fatal and silent `.ac` load/save failures with contextual UI errors, explicit stream ownership, and focused I/O tests.
 - Simplified log-directory validation dialogs to concise reasons without exposing or repeating long machine-specific paths.
 - Standardized audio, action-configuration, game-directory, setup-reminder, and action-ID messages as concise actionable English without low-level details.
+- Standardized user-facing navigation, dialogs, monitoring controls, production controls, and enum labels while preserving action markers and configuration compatibility.
 
 ## Current repository facts
 

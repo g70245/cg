@@ -46,8 +46,8 @@ func App(title, gameDir string, width, height float32) {
 	r.generateRobotContainer()
 
 	var content *fyne.Container
-	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
-		refreshDialog := dialog.NewConfirm("Refresh games", "Do you really want to refresh?", func(isRefreshing bool) {
+	refreshButton := widget.NewButtonWithIcon("Refresh Games", theme.ViewRefreshIcon(), func() {
+		refreshDialog := dialog.NewConfirm("Refresh Games", "Refresh the game list? All running tasks will stop.", func(isRefreshing bool) {
 			if isRefreshing {
 				content.Remove(r.main)
 				r.close()
@@ -88,10 +88,10 @@ func App(title, gameDir string, width, height float32) {
 	alertDialogButton.Importance = widget.HighImportance
 
 	var gameDirDialogButton *widget.Button
-	gameDirDialogButton = widget.NewButtonWithIcon("Game Directory", theme.FolderIcon(), func() {
+	gameDirDialogButton = widget.NewButtonWithIcon("Game Folder", theme.FolderIcon(), func() {
 		gameDirDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
 			if err != nil {
-				showErrorMessage(gameDirectorySelectionError)
+				showErrorMessage(gameFolderSelectionError)
 				return
 			}
 			if lu == nil {
@@ -142,7 +142,7 @@ func (r *robot) generateRobotContainer() {
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Battle", autoBattleContainer),
-		container.NewTabItem("Produce", productionContainer),
+		container.NewTabItem("Production", productionContainer),
 	)
 
 	tabs.SetTabLocation(container.TabLocationBottom)

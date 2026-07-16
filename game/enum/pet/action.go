@@ -29,15 +29,15 @@ func (a Action) String() string {
 	case HealSelf:
 		return "*Pet Heal Self"
 	case HealOne:
-		return "*Pet Heal One"
+		return "*Pet Heal Ally"
 	case Ride:
 		return "*Pet Ride"
 	case OffRide:
-		return "*Pet Off Ride"
+		return "*Pet Dismount"
 	case Catch:
 		return "Pet Catch"
 	case Hang:
-		return "Pet Hang"
+		return "Pet Wait"
 	default:
 		return "Unknown"
 	}

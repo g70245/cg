@@ -24,12 +24,12 @@ func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorker
 	pw := ProductionWorkers{make(map[string]*fyne.Container), make(map[string]chan bool)}
 
 	productionsContainer := container.NewVBox()
-	newProductionButton := widget.NewButtonWithIcon("New Production", theme.ContentAddIcon(), func() {
+	newProductionButton := widget.NewButtonWithIcon("Add Production", theme.ContentAddIcon(), func() {
 
 		gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
 		gamesCheckGroup.Horizontal = true
 
-		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", gamesCheckGroup, window)
+		gamesSelectorDialog := dialog.NewCustom("Select Games", "Create", gamesCheckGroup, window)
 		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
 		gamesSelectorDialog.SetOnClosed(func() {
@@ -57,7 +57,7 @@ func newProductionContainer(games game.Games) (*fyne.Container, ProductionWorker
 		})
 		gamesSelectorDialog.Show()
 
-		notifyBeeperAndLogConfig("Production setup")
+		notifyBeeperAndLogConfig("Production Setup")
 	})
 
 	main := container.NewBorder(nil, newProductionButton, nil, nil, productionsContainer)
@@ -71,9 +71,9 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 
 	var nicknameButton *widget.Button
 	nicknameEntry := widget.NewEntry()
-	nicknameEntry.SetPlaceHolder("Enter nickname")
+	nicknameEntry.SetPlaceHolder("Nickname")
 	nicknameButton = widget.NewButtonWithIcon(gameKey, theme.AccountIcon(), func() {
-		nicknameDialog := dialog.NewCustom("Enter nickname", "Ok", nicknameEntry, window)
+		nicknameDialog := dialog.NewCustom("Set Nickname", "Save", nicknameEntry, window)
 		nicknameDialog.SetOnClosed(func() {
 			worker.SetName(nicknameEntry.Text)
 
@@ -86,7 +86,7 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 	nicknameButton.Alignment = widget.ButtonAlignLeading
 
 	var isGatheringButton *widget.Button
-	isGatheringButton = widget.NewButtonWithIcon("Gathering", theme.CheckButtonIcon(), func() {
+	isGatheringButton = widget.NewButtonWithIcon("Gathering Mode", theme.CheckButtonIcon(), func() {
 		switch isGatheringButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			worker.SetGatheringMode(false)
@@ -101,7 +101,7 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
-			if !validateLogConfig("Production setup") {
+			if !validateLogConfig("Production Setup") {
 				return
 			}
 			if worker.Work() {

@@ -48,14 +48,14 @@ func newBattleContainer(games game.Games) (*fyne.Container, BattleGroups) {
 	groupTabs.SetTabLocation(container.TabLocationTop)
 	groupTabs.Hide()
 
-	newGroupButton := widget.NewButtonWithIcon("New Group", theme.ContentAddIcon(), func() {
+	newGroupButton := widget.NewButtonWithIcon("New Battle Group", theme.ContentAddIcon(), func() {
 		groupNameEntry := widget.NewEntry()
-		groupNameEntry.SetPlaceHolder("Enter group name")
+		groupNameEntry.SetPlaceHolder("Group Name")
 
 		gamesCheckGroup := widget.NewCheckGroup(games.GetSortedKeys(), nil)
 		gamesCheckGroup.Horizontal = true
 
-		gamesSelectorDialog := dialog.NewCustom("Select games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
+		gamesSelectorDialog := dialog.NewCustom("Select Games", "Create", container.NewVBox(groupNameEntry, gamesCheckGroup), window)
 		gamesSelectorDialog.Resize(fyne.NewSize(240, 166))
 
 		gamesSelectorDialog.SetOnClosed(func() {
@@ -145,9 +145,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		var aliasButton *widget.Button
 		aliasButton = widget.NewButtonWithIcon(options.allGames.FindKey(worker.GetHandle()), theme.AccountIcon(), func() {
 			aliasEntry := widget.NewEntry()
-			aliasEntry.SetPlaceHolder("Enter alias")
+			aliasEntry.SetPlaceHolder("Alias")
 
-			aliasDialog := dialog.NewCustom("Enter alias", "Ok", aliasEntry, window)
+			aliasDialog := dialog.NewCustom("Set Alias", "Save", aliasEntry, window)
 			aliasDialog.SetOnClosed(func() {
 				if _, ok := options.allGames[aliasEntry.Text]; aliasEntry.Text == "" || ok {
 					return
@@ -169,14 +169,14 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				if mode != movement.None {
 					movementModeButton.SetText(s)
 				} else {
-					movementModeButton.SetText("Move Way")
+					movementModeButton.SetText("Movement")
 				}
 			}
 			movementModeDialog.Hide()
 		})
 		movementModeSelector.Required = true
-		movementModeDialog = dialog.NewCustomWithoutButtons("Select a move way", movementModeSelector, window)
-		movementModeButton = widget.NewButtonWithIcon("Move Way", theme.MailReplyIcon(), func() {
+		movementModeDialog = dialog.NewCustomWithoutButtons("Select Movement Pattern", movementModeSelector, window)
+		movementModeButton = widget.NewButtonWithIcon("Movement", theme.MailReplyIcon(), func() {
 			movementModeDialog.Show()
 		})
 
@@ -186,12 +186,12 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 		})
 		enemyOrderCheckGroup.Horizontal = true
 		enemyOrderLabel := widget.NewLabelWithData(enemyOrderBindingStr)
-		enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.SearchIcon(), func() {
+		enemyOrderButton := widget.NewButtonWithIcon("Target Priority", theme.SearchIcon(), func() {
 			order := worker.CustomEnemyOrder()
 			enemyOrderCheckGroup.Selected = order
 			enemyOrderBindingStr.Set(strings.Join(order, separator))
 
-			d := dialog.NewCustom("Enemy Order", "Apply", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
+			d := dialog.NewCustom("Target Priority", "Apply", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
 			d.SetOnClosed(func() {
 				worker.SetCustomEnemyOrder(enemyOrderCheckGroup.Selected)
 			})
@@ -227,7 +227,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				return validateActionID(jumpIdStr, totalActions-2)
 			}
 
-			jumpDialog := dialog.NewForm("Enter next action id", "Ok", "Dismiss", []*widget.FormItem{widget.NewFormItem("Action Id", jumpEntry)}, func(isValid bool) {
+			jumpDialog := dialog.NewForm("Jump to Action", "Jump", "Cancel", []*widget.FormItem{widget.NewFormItem("Action ID", jumpEntry)}, func(isValid bool) {
 				if isValid {
 					jumpId, _ := strconv.Atoi(jumpEntry.Text)
 					callback(jumpId)
@@ -285,9 +285,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			refreshActionViewer()
 			selectorDialogEnableChan <- true
 		}
-		successControlUnitDialog = dialog.NewCustomWithoutButtons("Select next action after successful execution", selector, window)
+		successControlUnitDialog = dialog.NewCustomWithoutButtons("Select Next Action After Success", selector, window)
 		successControlUnitDialog.SetOnClosed(controlUnitOnClosed)
-		failureControlUnitDialog = dialog.NewCustomWithoutButtons("Select next action after failed execution", selector, window)
+		failureControlUnitDialog = dialog.NewCustomWithoutButtons("Select Next Action After Failure", selector, window)
 		failureControlUnitDialog.SetOnClosed(controlUnitOnClosed)
 
 		successControlUnitSelectorDialog := getNewSelectorDialog(successControlUnitDialog, battle.ControlUnits.GetOptions(), successControlUnitOnChanged)
@@ -305,7 +305,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}
 		}
-		paramDialog = dialog.NewCustomWithoutButtons("Select param", selector, window)
+		paramDialog = dialog.NewCustomWithoutButtons("Select Parameter", selector, window)
 		paramDialog.SetOnClosed(onClosed)
 
 		healingRatioSelectorDialog := getNewSelectorDialog(paramDialog, battle.Ratios.GetOptions(), paramOnChanged)
@@ -323,7 +323,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}
 		}
-		thresholdDialog = dialog.NewCustomWithoutButtons("Select threshold", selector, window)
+		thresholdDialog = dialog.NewCustomWithoutButtons("Select Enemy Count", selector, window)
 		thresholdDialog.SetOnClosed(onClosed)
 
 		thresholdSelectorDialog := getNewSelectorDialog(thresholdDialog, battle.Thresholds.GetOptions(), thresholdOnChanged)
@@ -341,7 +341,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}
 		}
-		offsetDialog = dialog.NewCustomWithoutButtons("Select skill offset", selector, window)
+		offsetDialog = dialog.NewCustomWithoutButtons("Select Skill Position", selector, window)
 		offsetDialog.SetOnClosed(onClosed)
 
 		offsetSelectorDialog := getNewSelectorDialog(offsetDialog, battle.Offsets.GetOptions(), offsetOnChanged)
@@ -359,7 +359,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 			}
 		}
-		levelDialog = dialog.NewCustomWithoutButtons("Select skill level", selector, window)
+		levelDialog = dialog.NewCustomWithoutButtons("Select Skill Level", selector, window)
 		levelDialog.SetOnClosed(onClosed)
 
 		levelSelectorDialog := getNewSelectorDialog(levelDialog, battle.Levels.GetOptions(), levelOnChanged)
@@ -431,7 +431,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 
-				notifyLogConfig("Catch setup")
+				notifyLogConfig("Catch Setup")
 			})
 			catchButton.Importance = widget.SuccessImportance
 
@@ -642,7 +642,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				trainButton,
 			)
 
-			actionsDialog := dialog.NewCustom("Select man actions with order", "Leave", actionsContainer, window)
+			actionsDialog := dialog.NewCustom("Add Character Actions in Order", "Close", actionsContainer, window)
 			actionsDialog.Show()
 		})
 
@@ -769,7 +769,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Catch) })
 				refreshActionViewer()
 
-				notifyLogConfig("Catch setup")
+				notifyLogConfig("Catch Setup")
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(role.Pet),
@@ -791,7 +791,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				petHangButton,
 			)
 
-			actionsDialog := dialog.NewCustom("Select pet actions with order", "Leave", actionsContainer, window)
+			actionsDialog := dialog.NewCustom("Add Pet Actions in Order", "Close", actionsContainer, window)
 			actionsDialog.Show()
 
 		})
@@ -883,19 +883,19 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
 		if hWnd, ok := options.allGames[s]; ok {
 			options.manaChecker.Set(fmt.Sprint(hWnd))
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", s))
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Monitor: %s", s))
 		} else {
 			options.manaChecker.Set(battle.NO_MANA_CHECKER)
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Checker: %s", options.manaChecker.Get()))
+			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana Monitor: %s", options.manaChecker.Get()))
 		}
 		manaCheckerSelectorDialog.Hide()
 	})
 	manaCheckerSelector.Required = true
-	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select a mana checker with this group", manaCheckerSelector, window)
-	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Checker: %s", options.manaChecker.Get()), func() {
+	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select Game for Mana Monitoring", manaCheckerSelector, window)
+	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana Monitor: %s", options.manaChecker.Get()), func() {
 		manaCheckerSelectorDialog.Show()
 
-		notifyBeeperConfig("Mana Checker setup")
+		notifyBeeperConfig("Mana Monitoring Setup")
 	})
 	manaCheckerSelectorButton.Importance = widget.HighImportance
 
@@ -929,7 +929,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	loadSettingButton.Importance = widget.HighImportance
 
 	deleteButton := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		deleteDialog := dialog.NewConfirm("Delete group", "Do you really want to delete this group?", func(isDeleting bool) {
+		deleteDialog := dialog.NewConfirm("Delete Battle Group", "Delete this battle group? All running tasks in the group will stop.", func(isDeleting bool) {
 			if isDeleting {
 				for i := range options.workers {
 					options.workers[i].Stop()
@@ -967,7 +967,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	switchButton.Importance = widget.WarningImportance
 
 	var teleportAndResourceCheckerButton *widget.Button
-	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Check TP & RES", theme.CheckButtonIcon(), func() {
+	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Teleport / Resources", theme.CheckButtonIcon(), func() {
 		switch teleportAndResourceCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range options.workers {
@@ -975,7 +975,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
 		case theme.CheckButtonIcon():
-			if !validateLogConfig("Teleport & Resource Checker setup") {
+			if !validateLogConfig("Teleport and Resource Monitoring") {
 				return
 			}
 			for i := range options.workers {
@@ -983,12 +983,12 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
 
-			notifyBeeperAndLogConfig("Teleport & Resource Checker setup")
+			notifyBeeperAndLogConfig("Teleport and Resource Monitoring")
 		}
 	})
 	teleportAndResourceCheckerButton.Importance = widget.HighImportance
 	var activitiesCheckerButton *widget.Button
-	activitiesCheckerButton = widget.NewButtonWithIcon("Check Activities", theme.CheckButtonIcon(), func() {
+	activitiesCheckerButton = widget.NewButtonWithIcon("Activities", theme.CheckButtonIcon(), func() {
 		switch activitiesCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range options.workers {
@@ -996,7 +996,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonIcon(), activitiesCheckerButton)
 		case theme.CheckButtonIcon():
-			if !validateLogConfig("Activities Checker setup") {
+			if !validateLogConfig("Activity Monitoring") {
 				return
 			}
 			for i := range options.workers {
@@ -1004,12 +1004,12 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), activitiesCheckerButton)
 
-			notifyBeeperAndLogConfig("Activities Checker setup")
+			notifyBeeperAndLogConfig("Activity Monitoring")
 		}
 	})
 	activitiesCheckerButton.Importance = widget.HighImportance
 	var inventoryCheckerButton *widget.Button
-	inventoryCheckerButton = widget.NewButtonWithIcon("Check Inventory", theme.CheckButtonIcon(), func() {
+	inventoryCheckerButton = widget.NewButtonWithIcon("Inventory", theme.CheckButtonIcon(), func() {
 		switch inventoryCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range options.workers {
@@ -1022,12 +1022,12 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			}
 			turn(theme.CheckButtonCheckedIcon(), inventoryCheckerButton)
 
-			notifyBeeperConfig("Inventory Checker setup")
+			notifyBeeperConfig("Inventory Monitoring")
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
-	checkersButton := widget.NewButtonWithIcon("Checkers", theme.MenuIcon(), func() {
-		dialog.NewCustom("Checkers", "Leave", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window).Show()
+	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
+		dialog.NewCustom("Monitoring", "Close", container.NewAdaptiveGrid(4, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window).Show()
 	})
 	checkersButton.Importance = widget.HighImportance
 
@@ -1037,11 +1037,11 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	})
 	enemyOrderCheckGroup.Horizontal = true
 	enemyOrderLabel := widget.NewLabelWithData(enemyOrderBindingStr)
-	enemyOrderButton := widget.NewButtonWithIcon("Enemy Order", theme.SearchIcon(), func() {
+	enemyOrderButton := widget.NewButtonWithIcon("Target Priority", theme.SearchIcon(), func() {
 		tempSelected := make([]string, len(enemyOrderCheckGroup.Selected))
 		copy(tempSelected, enemyOrderCheckGroup.Selected)
 
-		d := dialog.NewCustom("Enemy Order", "Leave", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
+		d := dialog.NewCustom("Target Priority", "Cancel", container.NewVBox(enemyOrderCheckGroup, enemyOrderLabel), window)
 
 		applyButton := widget.NewButton("Apply", func() {
 			for i := range options.workers {
@@ -1050,7 +1050,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 			d.Hide()
 		})
 
-		leaveButton := widget.NewButton("Leave", func() {
+		leaveButton := widget.NewButton("Cancel", func() {
 			enemyOrderCheckGroup.Selected = tempSelected
 			enemyOrderBindingStr.Set(strings.Join(enemyOrderCheckGroup.Selected, separator))
 			d.Hide()

@@ -187,8 +187,8 @@ flowchart TD
    - `game.NewGames()` calls `internal.FindWindows()`.
    - `internal.FindWindows()` enumerates child windows under desktop handle `0` and keeps class names matching `CLASS_PATTERN`.
    - `gameDir` stores the initial directory behind synchronized accessors; `actionDir` copies its initial value.
-4. `robot.generateRobotContainer` creates empty Battle and Produce tabs for the discovered games. No battle or production worker goroutine starts at this point.
-5. `container.App` creates Refresh, Alert Music, and Game Directory controls.
+4. `robot.generateRobotContainer` creates empty Battle and Production tabs for the discovered games. No battle or production worker goroutine starts at this point.
+5. `container.App` creates Refresh Games, Alert Music, and Game Folder controls.
 6. It registers `Ctrl+0` as a desktop shortcut that calls `utils.Beeper.Stop()`.
 7. It sets the root content and calls `window.ShowAndRun()`, which owns the Fyne event loop until the window exits.
 
@@ -209,7 +209,7 @@ sequenceDiagram
     Win-->>Game: map[string]HWND
     Game-->>App: game.Games
     App->>App: robot.generateRobotContainer()
-    App->>UI: Build menus, Battle tab, Produce tab
+    App->>UI: Build menus, Battle tab, Production tab
     App->>UI: Register Ctrl+0 shortcut
     App->>UI: ShowAndRun()
     User->>UI: Create group/production and press Start
@@ -252,7 +252,7 @@ container.App / robot.refresh
 
 Failure handling is minimal: Win32 return values are not checked, regex compilation occurs during each enumeration callback, and an empty result produces an application with no selectable game windows. No error is shown to the user.
 
-**Output:** Rebuilt Battle and Produce tabs backed by the current in-memory `game.Games` map.
+**Output:** Rebuilt Battle and Production tabs backed by the current in-memory `game.Games` map.
 
 ### 6.2 Battle group configuration and execution
 
@@ -313,7 +313,7 @@ Independent ticker cases check inventory, map/log teleport state, resource phras
 
 ### 6.3 Production workflow
 
-**Trigger:** The user selects games under New Production and presses a worker Play button.
+**Trigger:** The user selects games under Add Production and presses a worker Play button.
 
 **Call chain:**
 
@@ -426,7 +426,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 ### 9.2 Configuration state
 
 - `r.gameDir` is protected by `robot` getter/setter methods; workers receive the synchronized getter and observe folder-dialog changes without sharing a raw string pointer.
-- `r.actionDir` is a string copied at startup and does not change with the Game Directory selector.
+- `r.actionDir` is a string copied at startup and does not change with the Game Folder selector.
 - `ActionState` JSON saves exported action slices and fields. Runtime fields use `json:"-"` or are unexported.
 - Loading a group setting deep-copies one unmarshaled `ActionState` into each worker's synchronized configuration.
 - There is no schema version, validation pass, migration policy, or atomic write for `.ac` files.
@@ -670,8 +670,8 @@ These directions favor KISS and YAGNI: retain the existing packages, add abstrac
 3. Are `MEMORY_MAP_NAME`, `MEMORY_MAP_POS_X`, and `MEMORY_MAP_POS_Y` valid for only one client version?
 4. Does the application require administrator privileges or the same Windows integrity level as the game client?
 5. Is broad process access mask `0x1F0FFF` intentional, or can memory access use narrower rights?
-6. Should the action directory continue using the initial `%USERPROFILE%\Documents\CG` path after the user selects a different game directory?
-7. What is the expected directory layout under the selected game directory, especially `Log` and `actions`?
+6. Should the action directory continue using the initial `%USERPROFILE%\Documents\CG` path after the user selects a different game folder?
+7. What is the expected directory layout under the selected game folder, especially `Log` and `actions`?
 8. Are game logs always Big5, timestamped as `[HH:MM:SS]`, and stored in files whose modification time identifies the active log?
 9. What are the expected log rotation, empty-log, and midnight behaviors?
 10. What phrases should `PH_PRODUCTION_FAILURE` contain? Is its current empty value intentional?

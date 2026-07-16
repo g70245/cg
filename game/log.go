@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	errGameDirectoryNotSelected = errors.New("Select a game directory first.")
-	errLogDirectoryUnavailable  = errors.New("The selected game directory does not contain a readable Log folder.")
+	errGameDirectoryNotSelected = errors.New("Select a game folder first.")
+	errLogDirectoryUnavailable  = errors.New("The selected game folder does not contain a readable Log folder.")
 	errNoLogFiles               = errors.New("The Log folder does not contain any log files.")
 )
 
