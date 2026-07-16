@@ -65,6 +65,7 @@ type Worker struct {
 	inventoryCheckerEnabled           atomic.Bool
 	activityCheckerEnabled            atomic.Bool
 	enabled                           atomic.Bool
+	running                           atomic.Bool
 
 	workerTicker                     *time.Ticker
 	inventoryCheckerTicker           *time.Ticker
@@ -109,7 +110,12 @@ func (w *Worker) GetHandleString() string {
 	return fmt.Sprint(w.hWnd)
 }
 
-func (w *Worker) Work() {
+func (w *Worker) Work() bool {
+	if !w.beginWork() {
+		log.Printf("Handle %d Auto Battle is already running\n", w.hWnd)
+		return false
+	}
+
 	game.CloseAllWindows(w.hWnd)
 
 	w.workerTicker.Reset(DURATION_BATTLE_WORKER)
@@ -120,6 +126,7 @@ func (w *Worker) Work() {
 	w.enabled.Store(true)
 
 	go func() {
+		defer w.finishWork()
 		defer w.stopTickers(&actionState)
 
 		currentMapName := game.GetMapName(w.hWnd)
@@ -225,6 +232,16 @@ func (w *Worker) Work() {
 			}
 		}
 	}()
+
+	return true
+}
+
+func (w *Worker) beginWork() bool {
+	return w.running.CompareAndSwap(false, true)
+}
+
+func (w *Worker) finishWork() {
+	w.running.Store(false)
 }
 
 func (w *Worker) stopTickers(actionState *ActionState) {

@@ -35,6 +35,7 @@ type Worker struct {
 
 	gatheringMode atomic.Bool
 	manualMode    atomic.Bool
+	running       atomic.Bool
 
 	workerTicker           *time.Ticker
 	logCheckerTicker       *time.Ticker
@@ -65,7 +66,11 @@ func NewWorker(hWnd win.HWND, gameDir func() string, stopChan chan bool) *Worker
 	}
 }
 
-func (w *Worker) Work() {
+func (w *Worker) Work() bool {
+	if !w.beginWork() {
+		log.Printf("Handle %d Production is already running\n", w.hWnd)
+		return false
+	}
 
 	w.workerTicker.Reset(DURATION_PRODUCTION_WORKER)
 	w.logCheckerTicker.Reset(DURATION_PRODUCTION_CHECKER_LOG)
@@ -75,6 +80,7 @@ func (w *Worker) Work() {
 	log.Printf("Handle %d Production started\n", w.hWnd)
 
 	go func() {
+		defer w.finishWork()
 		defer w.StopTickers()
 
 		w.Reset()
@@ -110,6 +116,16 @@ func (w *Worker) Work() {
 			}
 		}
 	}()
+
+	return true
+}
+
+func (w *Worker) beginWork() bool {
+	return w.running.CompareAndSwap(false, true)
+}
+
+func (w *Worker) finishWork() {
+	w.running.Store(false)
 }
 
 func (w *Worker) StopTickers() {

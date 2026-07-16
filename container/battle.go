@@ -953,10 +953,15 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
+			started := false
 			for i := range options.workers {
-				options.workers[i].Work()
+				if options.workers[i].Work() {
+					started = true
+				}
 			}
-			turn(theme.MediaStopIcon(), switchButton)
+			if started {
+				turn(theme.MediaStopIcon(), switchButton)
+			}
 		case theme.MediaStopIcon():
 			for i := range options.workers {
 				options.workers[i].Stop()

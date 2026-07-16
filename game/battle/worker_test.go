@@ -31,6 +31,52 @@ func TestManaCheckerConcurrentAccess(t *testing.T) {
 	waitGroup.Wait()
 }
 
+func TestWorkerBeginWorkAllowsOnlyOneConcurrentStart(t *testing.T) {
+	worker := &Worker{}
+	const attempts = 50
+
+	start := make(chan struct{})
+	results := make(chan bool, attempts)
+	var waitGroup sync.WaitGroup
+	for i := 0; i < attempts; i++ {
+		waitGroup.Add(1)
+		go func() {
+			defer waitGroup.Done()
+			<-start
+			results <- worker.beginWork()
+		}()
+	}
+
+	close(start)
+	waitGroup.Wait()
+	close(results)
+
+	successes := 0
+	for result := range results {
+		if result {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("successful starts = %d, want 1", successes)
+	}
+}
+
+func TestWorkerCanBeginWorkAgainAfterFinish(t *testing.T) {
+	worker := &Worker{}
+	if !worker.beginWork() {
+		t.Fatal("first beginWork() = false, want true")
+	}
+	if worker.beginWork() {
+		t.Fatal("second beginWork() = true while running, want false")
+	}
+
+	worker.finishWork()
+	if !worker.beginWork() {
+		t.Fatal("beginWork() after finishWork() = false, want true")
+	}
+}
+
 func TestWorkerActionStateSnapshotIsIndependent(t *testing.T) {
 	worker := &Worker{
 		hWnd:                  1,

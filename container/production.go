@@ -104,8 +104,9 @@ func newProductionWorkerContainer(gameKey string, games game.Games, destroy func
 			if !validateLogConfig("About Production") {
 				return
 			}
-			worker.Work()
-			turn(theme.MediaStopIcon(), switchButton)
+			if worker.Work() {
+				turn(theme.MediaStopIcon(), switchButton)
+			}
 		case theme.MediaStopIcon():
 			worker.Stop()
 			turn(theme.MediaPlayIcon(), switchButton)
