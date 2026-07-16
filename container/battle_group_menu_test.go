@@ -6,6 +6,10 @@ import (
 	"reflect"
 	"testing"
 
+	"fyne.io/fyne/v2"
+	fynecontainer "fyne.io/fyne/v2/container"
+	fynetest "fyne.io/fyne/v2/test"
+	"fyne.io/fyne/v2/widget"
 	"github.com/g70245/win"
 )
 
@@ -28,5 +32,44 @@ func TestManaCheckerOptionsFollowCurrentAliases(t *testing.T) {
 	manaChecker.Set("456")
 	if got := currentManaCheckerAlias(manaChecker, allGames); got != "4" {
 		t.Fatalf("mana checker alias = %q, want %q", got, "4")
+	}
+}
+
+func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	switchButton := widget.NewButton("Start", nil)
+	restoreButton := widget.NewButton("Restore", nil)
+	fullMenuObjects := []fyne.CanvasObject{
+		widget.NewButton("Monitoring", nil),
+		widget.NewButton("Target Priority", nil),
+		widget.NewButton("Load", nil),
+		widget.NewButton("Delete", nil),
+		switchButton,
+	}
+	menu := newBattleGroupMenu(fullMenuObjects, switchButton, restoreButton)
+	view := newBattleGroupView(menu, fynecontainer.NewVBox(widget.NewLabel("Worker settings")))
+
+	view.setCompact(true)
+	if got := len(view.container.Objects); got != 1 {
+		t.Fatalf("compact group object count = %d, want 1", got)
+	}
+	if got := len(menu.container.Objects); got != 2 {
+		t.Fatalf("compact menu object count = %d, want 2", got)
+	}
+	if menu.container.Objects[0] != switchButton {
+		t.Fatal("compact menu replaced the existing start/stop button")
+	}
+	if menu.container.Objects[1] != restoreButton {
+		t.Fatal("compact menu does not contain the restore button")
+	}
+
+	view.setCompact(false)
+	if got, want := len(view.container.Objects), len(view.fullObjects); got != want {
+		t.Fatalf("full group object count = %d, want %d", got, want)
+	}
+	if !reflect.DeepEqual(menu.container.Objects, fullMenuObjects) {
+		t.Fatal("full menu objects were not restored")
 	}
 }

@@ -94,7 +94,7 @@ cg/
 ├── docs/                          # Build, progress, and architecture documentation
 ├── .codex/skills/session-handoff/ # Project-local Codex handoff workflow
 ├── app.png                        # Fyne packaging icon
-├── example.png                    # Example UI screenshot
+├── example1.png / example2.png    # Full and compact Battle UI screenshots
 └── dist/                          # Ignored generated executables
 ```
 
@@ -128,7 +128,7 @@ cg/
 | `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
 | `.github/workflows/windows-ci.yml` | Runs the verified Windows build, package compilation checks, and vetting on GitHub Actions. | Uses `windows-2022`, Go `1.21.x`, CGO, and GCC. |
 | `app.png` | Repository-owned package icon. | Used only by `scripts/package.ps1`. |
-| `example.png` | Screenshot of the battle UI. | Referenced by `README.md`; not embedded into the executable. |
+| `example1.png`, `example2.png` | Screenshots of the full and compact Battle UI. | Referenced by `README.md`; not embedded into the executable. |
 | `dist/` | Generated build output. | `*.exe` is ignored by `.gitignore`. |
 
 There are no repository configuration files for standalone linting, installers, runtime settings, or persisted user preferences. GitHub Actions CI is configured in `.github/workflows/windows-ci.yml`.
@@ -193,7 +193,7 @@ flowchart TD
    - `internal.FindWindows()` enumerates child windows under desktop handle `0` and keeps class names matching `CLASS_PATTERN`.
    - `gameDir` stores the initial directory behind synchronized accessors; `actionDir` copies its initial value.
 4. `robot.generateRobotContainer` creates empty Battle and Production tabs for the discovered games. No battle or production worker goroutine starts at this point.
-5. `container.App` creates Refresh Games, Alert Music, and Game Folder controls.
+5. `container.App` creates Refresh Games, Alert Music, Game Folder, and the Battle-only compact-view control.
 6. It registers `Ctrl+0` as a desktop shortcut that calls `utils.Beeper.Stop()`.
 7. It sets the root content and calls `window.ShowAndRun()`, which owns the Fyne event loop until the window exits.
 
@@ -271,6 +271,8 @@ Failure handling is minimal: Win32 return values are not checked, regex compilat
    - `sharedWaitGroup`
    - `sharedInventoryStatus`
    - a synchronized `ManaChecker` selection
+
+The Battle-only compact view temporarily replaces the normal root content, preserves the group tabs, and reduces each group to its existing start/stop control plus a full-view restore control. The window keeps a minimum compact width for title-bar dragging while its height follows the compact content. Returning to the full view restores the normal application content and configured window size. Production does not expose this mode.
 3. `generateGameWidget` updates synchronized worker configuration for movement, enemy order, and actions. Each `Work` call uses a deep action snapshot so UI edits cannot mutate an executing state machine.
 4. Character and pet actions are appended in UI order. Optional parameters, offsets, thresholds, success/failure `ControlUnit` values, and jump IDs are collected through sequenced dialogs.
 5. Save marshals an `ActionState` snapshot; load unmarshals JSON and replaces worker configuration through its synchronized API. Runtime-only dependencies are attached to the execution snapshot.
@@ -400,8 +402,8 @@ Go's compiler-enforced import graph is acyclic. The current graph has no import 
 
 | Name | Package | Responsibility | Main dependencies | Main callers | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `robot` | `container` | Holds root UI, directories, dimensions, discovered games, and a refresh cleanup closure. | Fyne, `game.Games` | `container.App` | Stored in package-global `r`; not persisted. |
-| `BattleGroups` | `container` | Tracks group stop channels for refresh cleanup. | `chan bool` | `newBattleContainer`, `robot.generateRobotContainer` | `stopAll` closes channels without tracking goroutine completion. |
+| `robot` | `container` | Holds root UI, directories, dimensions, discovered games, refresh cleanup, and the Battle compact-view bridge. | Fyne, `game.Games` | `container.App` | Stored in package-global `r`; not persisted. |
+| `BattleGroups` | `container` | Tracks group stop channels, compactable group views, and current compact state. | Fyne containers, `chan bool` | `newBattleContainer`, `robot.generateRobotContainer` | `stopAll` closes channels without tracking goroutine completion. |
 | `ProductionWorkers` | `container` | Tracks production UI containers and stop channels by game key. | Fyne containers, `chan bool` | `newProductionContainer`, `robot.generateRobotContainer` | UI management and worker lifecycle are combined. |
 | `Games` | `game` | Maps aliases/handle strings to `win.HWND`; supports refresh and selection. | `internal.FindWindows`, `x/exp/maps` | `container`, worker factories | Alias state exists only in memory. |
 | `CheckTarget` | `game` | Represents a client-coordinate pixel target and expected color. | `win.COLORREF` | Detection and action code | Core representation for fixed-layout automation. |
@@ -563,7 +565,7 @@ There is no installer, code signing, update mechanism, or release workflow. Cros
 ### 11.5 Resource handling
 
 - `app.png` is supplied to Fyne CLI for release packaging; it is not referenced by application Go code.
-- `example.png` is documentation-only.
+- `example1.png` and `example2.png` are documentation-only.
 - No resources are embedded with `fyne bundle`, `go:embed`, or a generated resource file.
 - Ordinary `go build` output and Fyne packaged output are distinct even though Windows treats `CG.exe` and `cg.exe` as the same case-insensitive filename in `dist`.
 

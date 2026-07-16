@@ -4,7 +4,7 @@
 
 This is a Windows-only Go/Fyne desktop application for automating compatible game windows. `app.go` is the entry point. Keep UI composition in `container/`, game behavior in `game/`, and Win32/file primitives in `internal/`. Battle and production workflows live in `game/battle/` and `game/production/`. Reusable enumerations and item definitions belong in `game/enum/` and `game/items/`; alerts and diagnostics belong in `utils/`.
 
-Repository assets include `app.png`, `example.png`, and documentation in `docs/`. Build tooling is in `scripts/`. There are currently no test files.
+Repository assets include `app.png`, the full/compact UI screenshots `example1.png` and `example2.png`, and documentation in `docs/`. Build tooling is in `scripts/`.
 
 ## Build and development
 

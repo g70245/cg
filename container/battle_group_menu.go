@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -25,6 +26,34 @@ type menuWidgetOptions struct {
 	sharedStopChan   chan bool
 	actionViewers    []*fyne.Container
 	destroy          func()
+	restoreFullView  func()
+}
+
+type battleGroupMenu struct {
+	container     *fyne.Container
+	fullObjects   []fyne.CanvasObject
+	switchButton  *widget.Button
+	restoreButton *widget.Button
+}
+
+func newBattleGroupMenu(fullObjects []fyne.CanvasObject, switchButton, restoreButton *widget.Button) *battleGroupMenu {
+	return &battleGroupMenu{
+		container:     container.NewGridWithColumns(5, fullObjects...),
+		fullObjects:   fullObjects,
+		switchButton:  switchButton,
+		restoreButton: restoreButton,
+	}
+}
+
+func (menu *battleGroupMenu) setCompact(compact bool) {
+	if compact {
+		menu.container.Layout = layout.NewBorderLayout(nil, nil, nil, menu.restoreButton)
+		menu.container.Objects = []fyne.CanvasObject{menu.switchButton, menu.restoreButton}
+	} else {
+		menu.container.Layout = layout.NewGridLayoutWithColumns(5)
+		menu.container.Objects = menu.fullObjects
+	}
+	menu.container.Refresh()
 }
 
 func currentManaCheckerOptions(games, allGames game.Games) []string {
@@ -53,7 +82,7 @@ func currentManaCheckerAlias(manaChecker *battle.ManaChecker, allGames game.Game
 	return battle.NO_MANA_CHECKER
 }
 
-func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) {
+func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	var manaCheckerSelectorDialog *dialog.CustomDialog
 	var manaCheckerSelectorButton *widget.Button
 	manaCheckerOptions := currentManaCheckerOptions(options.games, options.allGames)
@@ -149,6 +178,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 		}
 	})
 	switchButton.Importance = widget.WarningImportance
+	restoreButton := widget.NewButtonWithIcon("", theme.ViewFullScreenIcon(), options.restoreFullView)
 
 	var teleportAndResourceCheckerButton *widget.Button
 	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Teleport / Resources", theme.CheckButtonIcon(), func() {
@@ -248,8 +278,8 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	})
 	enemyOrderButton.Importance = widget.HighImportance
 
-	menuWidget = container.NewGridWithColumns(5, checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton)
-	return
+	fullObjects := []fyne.CanvasObject{checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton}
+	return newBattleGroupMenu(fullObjects, switchButton, restoreButton)
 }
 
 func turn(icon fyne.Resource, button *widget.Button) {

@@ -6,12 +6,21 @@ CG is a Windows desktop application for coordinating battle and production workf
 
 CG is designed for operator-supervised automation. Compatibility depends on the exact game client and Windows environment, and is not detected automatically.
 
-![CG battle interface](example.png)
+### Interface Previews
+
+Full Battle view:
+
+![CG full battle interface](example1.png)
+
+Compact Battle view keeps the battle-group tabs and the selected group's start/stop control visible while hiding configuration controls:
+
+<img src="example2.png" alt="CG compact battle interface" width="480">
 
 ## Features
 
 - Discover and refresh multiple compatible game windows.
 - Group selected windows for coordinated battle workflows.
+- Switch the Battle tab to a compact view for group selection and start/stop control.
 - Configure ordered character and pet actions, conditions, jumps, and targets.
 - Load and save battle action configurations as `.ac` files.
 - Select optional movement patterns driven by in-game map coordinates.

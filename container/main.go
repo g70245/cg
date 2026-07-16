@@ -20,15 +20,19 @@ var (
 	r      robot
 )
 
+const compactWindowMinimumWidth float32 = 360
+
 type robot struct {
-	main      *fyne.Container
-	gameDirMu sync.RWMutex
-	gameDir   string
-	actionDir string
-	width     float32
-	height    float32
-	games     game.Games
-	close     func()
+	main                   *fyne.Container
+	gameDirMu              sync.RWMutex
+	gameDir                string
+	actionDir              string
+	width                  float32
+	height                 float32
+	games                  game.Games
+	close                  func()
+	battleCompactButton    *widget.Button
+	onBattleCompactChanged func(bool, fyne.CanvasObject)
 }
 
 func App(title, gameDir string, width, height float32) {
@@ -36,16 +40,31 @@ func App(title, gameDir string, width, height float32) {
 	window = cg.NewWindow(title)
 	window.Resize(fyne.NewSize(width, height))
 
+	var content *fyne.Container
+	battleCompactButton := widget.NewButtonWithIcon("", theme.ViewRestoreIcon(), nil)
 	r = robot{
-		games:     game.NewGames(),
-		gameDir:   gameDir,
-		actionDir: gameDir,
-		width:     width,
-		height:    height,
+		games:               game.NewGames(),
+		gameDir:             gameDir,
+		actionDir:           gameDir,
+		width:               width,
+		height:              height,
+		battleCompactButton: battleCompactButton,
+		onBattleCompactChanged: func(compact bool, battleContent fyne.CanvasObject) {
+			if compact {
+				compactContent := container.NewPadded(battleContent)
+				window.SetContent(compactContent)
+				compactSize := compactContent.MinSize()
+				compactSize.Width = fyne.Max(compactSize.Width, compactWindowMinimumWidth)
+				window.Resize(compactSize)
+				return
+			}
+
+			window.SetContent(content)
+			window.Resize(fyne.NewSize(width, height))
+		},
 	}
 	r.generateRobotContainer()
 
-	var content *fyne.Container
 	refreshButton := widget.NewButtonWithIcon("Refresh Games", theme.ViewRefreshIcon(), func() {
 		refreshDialog := dialog.NewConfirm("Refresh Games", "Refresh the game list? All running tasks will stop.", func(isRefreshing bool) {
 			if isRefreshing {
@@ -105,7 +124,8 @@ func App(title, gameDir string, width, height float32) {
 	})
 	gameDirDialogButton.Importance = widget.HighImportance
 
-	menu := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton)
+	menuButtons := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton)
+	menu := container.NewBorder(nil, nil, nil, battleCompactButton, menuButtons)
 	content = container.NewBorder(menu, nil, nil, nil, r.main)
 
 	/* shortcuts */
@@ -137,15 +157,26 @@ func (r *robot) refresh() {
 
 func (r *robot) generateRobotContainer() {
 
-	autoBattleContainer, autoBattleGroups := newBattleContainer(r.games)
+	autoBattleContainer, autoBattleGroups := newBattleContainer(r.games, r.battleCompactButton, r.onBattleCompactChanged)
 	productionContainer, productionWorkers := newProductionContainer(r.games)
 
+	battleTab := container.NewTabItem("Battle", autoBattleContainer)
+	productionTab := container.NewTabItem("Production", productionContainer)
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Battle", autoBattleContainer),
-		container.NewTabItem("Production", productionContainer),
+		battleTab,
+		productionTab,
 	)
+	tabs.OnSelected = func(selected *container.TabItem) {
+		if selected == battleTab {
+			r.battleCompactButton.Show()
+		} else {
+			r.battleCompactButton.Hide()
+		}
+		window.Content().Refresh()
+	}
 
 	tabs.SetTabLocation(container.TabLocationBottom)
+	r.battleCompactButton.Show()
 	main := container.NewStack(tabs)
 
 	r.main = main
