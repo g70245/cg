@@ -25,12 +25,13 @@ CG is designed for operator-supervised automation. Compatibility depends on the 
 CG is Windows-only. The current implementation assumes:
 
 - A compatible game window class matching `Blue` or `Sandbox:CG<digits>:Blue`.
+- A 1920×1080 desktop with Windows display scaling set to 100%.
 - A 640×480 game client coordinate layout.
 - Stable UI positions, colors, keyboard shortcuts, and process-memory addresses.
 - Big5-encoded game logs stored below a selected `Log` directory.
 - Permission to inspect the game window and read its process memory.
 
-A game client update, Windows display scaling, a different UI layout, insufficient process permissions, or an unexpected log format can prevent automation from working correctly. Test changes with supervision before relying on long-running workflows.
+Other display resolutions or Windows display scaling percentages have not been validated and are not currently supported. A game client update, a different UI layout, insufficient process permissions, or an unexpected log format can prevent automation from working correctly. Test changes with supervision before relying on long-running workflows.
 
 ## Requirements
 

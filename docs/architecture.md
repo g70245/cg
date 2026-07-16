@@ -73,7 +73,7 @@ Important indirect dependencies include:
 
 ### 2.4 Runtime dependencies
 
-The built application requires Windows, a compatible game client, and access to an audio device when alerts are used. Battle and production automation depend on the game client retaining the expected window class, 640×480 client-coordinate layout, colors, keyboard shortcuts, memory addresses, and Big5 log behavior. These compatibility constraints are encoded as constants rather than negotiated at runtime.
+The built application requires Windows, a compatible game client, and access to an audio device when alerts are used. The validated display environment is a 1920×1080 desktop with Windows display scaling set to 100% and a 640×480 game client-coordinate layout. Other resolutions and scaling percentages are outside the current support scope. Battle and production automation also depend on the game client retaining the expected window class, colors, keyboard shortcuts, memory addresses, and Big5 log behavior. These client-specific compatibility constraints are intentionally encoded as constants rather than negotiated at runtime.
 
 ## 3. Repository Structure
 
@@ -600,7 +600,7 @@ No repeatable manual test checklist or expected fixture data is stored in the re
 - Worker start/stop/restart, group coordination, refresh cleanup, and application shutdown.
 - Audio initialization, concurrent alerts, invalid files, and device failures.
 - `.ac` round trips, invalid JSON, incompatible schemas, and write errors.
-- DPI, scaling, minimized/covered windows, multiple monitors, and game UI variants.
+- Unsupported display resolutions or scaling percentages, minimized/covered windows, multiple monitors, and game UI variants.
 
 Tests for these behaviors cannot safely depend on a live game, process memory, or user log directory. Future tests would first require small seams around pixel, input, memory, clock, filesystem, and audio operations.
 
@@ -614,9 +614,7 @@ No issue is classified as confirmed Critical from repository evidence alone. Run
 
 ### High
 
-| Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
-| --- | --- | --- | --- | --- |
-| Compatibility assumptions are hard-coded and unvalidated | `game/constant.go`, `game/battle/*`, `game/production/*`, `internal/window.go` | A client update, DPI/layout change, or memory-layout change can cause wrong clicks, false detections, or invalid reads. | Fixed coordinates/colors/addresses are the core automation mechanism. | Establish supported client/UI matrix and add a startup compatibility diagnostic before automation. |
+No remaining issue is currently classified as High.
 
 ### Medium
 
@@ -665,8 +663,7 @@ Improvements should be incremental and driven by observed failures:
 3. **Introduce narrow test seams around volatile I/O.** Small function fields or focused interfaces for pixels, input, memory, logs, clock/tickers, and alerts would enable table-driven state-machine tests without designing a broad abstraction hierarchy.
 4. **Separate persisted battle configuration from runtime state when compatibility work requires it.** Add schema validation/versioning before considering broader model restructuring.
 5. **Reduce UI coupling opportunistically.** Extract action-file load/save and stable action-editor helpers when those areas next change. Keep Fyne-specific code in `container`; do not introduce controllers or repositories without a concrete need.
-6. **Centralize compatibility diagnostics.** A small preflight check could verify window class, expected client size/pixels, memory access, log directory, and alert readiness before starting automation.
-7. **Automate the verified build path.** Fix packaging, add Windows CI for module verification/build/vet/tests, and add targeted tests as seams become available.
+6. **Automate the verified build path.** Fix packaging, add Windows CI for module verification/build/vet/tests, and add targeted tests as seams become available.
 
 These directions favor KISS and YAGNI: retain the existing packages, add abstractions only at expensive external boundaries, and avoid a large rewrite.
 
@@ -674,26 +671,25 @@ These directions favor KISS and YAGNI: retain the existing packages, add abstrac
 
 1. What is the official name of the compatible game, and which client versions/builds are supported?
 2. Are `Blue` and `Sandbox:CG<digits>:Blue` the complete supported window-class patterns?
-3. Must every client use a 640×480 content area? What Windows DPI, display scaling, theme, language, and window-state assumptions apply?
-4. Are `MEMORY_MAP_NAME`, `MEMORY_MAP_POS_X`, and `MEMORY_MAP_POS_Y` valid for only one client version?
-5. Does the application require administrator privileges or the same Windows integrity level as the game client?
-6. Is broad process access mask `0x1F0FFF` intentional, or can memory access use narrower rights?
-7. Should the action directory continue using the initial `%USERPROFILE%\Documents\CG` path after the user selects a different game directory?
-8. What is the expected directory layout under the selected game directory, especially `Log` and `actions`?
-9. Are game logs always Big5, timestamped as `[HH:MM:SS]`, and stored in files whose modification time identifies the active log?
-10. What are the expected log rotation, empty-log, and midnight behaviors?
-11. What phrases should `PH_PRODUCTION_FAILURE` contain? Is its current empty value intentional?
-12. What is the intended semantic meaning of `IsProductionStatusOK` when it searches for the worker name plus failure phrases?
-13. What are the intended user workflows for `GatheringMode` and `ManualMode`?
-14. Should worker Play be restartable after an alert, and should repeated Start calls be rejected?
-15. Should closing the main window wait for all worker and audio goroutines to exit?
-16. Are aliases expected to persist between sessions?
-17. Are `.ac` files already distributed to users? If so, what compatibility guarantees and representative fixtures exist?
-18. Are all character/pet actions in the enum still supported? `character.Steal` and `pet.Protect` are defined but are not fully represented in the current UI/execution switches.
-19. Are the hard-coded item colors and bomb names complete for supported clients?
-20. Which Windows versions and CPU architectures are supported in practice?
-21. Is the application distributed as a standalone executable, a Fyne package, or through an external installer?
-22. Is code signing required for releases?
-23. Is cross-compilation a requirement, or is native Windows x64 building sufficient?
-24. Are `utils/helpers.go` and the empty `game/map.go` still intentionally retained?
-25. Which current behaviors are temporary workarounds for client-specific issues?
+3. Are `MEMORY_MAP_NAME`, `MEMORY_MAP_POS_X`, and `MEMORY_MAP_POS_Y` valid for only one client version?
+4. Does the application require administrator privileges or the same Windows integrity level as the game client?
+5. Is broad process access mask `0x1F0FFF` intentional, or can memory access use narrower rights?
+6. Should the action directory continue using the initial `%USERPROFILE%\Documents\CG` path after the user selects a different game directory?
+7. What is the expected directory layout under the selected game directory, especially `Log` and `actions`?
+8. Are game logs always Big5, timestamped as `[HH:MM:SS]`, and stored in files whose modification time identifies the active log?
+9. What are the expected log rotation, empty-log, and midnight behaviors?
+10. What phrases should `PH_PRODUCTION_FAILURE` contain? Is its current empty value intentional?
+11. What is the intended semantic meaning of `IsProductionStatusOK` when it searches for the worker name plus failure phrases?
+12. What are the intended user workflows for `GatheringMode` and `ManualMode`?
+13. Should worker Play be restartable after an alert, and should repeated Start calls be rejected?
+14. Should closing the main window wait for all worker and audio goroutines to exit?
+15. Are aliases expected to persist between sessions?
+16. Are `.ac` files already distributed to users? If so, what compatibility guarantees and representative fixtures exist?
+17. Are all character/pet actions in the enum still supported? `character.Steal` and `pet.Protect` are defined but are not fully represented in the current UI/execution switches.
+18. Are the hard-coded item colors and bomb names complete for supported clients?
+19. Which Windows versions and CPU architectures are supported in practice?
+20. Is the application distributed as a standalone executable, a Fyne package, or through an external installer?
+21. Is code signing required for releases?
+22. Is cross-compilation a requirement, or is native Windows x64 building sufficient?
+23. Are `utils/helpers.go` and the empty `game/map.go` still intentionally retained?
+24. Which current behaviors are temporary workarounds for client-specific issues?
