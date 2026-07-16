@@ -475,11 +475,11 @@ The project uses several inconsistent error strategies:
 
 - Detection and state-machine failures usually return `bool` and produce `log.Printf` output.
 - Many Win32 return values and errors are ignored.
-- Game-directory, action-configuration, and audio-selection callback errors are shown with concise user-facing messages; file-dialog initial-location errors remain ignored.
+- Game-directory, action-configuration, and audio-selection callback errors are shown with concise user-facing messages; an invalid file-dialog initial location intentionally falls back to Fyne's default location.
 - Action-configuration read, JSON, write, and close failures retain contextual subsystem errors while Fyne dialogs show operation-level guidance without paths or decoder details.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
 - Missing or unreadable game logs return path-rich errors at the filesystem boundary; preflight validation maps them to concise path-free UI reasons, while runtime phrase checks treat unavailable logs as no match.
-- Big5 conversion and process-memory read failures are not fully surfaced to users.
+- Process-memory read failures are not surfaced to users.
 
 Fyne information dialogs use feature-specific setup titles and report only the missing audio/log requirements. Error dialogs report game-directory, action-configuration, and audio-selection failures with concise actionable text. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
@@ -619,14 +619,13 @@ No remaining issue is currently classified as High.
 
 ### Medium
 
-| Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
-| --- | --- | --- | --- | --- |
-| Native and UI errors are still ignored | `container/*`, `internal/*` | Some failed dialogs, Win32 calls, pixel reads, and memory reads resemble empty or unexpected state instead of actionable errors. | Native and UI boundaries are expected failure points. | Introduce contextual reporting incrementally when a specific operation next changes. |
+No remaining issue is currently classified as Medium.
 
 ### Low
 
 | Issue | Location | Risk and current impact | Why investigate | Suggested investigation |
 | --- | --- | --- | --- | --- |
+| Native polling and message failures are not surfaced | `internal/window.go`, `internal/message.go`, `internal/color.go`, `internal/memory.go` | Failed window enumeration, input injection, pixel reads, and memory reads can resemble empty or unexpected game state; no reproducible user-visible failure is currently confirmed. | These operations run frequently, and reporting every transient failure would be noisy; the current Win32 wrapper also does not expose complete process-memory read errors. | Add structured error propagation only when a specific boundary has an observable failure or is otherwise being changed; stop the affected worker once instead of showing dialogs from polling loops. |
 | No explicit shutdown hook | `container/main.go` | Workers/audio are stopped on refresh/removal but not on normal window close; the process currently exits with the last Fyne window, and operators commonly stop active work first. | No user-visible shutdown failure is confirmed, so adding lifecycle machinery now would be speculative. | Reassess if shutdown must persist state, wait for workers, or release resources before process exit. |
 | `.ac` format is unversioned and weakly validated | `container/action_config.go`, `game/battle/action.go` | Syntactically valid JSON with invalid action values can load, but the files are personal, generated through the UI, and inexpensive to rebuild. | Public compatibility and migration guarantees are not required for the current workflow. | Reassess if files are shared, distributed, manually edited, or become expensive to recreate. |
 | Background dialog sequencing relies on Fyne v2.4 concurrency behavior | `container/battle.go:activateDialogs`, `container/battle.go:notifySetupConfig` | Dialogs are shown from application-owned goroutines, and `activateDialogs` directly reconfigures selector fields; no runtime failure is confirmed under the pinned pre-v2.6 toolkit. | Fyne v2.6 introduced a different single-UI-goroutine model and requires `fyne.Do` for background UI calls. | Reassess both paths during a Fyne upgrade or if a dialog race becomes observable; do not add a custom dispatcher for v2.4. |
