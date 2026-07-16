@@ -214,6 +214,7 @@ func generateMenuWidget(options menuWidgetOptions) (menuWidget *fyne.Container) 
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
 		refreshManaCheckerSelector()
 		monitoringDialog.Show()
+		monitoringDialog.Resize(monitoringDialog.MinSize())
 	})
 	checkersButton.Importance = widget.HighImportance
 
