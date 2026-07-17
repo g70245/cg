@@ -81,6 +81,7 @@ The built application requires Windows, a compatible game client, and access to 
 cg/
 ├── app.go                         # Executable entry point
 ├── go.mod / go.sum                # Go module definition and checksums
+├── cmd/cg-helper/                 # Live-window diagnostics and editable scratchpad
 ├── container/                     # Fyne UI and workflow coordination
 ├── game/
 │   ├── battle/                    # Battle state machine, detection, movement, workers
@@ -89,7 +90,7 @@ cg/
 │   ├── items/                     # Known item definitions and colors
 │   └── *.go                       # Shared game operations, detection, logs, instances
 ├── internal/                      # Win32, memory, color, and file primitives
-├── utils/                         # Audio alerts and diagnostic helpers
+├── utils/                         # Audio alerts
 ├── scripts/                       # Windows build and Fyne packaging scripts
 ├── docs/                          # Build, progress, and architecture documentation
 ├── .codex/skills/session-handoff/ # Project-local Codex handoff workflow
@@ -101,6 +102,8 @@ cg/
 | Path | Responsibility | Notes |
 | --- | --- | --- |
 | `app.go` | Calls `container.App`. | Uses title `CG`, derives the initial directory from `%USERPROFILE%\Documents\CG`, and sets window size `960×320`. |
+| `cmd/cg-helper/main.go` | Provides commands to list compatible HWND values and capture a 640×480 client-area PNG. | `capture` requires an explicit decimal handle; the tool is separate from the application entry path. |
+| `cmd/cg-helper/scratch.go` | Retains the developer-owned scratchpad for temporary coordinate, pixel, hotkey, and goroutine experiments. | Invoked through `go run ./cmd/cg-helper scratch`; machine/session-specific values and edits are intentional. |
 | `container/main.go` | Creates the Fyne application, global window, root tabs, refresh controls, path/audio selectors, and shutdown closures used during refresh. | Contains package-level `window` and `r`. |
 | `container/battle.go` | Creates battle groups and workers and coordinates group shutdown. | Keeps battle-group lifecycle separate from editor and menu composition. |
 | `container/battle_action_editor.go` | Builds each game's action editor and coordinates its selector dialogs. | Retains the existing stateful editor callback flow without adding an abstraction layer. |
@@ -120,10 +123,10 @@ cg/
 | `internal/window.go` | Enumerates game windows by class-name regex. | Calls Win32 through `github.com/g70245/win`. |
 | `internal/message.go` | Sends mouse and keyboard window messages with fixed sleeps. | Uses a dot import of the Win32 package. |
 | `internal/color.go` | Reads a pixel from a target window device context. | Pairs `GetDC` with `ReleaseDC`. |
+| `internal/capture.go` | Copies a client-area rectangle into a Go RGBA image through GDI. | Restores selected objects and releases the source DC, memory DC, and bitmap on every path. |
 | `internal/memory.go` | Reads strings and `float32` values from another process. | Opens and closes a process handle around every read; open failures return zero-filled data. |
 | `internal/file.go` | Finds the newest log file, reads trailing lines, and decodes Big5. | Returns contextual errors for missing or unreadable logs and safely handles empty files. |
 | `utils/beeper.go` | Owns global looping MP3 playback. | Uses a synchronized audio-session lifecycle with error-returning initialization and fake-session test seams. |
-| `utils/helpers.go` | Provides a developer-only scratchpad for manually checking coordinates, pixel colors, window handles, hotkeys, and goroutines. | Machine/session-specific values are intentional test inputs; the helpers are not part of the application entry path. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
 | `scripts/package.ps1` | Runs pinned Fyne packaging with the required app ID and moves `CG.exe` to `dist\CG.exe`. | Uses `com.github.g70245.cg`. |
 | `.github/workflows/windows-ci.yml` | Runs the verified Windows build, package compilation checks, and vetting on GitHub Actions. | Uses `windows-2022`, Go `1.21.x`, CGO, and GCC. |
@@ -400,7 +403,7 @@ Go's compiler-enforced import graph is acyclic. The current graph has no import 
 - `game/battle` combines scheduling, state-machine policy, detection, input operations, log checking, audio alerts, and group coordination.
 - `game/production` combines scheduling, UI-state inference, input operations, and alert policy.
 - `game` depends on `internal` directly; there are no interfaces separating game behavior from Win32, memory, pixels, time, or filesystem access.
-- `utils` depends upward on `game` and `internal` because the intentionally retained developer diagnostics in `utils/helpers.go` inspect live game state. This does not create a cycle today, but it broadens the utility package's dependency surface.
+- `cmd/cg-helper` depends on `game` and `internal` for intentionally retained live-window diagnostics. As an executable leaf package, it does not broaden the runtime packages' dependency surface.
 - Windows integration is physically isolated in `internal`, but its concrete functions are called directly. It is a package boundary, not a replaceable abstraction.
 
 ## 8. Key Types and Components

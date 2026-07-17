@@ -1,15 +1,13 @@
-package utils
+package main
 
 import (
 	. "cg/game"
 	. "cg/internal"
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/g70245/win"
@@ -99,6 +97,5 @@ func getGoId() int {
 	return id
 }
 
-func Test() {
-	os.Exit(0)
+func runScratch() {
 }

@@ -122,6 +122,16 @@ The automated tests cover selected pure-logic and filesystem boundaries. They do
 
 Windows CI runs the verified build path, tests, and vet checks for changes targeting `dev` or `main`.
 
+Live-window developer diagnostics are available through `cg-helper`:
+
+```powershell
+go run ./cmd/cg-helper windows
+go run ./cmd/cg-helper capture -handle 123456
+go run ./cmd/cg-helper scratch
+```
+
+`windows` lists compatible game handles, while `capture` writes a 640×480 client-area PNG to the system temporary directory unless `-output` is provided. `scratch` runs the intentionally editable `cmd/cg-helper/scratch.go` entry point for temporary coordinate, pixel, hotkey, and goroutine experiments.
+
 ## Package a Windows Release
 
 Create a Fyne release package with the repository-owned icon and application ID:
@@ -142,11 +152,12 @@ The packaged executable is written to `dist\CG.exe`. The script pins Fyne CLI `v
 
 ```text
 container/        Fyne UI and workflow coordination
+cmd/cg-helper/    Live-window diagnostics and editable scratchpad
 game/             Shared game operations, detection, logs, and instances
 game/battle/      Battle state machine, targeting, movement, and workers
 game/production/  Production workflow and workers
 internal/         Win32, process-memory, color, and filesystem primitives
-utils/            Audio alerts and diagnostic helpers
+utils/            Audio alerts
 scripts/          Windows build and packaging commands
 docs/             Architecture and Windows build documentation
 ```
