@@ -1,6 +1,7 @@
 package battle
 
 import (
+	"log"
 	"time"
 
 	"cg/game"
@@ -59,9 +60,28 @@ func (s *ActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTa
 }
 
 func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
+	if len(checkTargets) == 0 {
+		return false
+	}
+
+	captureFailureLogged := false
 	for attempt := 0; attempt < flawlessPetMaxRetries; attempt++ {
+		capture, err := internal.CaptureClientArea(s.hWnd, 0, 0, game.GAME_WIDTH, game.GAME_HEIGHT)
+		if err != nil && !captureFailureLogged {
+			log.Printf("# Handle %v cannot capture battle scene for flawless pet detection: %v; using pixel fallback", s.hWnd, err)
+			captureFailureLogged = true
+		}
+
 		for i := range checkTargets {
-			if game.CheckAreaColor(s.hWnd, checkTargets[i].X-38, checkTargets[i].Y-10, checkTargets[i].X+26, checkTargets[i].Y+18, COLOR_BATTLE_FLAWLESS_PET) {
+			originX := checkTargets[i].X - 38
+			originY := checkTargets[i].Y - 10
+			destinationX := checkTargets[i].X + 26
+			destinationY := checkTargets[i].Y + 18
+
+			if err == nil && internal.RGBAAreaContainsColor(capture, originX, originY, destinationX, destinationY, COLOR_BATTLE_FLAWLESS_PET) {
+				return true
+			}
+			if err != nil && game.CheckAreaColor(s.hWnd, originX, originY, destinationX, destinationY, COLOR_BATTLE_FLAWLESS_PET) {
 				return true
 			}
 		}

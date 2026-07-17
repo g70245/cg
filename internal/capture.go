@@ -82,3 +82,34 @@ func CaptureClientArea(hWnd win.HWND, x, y, width, height int32) (*image.RGBA, e
 
 	return capture, nil
 }
+
+func RGBAAreaContainsColor(capture *image.RGBA, originX, originY, destinationX, destinationY int32, expectedColor win.COLORREF) bool {
+	if capture == nil || originX > destinationX || originY > destinationY {
+		return false
+	}
+
+	bounds := capture.Bounds()
+	startX := max(int(originX), bounds.Min.X)
+	startY := max(int(originY), bounds.Min.Y)
+	endX := min(int(destinationX), bounds.Max.X-1)
+	endY := min(int(destinationY), bounds.Max.Y-1)
+	if startX > endX || startY > endY {
+		return false
+	}
+
+	expectedRed := byte(expectedColor)
+	expectedGreen := byte(expectedColor >> 8)
+	expectedBlue := byte(expectedColor >> 16)
+
+	for y := startY; y <= endY; y++ {
+		offset := capture.PixOffset(startX, y)
+		for x := startX; x <= endX; x++ {
+			if capture.Pix[offset] == expectedRed && capture.Pix[offset+1] == expectedGreen && capture.Pix[offset+2] == expectedBlue {
+				return true
+			}
+			offset += 4
+		}
+	}
+
+	return false
+}
