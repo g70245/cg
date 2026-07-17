@@ -34,6 +34,10 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Standardized user-facing navigation, dialogs, monitoring controls, production controls, and enum labels while preserving action markers and configuration compatibility.
 - Reclassified `.ac` schema versioning and semantic validation as low priority because the settings are personal, UI-generated, and inexpensive to rebuild.
 - Reclassified background dialog threading as a Fyne-version-specific low risk after confirming the pinned v2.4 driver predates the v2.6 single-UI-goroutine model.
+- Split the battle UI into focused composition files, improved character/pet tag presentation, repaired monitoring-control refresh/layout behavior, and added a Battle-only compact view that preserves group switching and start/stop control.
+- Added runtime Flawless Pet monitoring that detects the moving sparkle effect around known enemy slots, plays the configured alert, and pauses battle actions until the battle ends or the worker stops.
+- Added `cmd/cg-helper` commands for compatible-window discovery and client-area PNG capture while retaining the editable diagnostic scratchpad outside the runtime `utils` package.
+- Replaced bulk Flawless Pet `GetPixel` calls with one 640×480 GDI capture per retry and in-memory RGBA region scans, with clipped bounds, focused color/boundary tests, and the original per-pixel path retained as a capture-failure fallback.
 
 ## Current repository facts
 
@@ -42,7 +46,8 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - `scripts/build.ps1` successfully produces `dist\cg.exe` in the verified environment.
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
-- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, user-facing setup messages and action-ID validation, action-configuration I/O, synchronized worker configuration, and duplicate worker-start prevention.
+- `go run ./cmd/cg-helper windows`, `capture -handle <HWND>`, and `scratch` provide live-window diagnostics without changing the application entry path.
+- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, user-facing setup messages and action-ID validation, action-configuration I/O, synchronized worker configuration, duplicate worker-start prevention, and captured-image color/boundary scanning.
 
 ## Active tasks
 
@@ -66,3 +71,4 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - `.ac` schema versioning and semantic validation are deferred unless the personal settings become shared, distributed, manually maintained, or expensive to recreate.
 - Background dialog calls remain unchanged under Fyne v2.4; `notifySetupConfig` and `activateDialogs` must be reassessed and dispatched with `fyne.Do` if the project upgrades to Fyne v2.6 or later.
 - User-facing file, audio, and setup errors omit machine-specific paths and low-level provider details; subsystem errors retain detailed context for diagnostics.
+- Fixed-pixel checks may continue using `GetPixel`, but dense or repeated region scans should capture once per observation frame and scan the resulting memory buffer; animated checks must recapture on each retry rather than reuse a stale frame.
