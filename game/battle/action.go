@@ -81,10 +81,11 @@ type ActionState struct {
 	isCharacterHanging bool `json:"-"`
 	isPetHanging       bool `json:"-"`
 
-	enabled                func() bool
-	activityCheckerEnabled func() bool
-	gameDir                func() string
-	manaChecker            *ManaChecker
+	enabled                   func() bool
+	activityCheckerEnabled    func() bool
+	flawlessPetCheckerEnabled func() bool
+	gameDir                   func() string
+	manaChecker               *ManaChecker
 
 	enemies         []game.CheckTarget `json:"-"`
 	trainingCounter int                `json:"-"`
@@ -97,6 +98,7 @@ func (s *ActionState) Act() {
 		s.wait()
 		s.executeActivity()
 		s.detectEnemies()
+		s.executeFlawlessPetChecker()
 		s.checkCharacterMana()
 		s.executeCharacterStateMachine()
 		s.wait()
@@ -119,6 +121,21 @@ func (s *ActionState) executeActivity() {
 
 	if game.DoesEncounterActivityMonsters(s.gameDir()) {
 		s.logH("encounters the activity monster")
+		utils.Beeper.Play()
+
+		for game.IsBattleScene(s.hWnd) && s.isEnabled() {
+			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+		}
+	}
+}
+
+func (s *ActionState) executeFlawlessPetChecker() {
+	if !s.isFlawlessPetCheckerEnabled() {
+		return
+	}
+
+	if s.searchFlawlessPet(s.enemies) {
+		s.logH("encounters a flawless pet")
 		utils.Beeper.Play()
 
 		for game.IsBattleScene(s.hWnd) && s.isEnabled() {
@@ -847,9 +864,10 @@ func CreateNewBattleActionState(hWnd win.HWND) ActionState {
 	}
 }
 
-func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, gameDir func() string, manaChecker *ManaChecker) {
+func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, flawlessPetCheckerEnabled func() bool, gameDir func() string, manaChecker *ManaChecker) {
 	s.enabled = enabled
 	s.activityCheckerEnabled = activityCheckerEnabled
+	s.flawlessPetCheckerEnabled = flawlessPetCheckerEnabled
 	s.gameDir = gameDir
 	s.manaChecker = manaChecker
 }
@@ -860,6 +878,10 @@ func (s *ActionState) isEnabled() bool {
 
 func (s *ActionState) isActivityCheckerEnabled() bool {
 	return s.activityCheckerEnabled != nil && s.activityCheckerEnabled()
+}
+
+func (s *ActionState) isFlawlessPetCheckerEnabled() bool {
+	return s.flawlessPetCheckerEnabled != nil && s.flawlessPetCheckerEnabled()
 }
 
 func (s ActionState) clone() ActionState {

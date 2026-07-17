@@ -173,3 +173,7 @@ func GetCurrentGamePos(hWnd win.HWND) GamePos {
 	fy := internal.ReadMemoryFloat32(hWnd, MEMORY_MAP_POS_Y, 32)
 	return GamePos{float64(fx / 64), float64(fy / 64)}
 }
+
+func CheckAreaColor(hWnd win.HWND, originX, originY, destinationX, destinationY int32, expectedColor win.COLORREF) bool {
+	return internal.AreaContainsColor(hWnd, originX, originY, destinationX, destinationY, expectedColor)
+}

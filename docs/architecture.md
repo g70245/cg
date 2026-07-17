@@ -18,7 +18,7 @@ The main features currently implemented are:
 - Multi-window discovery, aliasing, refresh, and grouping.
 - Configurable character and pet battle-action state machines.
 - Optional movement patterns based on process-memory map coordinates.
-- Inventory, teleport, resource, activity, verification, health, and mana checks.
+- Inventory, teleport, resource, activity, verification, health, mana, and flawless-pet encounter checks.
 - Semi-automatic material preparation, production, and inventory compaction.
 - Repeating MP3 alerts when operator attention is required.
 - JSON-based loading and saving of battle action configurations as `.ac` files.
@@ -295,7 +295,10 @@ flowchart TD
 
     Act --> Activity[Optional activity log check]
     Activity --> Enemies[Pixel and cursor-based enemy detection]
-    Enemies --> Mana[Optional party mana check]
+    Enemies --> Flawless{Flawless Pet enabled and sparkle found?}
+    Flawless -->|Yes| FlawlessAlert[Play alert and wait for battle end or Stop]
+    FlawlessAlert --> Loop
+    Flawless -->|No| Mana[Optional party mana check]
     Mana --> Character[Character action state machine]
     Character --> Pet[Pet action state machine]
     Pet --> BattleEnd{Battle scene ended or disabled?}
@@ -304,6 +307,8 @@ flowchart TD
 ```
 
 `ActionState` transforms configured action records into mouse/key operations. It detects stages and results by pixels, changes action IDs according to `StartOver`, `Continue`, `Repeat`, or `Jump`, and resets IDs after battle. Targeting and healing inspect fixed player/enemy coordinates. Movement reads current map coordinates from process memory and clicks a point around the 640×480 center.
+
+The optional Flawless Pet checker runs after enemy detection and before mana and action processing. For each detected enemy, it scans the inclusive 65×29 area from `(X-38, Y-10)` through `(X+26, Y+18)` for the configured sparkle color. This area covers the moving, blinking star effect rather than a fixed monster-body pixel. The checker performs five complete scans separated by 50 ms, with no delay after the final attempt. Each enemy-area scan acquires one window device context and releases it immediately afterward. A match starts the repeating audio alert and keeps that window out of its battle action state machines until the battle scene ends or the worker is stopped.
 
 Independent ticker cases check inventory, map/log teleport state, resource phrases, and verification phrases. When a stop condition occurs, tickers stop and audio is requested.
 
@@ -429,6 +434,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 - Detection targets, colors, option lists, and item lists are package-level variables/constants.
 - Fyne widgets retain selection, icon, text, and dialog state. UI callbacks directly update workers and the `Games` map.
 - No state is persisted automatically. Aliases, selected directories, enabled checkers, groups, and production settings are lost on exit.
+- The Flawless Pet checker is a per-worker atomic runtime flag. Like the other enabled checkers, it is not part of saved `.ac` action configuration.
 
 ### 9.2 Configuration state
 

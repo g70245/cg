@@ -222,6 +222,24 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	activitiesCheckerButton.Importance = widget.HighImportance
+	var flawlessPetCheckerButton *widget.Button
+	flawlessPetCheckerButton = widget.NewButtonWithIcon("Flawless Pet", theme.CheckButtonIcon(), func() {
+		switch flawlessPetCheckerButton.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range options.workers {
+				options.workers[i].SetFlawlessPetCheckerEnabled(false)
+			}
+			turn(theme.CheckButtonIcon(), flawlessPetCheckerButton)
+		case theme.CheckButtonIcon():
+			for i := range options.workers {
+				options.workers[i].SetFlawlessPetCheckerEnabled(true)
+			}
+			turn(theme.CheckButtonCheckedIcon(), flawlessPetCheckerButton)
+
+			notifyBeeperConfig("Flawless Pet Monitoring")
+		}
+	})
+	flawlessPetCheckerButton.Importance = widget.HighImportance
 	var inventoryCheckerButton *widget.Button
 	inventoryCheckerButton = widget.NewButtonWithIcon("Inventory", theme.CheckButtonIcon(), func() {
 		switch inventoryCheckerButton.Icon {
@@ -240,7 +258,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
-	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window)
+	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, teleportAndResourceCheckerButton, activitiesCheckerButton, flawlessPetCheckerButton, inventoryCheckerButton), window)
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
 		refreshManaCheckerSelector()
 		monitoringDialog.Show()

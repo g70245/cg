@@ -1,6 +1,8 @@
 package battle
 
 import (
+	"time"
+
 	"cg/game"
 	"cg/game/enum/enemy"
 	"cg/internal"
@@ -39,14 +41,34 @@ var (
 	EnemyEnumMap = map[enemy.Position]game.CheckTarget{enemy.T1: MON_POS_T_1, enemy.T2: MON_POS_T_2, enemy.T3: MON_POS_T_3, enemy.T4: MON_POS_T_4, enemy.T5: MON_POS_T_5, enemy.B1: MON_POS_B_1, enemy.B2: MON_POS_B_2, enemy.B3: MON_POS_B_3, enemy.B4: MON_POS_B_4, enemy.B5: MON_POS_B_5}
 )
 
+const (
+	flawlessPetMaxRetries    = 5
+	flawlessPetRetryInterval = 50 * time.Millisecond
+)
+
 func (s *ActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTarget {
 	targets := []game.CheckTarget{}
 
 	for i := range checkTargets {
 		internal.MoveCursorWithDuration(s.hWnd, checkTargets[i].X, checkTargets[i].Y, DURATION_MONSTER_DETECING_CURSOR_MOV)
-		if internal.GetColor(s.hWnd, game.MENU_CONTACT.X, game.MENU_CONTACT.Y) == game.COLOR_MENU_HIDDEN {
+		if internal.GetColor(s.hWnd, game.MENU_ESC.X, game.MENU_ESC.Y) == game.COLOR_MENU_HIDDEN {
 			targets = append(targets, checkTargets[i])
 		}
 	}
 	return targets
+}
+
+func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
+	for attempt := 0; attempt < flawlessPetMaxRetries; attempt++ {
+		for i := range checkTargets {
+			if game.CheckAreaColor(s.hWnd, checkTargets[i].X-38, checkTargets[i].Y-10, checkTargets[i].X+26, checkTargets[i].Y+18, COLOR_BATTLE_FLAWLESS_PET) {
+				return true
+			}
+		}
+
+		if attempt+1 < flawlessPetMaxRetries {
+			time.Sleep(flawlessPetRetryInterval)
+		}
+	}
+	return false
 }

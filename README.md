@@ -24,7 +24,7 @@ Compact Battle view keeps the battle-group tabs and the selected group's start/s
 - Configure ordered character and pet actions, conditions, jumps, and targets.
 - Load and save battle action configurations as `.ac` files.
 - Select optional movement patterns driven by in-game map coordinates.
-- Monitor teleport, resource, activity, verification, health, mana, and inventory conditions.
+- Monitor teleport, resource, activity, verification, health, mana, inventory, and flawless-pet encounters.
 - Assist with material preparation, item production, and inventory organization.
 - Play a repeating MP3 alert when operator attention is required.
 - Recognize both standard and supported Sandbox-style game window classes.
@@ -97,7 +97,9 @@ Log-dependent battle and production monitoring will not start unless the selecte
 
 The Battle tab supports grouped game windows and configurable character and pet action sequences. Actions may include attacks, skills, healing, defensive behavior, movement, conditional thresholds, success/failure control units, and jumps between configured steps.
 
-Use the checker menu to enable only the monitoring required for the current workflow. Battle action configurations can be saved to and loaded from `.ac` files. These files are JSON-based but currently have no formal schema version, so keep backups before editing them outside CG.
+Use the Monitoring menu to enable only the checks required for the current workflow. **Flawless Pet** monitoring looks for the moving, blinking sparkle effect around detected enemies. When the configured sparkle color is found, CG plays the selected alert and pauses that window's battle actions until the battle ends or the worker is stopped. The check depends on fixed client coordinates and colors and is not saved in `.ac` files.
+
+Battle action configurations can be saved to and loaded from `.ac` files. These files are JSON-based but currently have no formal schema version, so keep backups before editing them outside CG.
 
 ## Production Workflow
 
@@ -105,7 +107,7 @@ The Production tab creates a worker for each selected game window. Production au
 
 ## Alerts
 
-CG uses the selected MP3 as a repeating operator alert. Alerts may be triggered by configured battle, inventory, verification, resource, or production conditions. Press `Ctrl+0` to stop an active alert.
+CG uses the selected MP3 as a repeating operator alert. Alerts may be triggered by configured battle, flawless-pet, inventory, verification, resource, or production conditions. Press `Ctrl+0` to stop an active alert.
 
 ## Test and Quality Checks
 
