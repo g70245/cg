@@ -3,7 +3,6 @@ package battle
 import (
 	"image"
 	"log"
-	"slices"
 	"time"
 
 	"cg/game"
@@ -238,33 +237,38 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	return nil, false
 }
 
-func (s *ActionState) getSelfTarget(isFirst bool) (*game.CheckTarget, bool) {
+func (s *ActionState) getSelfTarget(characterFirst bool) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
+	capture, err := internal.CaptureClientArea(s.hWnd, 0, 0, game.GAME_WIDTH, game.GAME_HEIGHT)
+	if err != nil {
+		log.Printf("# Handle %v cannot capture battle scene for self-target detection: %v", s.hWnd, err)
+		return nil, false
+	}
 
-	var targetRows [][]game.CheckTarget
-	if isFirst {
-		targetRows = append(targetRows, allCharacters, allPets)
+	return getSelfTargetFromCapture(capture, characterFirst)
+}
+
+func getSelfTargetFromCapture(capture *image.RGBA, characterFirst bool) (*game.CheckTarget, bool) {
+	var prioritizedTargetGroups [][]game.CheckTarget
+	if characterFirst {
+		prioritizedTargetGroups = append(prioritizedTargetGroups, allCharacters, allPets)
 	} else {
-		targetRows = append(targetRows, allPets, allCharacters)
+		prioritizedTargetGroups = append(prioritizedTargetGroups, allPets, allCharacters)
 	}
 
 	nameColors := []win.COLORREF{COLOR_BATTLE_SELF_NAME_1, COLOR_BATTLE_SELF_NAME_2, COLOR_BATTLE_SELF_NAME_3, COLOR_BATTLE_SELF_NAME_4, COLOR_BATTLE_SELF_NAME_5}
 
-	for i := range targetRows {
-		for j := range targetRows[i] {
-			if !s.doesPlayerExist(targetRows[i][j]) {
+	for groupIndex := range prioritizedTargetGroups {
+		for targetIndex := range prioritizedTargetGroups[groupIndex] {
+			target := &prioritizedTargetGroups[groupIndex][targetIndex]
+			if !internal.RGBAAreaContainsColor(capture, target.X, target.Y, target.X, target.Y, COLOR_BATTLE_BLOOD_UPPER) {
 				continue
 			}
-			x := targetRows[i][j].X + 8
-			for x <= targetRows[i][j].X+30 {
-				y := targetRows[i][j].Y - 10
-				for y >= targetRows[i][j].Y-26 {
-					if slices.Contains(nameColors, internal.GetColor(s.hWnd, x, y)) {
-						return &targetRows[i][j], true
-					}
-					y--
+
+			for _, nameColor := range nameColors {
+				if internal.RGBAAreaContainsColor(capture, target.X+8, target.Y-26, target.X+30, target.Y-10, nameColor) {
+					return target, true
 				}
-				x++
 			}
 		}
 	}
