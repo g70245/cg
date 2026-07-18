@@ -88,6 +88,7 @@ cg/
 │   ├── production/                # Production workflow, detection, workers
 │   ├── enum/                      # UI/domain enumerations
 │   ├── items/                     # Known item definitions and colors
+│   ├── navigation/                # Local map parsing and route ordering
 │   └── *.go                       # Shared game operations, detection, logs, instances
 ├── internal/                      # Win32, memory, color, and file primitives
 ├── utils/                         # Audio alerts
@@ -106,6 +107,7 @@ cg/
 | `cmd/cg-helper/scratch.go` | Retains the developer-owned scratchpad for temporary coordinate, pixel, hotkey, and goroutine experiments. | Invoked through `go run ./cmd/cg-helper scratch`; machine/session-specific values and edits are intentional. |
 | `container/main.go` | Creates the Fyne application, global window, root tabs, refresh controls, path/audio selectors, and shutdown closures used during refresh. | Contains package-level `window` and `r`. |
 | `container/battle.go` | Creates battle groups and workers and coordinates group shutdown. | Keeps battle-group lifecycle separate from editor and menu composition. |
+| `container/battle_navigation.go` | Builds the Compact Battle navigation panel and controls its opt-in alias updater. | Reads only while Compact Battle is active and an alias is selected; displayed text omits map names and paths. |
 | `container/battle_action_editor.go` | Builds each game's action editor and coordinates its selector dialogs. | Retains the existing stateful editor callback flow without adding an abstraction layer. |
 | `container/battle_group_menu.go` | Builds group-level battle, monitoring, target-priority, and configuration controls. | Applies shared controls across the group's workers. |
 | `container/battle_tags.go` | Renders character and pet action summaries as colored tags. | Preserves the internal `*` and `**` action classifications. |
@@ -114,7 +116,8 @@ cg/
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
 | `game/instance.go` | Represents discovered windows as `Games map[string]win.HWND`. | Initial keys are decimal handle strings; UI aliases mutate this map in memory only. |
 | `game/operation.go` | Provides timed, game-level input operations such as opening windows, using skills, and using items. | Delegates to `internal/message.go`. |
-| `game/detection.go` | Shared scene, inventory, item, map-name, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
+| `game/detection.go` | Shared scene, inventory, item, map-name, map-code, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
+| `game/navigation/` | Resolves map codes beneath the selected Game Folder, parses map sections, classifies transitions, caches unchanged files, and orders routes by distance. | Checks numeric `.dat` files at the supported shallow `map` directory layouts without a recursive fallback scan. |
 | `game/log.go` | Searches recent Big5 game logs for time-bounded phrases. | Does not expose errors to callers. |
 | `game/battle/` | Implements battle actions, control units, target selection, health/mana checks, movement, and worker scheduling. | Dominated by `ActionState` and `Worker`. |
 | `game/production/` | Implements material unpacking, production-state detection, inventory tidying, and worker scheduling. | Operates by fixed coordinates and colors. |
@@ -182,8 +185,8 @@ flowchart TD
 - **Game integration:** `game` and its subpackages translate game concepts into fixed coordinates, colors, keys, timings, phrases, and memory offsets.
 - **Native integration:** `internal` translates operations into Win32 calls and local filesystem reads.
 - **Configuration and state:** Runtime state is held in package globals, maps, worker structs, pointers, and Fyne widgets. Battle action configuration alone can be persisted as JSON `.ac` files.
-- **Data access:** The application reads game window pixels, game process memory, game log files, MP3 files, and `.ac` configuration files. It writes `.ac` configuration files and standard-library log output.
-- **Background work:** Battle workers, production workers, dialog sequencing, delayed configuration notices, and audio playback use goroutines.
+- **Data access:** The application reads game window pixels, game process memory, local map files, game log files, MP3 files, and `.ac` configuration files. It writes `.ac` configuration files and standard-library log output.
+- **Background work:** Battle workers, production workers, the Compact Battle navigation updater, dialog sequencing, delayed configuration notices, and audio playback use goroutines.
 
 ## 5. Startup Flow
 
@@ -275,7 +278,7 @@ Failure handling is minimal: Win32 return values are not checked, regex compilat
    - `sharedInventoryStatus`
    - a synchronized `ManaChecker` selection
 
-The Battle-only compact view temporarily replaces the normal root content, preserves the group tabs, and reduces each group to its existing start/stop control plus a full-view restore control. The window keeps a minimum compact width for title-bar dragging while its height follows the compact content. Returning to the full view restores the normal application content and configured window size. Production does not expose this mode.
+The Battle-only compact view temporarily replaces the normal root content, preserves the group tabs, and reduces each group to its existing start/stop control, a full-view restore control, and an alias selector for local-map navigation. Navigation defaults to `Navigation Off` and remains collapsed to that selector in the off state. Selecting one current window alias expands a scrollable list with a minimum height that grows with manual window resizing, and starts a single updater that reads the current map code and coordinates from that process, finds the matching numeric `.dat` file at the supported shallow levels beneath the selected Game Folder's `map` directory, caches unchanged map data, and lists all detected routes by distance. Missing files report unavailable immediately without recursively scanning the map tree. Selecting `Navigation Off` stops the updater, collapses the panel, and restores the compact content's minimum window height; deleting the group, refreshing the application, or leaving compact view also stops the updater. Returning to compact view restarts it when the selected alias still exists. The panel uses neutral English position, direction, and route-type text and does not show the map name, raw filename, path, or compatible client identity. The full Battle view and Production view do not expose this panel.
 3. `generateGameWidget` updates synchronized worker configuration for movement, enemy order, and actions. Each `Work` call uses a deep action snapshot so UI edits cannot mutate an executing state machine.
 4. Character and pet actions are appended in UI order. Optional parameters, offsets, thresholds, success/failure `ControlUnit` values, and jump IDs are collected through sequenced dialogs.
 5. Save marshals an `ActionState` snapshot; load unmarshals JSON and replaces worker configuration through its synchronized API. Runtime-only dependencies are attached to the execution snapshot.

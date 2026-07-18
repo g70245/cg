@@ -48,6 +48,11 @@ func ReadMemoryFloat32(hWnd win.HWND, lpBaseAddress uint32, size uint) float32 {
 	return math.Float32frombits(binary.LittleEndian.Uint32(data))
 }
 
+func ReadMemoryUint32(hWnd win.HWND, lpBaseAddress uint32) uint32 {
+	data := readMemory(hWnd, lpBaseAddress, 4)
+	return binary.LittleEndian.Uint32(data)
+}
+
 func readMemory(hWnd win.HWND, lpBaseAddress uint32, size uint) []byte {
 	return readMemoryWith(newMemoryOperations(), hWnd, lpBaseAddress, size)
 }

@@ -227,6 +227,10 @@ func GetMapName(hWnd win.HWND) string {
 	return internal.ReadMemoryString(hWnd, MEMORY_MAP_NAME, 32)
 }
 
+func GetMapCode(hWnd win.HWND) uint32 {
+	return internal.ReadMemoryUint32(hWnd, MEMORY_MAP_CODE)
+}
+
 type GamePos struct {
 	X, Y float64
 }

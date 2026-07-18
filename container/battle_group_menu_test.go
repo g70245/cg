@@ -49,11 +49,12 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 		switchButton,
 	}
 	menu := newBattleGroupMenu(fullMenuObjects, switchButton, restoreButton)
-	view := newBattleGroupView(menu, fynecontainer.NewVBox(widget.NewLabel("Worker settings")))
+	navigation := newBattleNavigationView(game.Games{}, game.Games{}, func() string { return "" }, nil)
+	view := newBattleGroupView(menu, navigation, fynecontainer.NewVBox(widget.NewLabel("Worker settings")))
 
 	view.setCompact(true)
-	if got := len(view.container.Objects); got != 1 {
-		t.Fatalf("compact group object count = %d, want 1", got)
+	if got, want := len(view.container.Objects), len(view.compactObjects); got != want {
+		t.Fatalf("compact group object count = %d, want %d", got, want)
 	}
 	if got := len(menu.container.Objects); got != 2 {
 		t.Fatalf("compact menu object count = %d, want 2", got)
@@ -64,6 +65,15 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	if menu.container.Objects[1] != restoreButton {
 		t.Fatal("compact menu does not contain the restore button")
 	}
+	foundNavigation := false
+	for _, object := range view.container.Objects {
+		if object == navigation.container {
+			foundNavigation = true
+		}
+	}
+	if !foundNavigation {
+		t.Fatal("compact group does not contain navigation")
+	}
 
 	view.setCompact(false)
 	if got, want := len(view.container.Objects), len(view.fullObjects); got != want {
@@ -71,5 +81,10 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	}
 	if !reflect.DeepEqual(menu.container.Objects, fullMenuObjects) {
 		t.Fatal("full menu objects were not restored")
+	}
+	for _, object := range view.container.Objects {
+		if object == navigation.container {
+			t.Fatal("full group unexpectedly contains navigation")
+		}
 	}
 }

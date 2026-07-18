@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -21,25 +22,35 @@ type BattleGroups struct {
 }
 
 type battleGroupView struct {
-	container   *fyne.Container
-	menu        *battleGroupMenu
-	fullObjects []fyne.CanvasObject
+	container      *fyne.Container
+	menu           *battleGroupMenu
+	navigation     *battleNavigationView
+	fullObjects    []fyne.CanvasObject
+	compactHeader  *fyne.Container
+	compactObjects []fyne.CanvasObject
 }
 
-func newBattleGroupView(menu *battleGroupMenu, gameWidget *fyne.Container) *battleGroupView {
+func newBattleGroupView(menu *battleGroupMenu, navigation *battleNavigationView, gameWidget *fyne.Container) *battleGroupView {
 	fullObjects := []fyne.CanvasObject{widget.NewSeparator(), menu.container, widget.NewSeparator(), gameWidget}
+	compactHeader := container.NewVBox(menu.container, widget.NewSeparator())
 	return &battleGroupView{
-		container:   container.NewVBox(fullObjects...),
-		menu:        menu,
-		fullObjects: fullObjects,
+		container:      container.NewVBox(fullObjects...),
+		menu:           menu,
+		navigation:     navigation,
+		fullObjects:    fullObjects,
+		compactHeader:  compactHeader,
+		compactObjects: []fyne.CanvasObject{compactHeader, navigation.container},
 	}
 }
 
 func (view *battleGroupView) setCompact(compact bool) {
 	view.menu.setCompact(compact)
+	view.navigation.setCompact(compact)
 	if compact {
-		view.container.Objects = []fyne.CanvasObject{view.menu.container}
+		view.container.Layout = layout.NewBorderLayout(view.compactHeader, nil, nil, nil)
+		view.container.Objects = view.compactObjects
 	} else {
+		view.container.Layout = layout.NewVBoxLayout()
 		view.container.Objects = view.fullObjects
 	}
 	view.container.Refresh()
@@ -57,6 +68,7 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 	groupTabs.Hide()
 
 	var setCompact func(bool)
+	var newBattleContainer *fyne.Container
 	newGroupButton := widget.NewButtonWithIcon("New Battle Group", theme.ContentAddIcon(), func() {
 		groupNameEntry := widget.NewEntry()
 		groupNameEntry.SetPlaceHolder("Group Name")
@@ -73,8 +85,10 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 			}
 
 			var newTabItem *container.TabItem
+			var newGroupView *battleGroupView
 			newGroupView, stopChan := newBatttleGroupContainer(games.New(gamesCheckGroup.Selected), games, func(id int) func() {
 				return func() {
+					newGroupView.close()
 					delete(battleGroups.stopChans, id)
 					delete(battleGroups.views, id)
 
@@ -89,6 +103,21 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 				}
 			}(id), func() {
 				setCompact(false)
+			}, func() {
+				if !battleGroups.compact || window.Content() == nil {
+					return
+				}
+				for _, view := range battleGroups.views {
+					view.container.Refresh()
+				}
+				groupTabs.Refresh()
+				newBattleContainer.Refresh()
+				currentContent := window.Content()
+				currentContent.Refresh()
+				compactSize := currentContent.MinSize()
+				compactSize.Width = fyne.Max(compactSize.Width, compactWindowMinimumWidth)
+				window.SetContent(currentContent)
+				window.Resize(compactSize)
 			})
 			battleGroups.stopChans[id] = stopChan
 			battleGroups.views[id] = newGroupView
@@ -113,7 +142,7 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 		gamesSelectorDialog.Show()
 	})
 
-	newBattleContainer := container.NewBorder(nil, newGroupButton, nil, nil, groupTabs)
+	newBattleContainer = container.NewBorder(nil, newGroupButton, nil, nil, groupTabs)
 	setCompact = func(compact bool) {
 		battleGroups.compact = compact
 		for _, view := range battleGroups.views {
@@ -145,7 +174,7 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 	return newBattleContainer, battleGroups
 }
 
-func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, restoreFullView func()) (groupView *battleGroupView, sharedStopChan chan bool) {
+func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, restoreFullView, resizeCollapsedView func()) (groupView *battleGroupView, sharedStopChan chan bool) {
 	manaChecker := battle.NewManaChecker()
 	sharedStopChan = make(chan bool, len(games))
 	workers := battle.CreateWorkers(games, r.getGameDir, manaChecker, new(atomic.Bool), sharedStopChan, new(sync.WaitGroup))
@@ -166,9 +195,14 @@ func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, re
 		destroy:         destroy,
 		restoreFullView: restoreFullView,
 	})
+	navigation := newBattleNavigationView(games, allGames, r.getGameDir, resizeCollapsedView)
 
-	groupView = newBattleGroupView(menu, gameWidget)
+	groupView = newBattleGroupView(menu, navigation, gameWidget)
 	return groupView, sharedStopChan
+}
+
+func (view *battleGroupView) close() {
+	view.navigation.close()
 }
 
 func stop(stopChan chan bool) {
@@ -182,5 +216,8 @@ func stop(stopChan chan bool) {
 func (bgs *BattleGroups) stopAll() {
 	for k := range bgs.stopChans {
 		stop(bgs.stopChans[k])
+	}
+	for _, view := range bgs.views {
+		view.close()
 	}
 }
