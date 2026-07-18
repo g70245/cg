@@ -113,3 +113,29 @@ func RGBAAreaContainsColor(capture *image.RGBA, originX, originY, destinationX, 
 
 	return false
 }
+
+func RGBAFindColor(capture *image.RGBA, originX, originY, destinationX, destinationY int32, expectedColor win.COLORREF, granularity int32) (int32, int32, bool) {
+	if capture == nil || originX > destinationX || originY > destinationY || granularity <= 0 {
+		return 0, 0, false
+	}
+
+	bounds := capture.Bounds()
+	expectedRed := byte(expectedColor)
+	expectedGreen := byte(expectedColor >> 8)
+	expectedBlue := byte(expectedColor >> 16)
+
+	for x := originX; x <= destinationX; x += granularity {
+		for y := originY; y <= destinationY; y += granularity {
+			if !image.Pt(int(x), int(y)).In(bounds) {
+				continue
+			}
+
+			offset := capture.PixOffset(int(x), int(y))
+			if capture.Pix[offset] == expectedRed && capture.Pix[offset+1] == expectedGreen && capture.Pix[offset+2] == expectedBlue {
+				return x, y, true
+			}
+		}
+	}
+
+	return 0, 0, false
+}

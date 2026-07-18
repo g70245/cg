@@ -1,11 +1,13 @@
 package battle
 
 import (
+	"image"
+	"log"
+	"slices"
+	"time"
+
 	"cg/game"
 	"cg/internal"
-	"slices"
-
-	"time"
 
 	"github.com/g70245/win"
 )
@@ -67,34 +69,53 @@ func (s *ActionState) isPetActionSuccessful() bool {
 
 func (s *ActionState) getSkillWindowPos() (int32, int32, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
-	x := BATTLE_WINDOW_SKILL_FIRST.X
-	for x <= 164 {
-		y := BATTLE_WINDOW_SKILL_FIRST.Y
-		for y <= 232 {
-			if internal.GetColor(s.hWnd, x, y) == BATTLE_WINDOW_SKILL_FIRST.Color {
-				return x, y, true
-			}
-			y += 2
-		}
-		x += 2
+	capture, err := internal.CaptureClientArea(s.hWnd, 0, 0, game.GAME_WIDTH, game.GAME_HEIGHT)
+	if err != nil {
+		log.Printf("# Handle %v cannot capture battle skill window for position detection: %v", s.hWnd, err)
+		return 0, 0, false
 	}
-	return 0, 0, false
+
+	return getSkillWindowPosFromCapture(capture)
 }
 
 func (s *ActionState) getInventoryPos() (int32, int32, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
-	x := BATTLE_INVENTORY_MONEY_PIVOT.X
-	for x <= BATTLE_INVENTORY_MONEY_PIVOT.X+50 {
-		y := BATTLE_INVENTORY_MONEY_PIVOT.Y
-		for y <= BATTLE_INVENTORY_MONEY_PIVOT.Y+50 {
-			if internal.GetColor(s.hWnd, x, y) == BATTLE_INVENTORY_MONEY_PIVOT.Color {
-				return x - 78, y + 20, true
-			}
-			y += 2
-		}
-		x += 2
+	capture, err := internal.CaptureClientArea(s.hWnd, 0, 0, game.GAME_WIDTH, game.GAME_HEIGHT)
+	if err != nil {
+		log.Printf("# Handle %v cannot capture battle inventory window for position detection: %v", s.hWnd, err)
+		return 0, 0, false
 	}
-	return 0, 0, false
+
+	return getInventoryPosFromCapture(capture)
+}
+
+func getSkillWindowPosFromCapture(capture *image.RGBA) (int32, int32, bool) {
+	return internal.RGBAFindColor(
+		capture,
+		BATTLE_WINDOW_SKILL_FIRST.X,
+		BATTLE_WINDOW_SKILL_FIRST.Y,
+		164,
+		232,
+		BATTLE_WINDOW_SKILL_FIRST.Color,
+		1,
+	)
+}
+
+func getInventoryPosFromCapture(capture *image.RGBA) (int32, int32, bool) {
+	x, y, found := internal.RGBAFindColor(
+		capture,
+		BATTLE_INVENTORY_MONEY_PIVOT.X,
+		BATTLE_INVENTORY_MONEY_PIVOT.Y,
+		BATTLE_INVENTORY_MONEY_PIVOT.X+50,
+		BATTLE_INVENTORY_MONEY_PIVOT.Y+50,
+		BATTLE_INVENTORY_MONEY_PIVOT.Color,
+		1,
+	)
+	if !found {
+		return 0, 0, false
+	}
+
+	return x - 78, y + 20, true
 }
 
 func (s *ActionState) isInventoryStuck() bool {
