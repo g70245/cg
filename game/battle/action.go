@@ -229,11 +229,11 @@ func (s *ActionState) executeCharacterStateMachine() {
 			s.isCharacterHanging = true
 			s.currentCU = controlunit.Repeat
 		case character.Bomb:
-			var bomb items.Item
-			for i := range items.Bombs.List {
-				if items.Bombs.List[i].Name == s.CharacterActions[s.currentCharacterActionId].Param {
-					bomb = items.Bombs.List[i]
-				}
+			bomb, ok := items.FindBomb(s.CharacterActions[s.currentCharacterActionId].Param)
+			if !ok {
+				s.logH("has an invalid bomb configuration")
+				s.setFailureState(role.Character)
+				break
 			}
 
 			if bomb == items.I_B_9A && len(s.enemies) < 4 {

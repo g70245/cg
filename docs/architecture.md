@@ -114,7 +114,7 @@ cg/
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
 | `game/instance.go` | Represents discovered windows as `Games map[string]win.HWND`. | Initial keys are decimal handle strings; UI aliases mutate this map in memory only. |
 | `game/operation.go` | Provides timed, game-level input operations such as opening windows, using skills, and using items. | Delegates to `internal/message.go`. |
-| `game/detection.go` | Shared scene, inventory, item, map-name, and map-position detection. | Uses fixed pixels and fixed memory addresses. |
+| `game/detection.go` | Shared scene, inventory, item, map-name, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
 | `game/log.go` | Searches recent Big5 game logs for time-bounded phrases. | Does not expose errors to callers. |
 | `game/battle/` | Implements battle actions, control units, target selection, health/mana checks, movement, and worker scheduling. | Dominated by `ActionState` and `Worker`. |
 | `game/production/` | Implements material unpacking, production-state detection, inventory tidying, and worker scheduling. | Operates by fixed coordinates and colors. |
@@ -310,6 +310,8 @@ flowchart TD
 ```
 
 `ActionState` transforms configured action records into mouse/key operations. It detects stages and results by pixels, changes action IDs according to `StartOver`, `Continue`, `Repeat`, or `Jump`, and resets IDs after battle. Targeting and healing inspect fixed player/enemy coordinates. Movement reads current map coordinates from process memory and clicks a point around the 640×480 center.
+
+Bomb and potion actions locate items by capturing the current 640×480 client area once and scanning the 5×4 inventory slots at single-pixel granularity in the resulting RGBA buffer. The scan preserves the existing slot order and skips a slot when it encounters the disabled-item color. If client-area capture fails, item lookup logs the failure and falls back to the existing per-pixel window scan with the previous granularity of two for bombs and three for potions.
 
 The optional Flawless Pet checker runs after enemy detection and before mana and action processing. For each detected enemy, it scans the inclusive 65×29 area from `(X-38, Y-10)` through `(X+26, Y+18)` for the configured sparkle color. This area covers the moving, blinking star effect rather than a fixed monster-body pixel. The checker performs five complete scans separated by 50 ms, with no delay after the final attempt. Each attempt captures the current 640×480 client area once and scans every detected enemy region in the resulting RGBA buffer; out-of-bounds region coordinates are clipped to the image. If capture fails, that attempt falls back to the existing per-pixel window scan and later attempts retry capture. A match starts the repeating audio alert and keeps that window out of its battle action state machines until the battle scene ends or the worker is stopped.
 

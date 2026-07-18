@@ -1,6 +1,8 @@
 package items
 
 import (
+	"fmt"
+
 	"cg/game/enum"
 
 	"github.com/g70245/win"
@@ -11,9 +13,28 @@ type Item struct {
 	Color win.COLORREF
 }
 
+func (i Item) String() string {
+	return i.Name
+}
+
 var (
 	I_B_7B = Item{"7B", COLOR_ITEM_BOMB_7B}
 	I_B_8B = Item{"8B", COLOR_ITEM_BOMB_8B}
 	I_B_9A = Item{"9A", COLOR_ITEM_BOMB_9A}
 	Bombs  = enum.GenericEnum[Item]{List: []Item{I_B_7B, I_B_8B, I_B_9A}}
 )
+
+func FindBomb(param string) (Item, bool) {
+	for i := range Bombs.List {
+		bomb := Bombs.List[i]
+		if param == bomb.Name || param == legacyItemParam(bomb) {
+			return bomb, true
+		}
+	}
+
+	return Item{}, false
+}
+
+func legacyItemParam(item Item) string {
+	return fmt.Sprintf("{%s %d}", item.Name, item.Color)
+}

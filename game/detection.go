@@ -1,6 +1,9 @@
 package game
 
 import (
+	"image"
+	"log"
+
 	"cg/game/items"
 	"cg/internal"
 
@@ -114,8 +117,22 @@ func IsInventorySlotFree(hWnd win.HWND, px, py int32) bool {
 	return true
 }
 
-func GetItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+func GetItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, fallbackGranularity int32) (int32, int32, bool) {
 	internal.MoveCursorToNowhere(hWnd)
+
+	capture, err := internal.CaptureClientArea(hWnd, 0, 0, GAME_WIDTH, GAME_HEIGHT)
+	if err == nil {
+		return getItemPosFromCapture(capture, px, py, color, 1)
+	}
+
+	log.Printf("# Handle %v cannot capture client area for item detection: %v; using pixel fallback", hWnd, err)
+	return getItemPosFromWindow(hWnd, px, py, color, fallbackGranularity)
+}
+
+func getItemPosFromCapture(capture *image.RGBA, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+	if capture == nil || granularity <= 0 {
+		return 0, 0, false
+	}
 
 	x := px
 	y := py
@@ -123,7 +140,53 @@ func GetItemPos(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int
 
 	for j = 0; j < 4; j++ {
 		for i = 0; i < 5; i++ {
-			if tx, ty, found := searchSlotForColor(hWnd, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
+			if tx, ty, found := searchCapturedSlotForColor(capture, x+i*ITEM_COL_LEN, y+j*ITEM_COL_LEN, color, granularity); found {
+				return tx, ty, found
+			}
+		}
+	}
+
+	return 0, 0, false
+}
+
+func searchCapturedSlotForColor(capture *image.RGBA, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+	bounds := capture.Bounds()
+	expectedRed := byte(color)
+	expectedGreen := byte(color >> 8)
+	expectedBlue := byte(color >> 16)
+	disabledRed := byte(items.COLOR_ITEM_CAN_NOT_BE_USED)
+	disabledGreen := byte(items.COLOR_ITEM_CAN_NOT_BE_USED >> 8)
+	disabledBlue := byte(items.COLOR_ITEM_CAN_NOT_BE_USED >> 16)
+
+	for x := px; x < px+30; x += granularity {
+		for y := py; y < py+30; y += granularity {
+			if !image.Pt(int(x), int(y)).In(bounds) {
+				continue
+			}
+
+			offset := capture.PixOffset(int(x), int(y))
+			red := capture.Pix[offset]
+			green := capture.Pix[offset+1]
+			blue := capture.Pix[offset+2]
+			if red == expectedRed && green == expectedGreen && blue == expectedBlue {
+				return x, y, true
+			} else if red == disabledRed && green == disabledGreen && blue == disabledBlue {
+				return 0, 0, false
+			}
+		}
+	}
+	return 0, 0, false
+}
+
+func getItemPosFromWindow(hWnd win.HWND, px, py int32, color win.COLORREF, granularity int32) (int32, int32, bool) {
+	if granularity <= 0 {
+		return 0, 0, false
+	}
+
+	var i, j int32
+	for j = 0; j < 4; j++ {
+		for i = 0; i < 5; i++ {
+			if tx, ty, found := searchSlotForColor(hWnd, px+i*ITEM_COL_LEN, py+j*ITEM_COL_LEN, color, granularity); found {
 				return tx, ty, found
 			}
 		}
