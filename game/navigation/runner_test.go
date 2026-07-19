@@ -50,24 +50,99 @@ func TestRunnerMovesToExitAndStopsAfterLeavingMaze(t *testing.T) {
 	}
 }
 
-func TestTraversalStatePreservesEntryPassageUntilFloorChanges(t *testing.T) {
+func TestRunnerStopsAndAlertsBeforeMovementWhenVerificationIsTriggered(t *testing.T) {
+	reads := 0
+	moves := 0
+	alerts := 0
+	var statuses []string
+	runner := Runner{
+		PollInterval: time.Millisecond,
+		ReadSnapshot: func() (MovementSnapshot, error) {
+			reads++
+			return MovementSnapshot{}, nil
+		},
+		CanMove: func() bool { return true },
+		Move:    func(Point) { moves++ },
+		VerificationTriggered: func() bool {
+			return true
+		},
+		OnVerification: func() { alerts++ },
+	}
+	if err := runner.Run(make(chan struct{}), StairUp, func(status string) {
+		statuses = append(statuses, status)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if reads != 0 || moves != 0 {
+		t.Fatalf("reads = %d moves = %d, want no snapshot or movement after verification", reads, moves)
+	}
+	if alerts != 1 {
+		t.Fatalf("alerts = %d, want 1", alerts)
+	}
+	if !containsStatus(statuses, StatusVerification) {
+		t.Fatalf("statuses = %v, want %q", statuses, StatusVerification)
+	}
+}
+
+func TestRunnerStopsMidRouteWhenVerificationIsTriggered(t *testing.T) {
+	data := walkableMap(3, 1)
+	data.Stairs = []Stair{{East: 2, Type: StairUp}}
+	snapshot := MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}
+	checks := 0
+	reads := 0
+	alerts := 0
+	var moves []Point
+	runner := Runner{
+		PollInterval:         time.Millisecond,
+		VerificationInterval: time.Nanosecond,
+		SegmentSteps:         1,
+		ReadSnapshot: func() (MovementSnapshot, error) {
+			reads++
+			return snapshot, nil
+		},
+		CanMove: func() bool { return true },
+		Move: func(delta Point) {
+			moves = append(moves, delta)
+			snapshot.Position = Point{East: 1}
+		},
+		VerificationTriggered: func() bool {
+			checks++
+			return checks == 2
+		},
+		OnVerification: func() { alerts++ },
+	}
+	if err := runner.Run(make(chan struct{}), StairUp, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(moves, []Point{{East: 1}}) {
+		t.Fatalf("moves = %v, want one move before verification", moves)
+	}
+	if reads != 1 {
+		t.Fatalf("snapshot reads = %d, want 1 before verification", reads)
+	}
+	if alerts != 1 {
+		t.Fatalf("alerts = %d, want 1", alerts)
+	}
+}
+
+func TestTraversalStatePreservesEntryTransitionUntilFloorChanges(t *testing.T) {
 	state := &TraversalState{}
 	entry := Stair{East: 1, Type: StairPassage}
 	newExit := Stair{East: 4, Type: StairPassage}
 
-	first := state.BeginFloor(699, Point{}, []Stair{entry})
-	second := state.BeginFloor(699, Point{}, []Stair{entry, newExit})
+	first := state.BeginFloor(699, "Floor 1", Point{}, []Stair{entry}, StairUp, false)
+	second := state.BeginFloor(699, "Floor 1", Point{}, []Stair{entry, newExit}, StairUp, false)
 	if !first[Point{East: 1}] || !second[Point{East: 1}] || second[Point{East: 4}] {
 		t.Fatalf("same-floor entry passages changed: first %v second %v", first, second)
 	}
 
-	third := state.BeginFloor(700, Point{East: 3}, []Stair{newExit})
+	third := state.BeginFloor(699, "Floor 2", Point{East: 3}, []Stair{newExit}, StairUp, true)
 	if third[Point{East: 1}] || !third[Point{East: 4}] {
 		t.Fatalf("new-floor entry passages = %v", third)
 	}
 
 	state.Reset()
-	reset := state.BeginFloor(700, Point{}, []Stair{entry})
+	reset := state.BeginFloor(699, "Floor 2", Point{}, []Stair{entry}, StairUp, false)
 	if !reset[Point{East: 1}] || reset[Point{East: 4}] {
 		t.Fatalf("reset entry passages = %v", reset)
 	}
@@ -76,9 +151,66 @@ func TestTraversalStatePreservesEntryPassageUntilFloorChanges(t *testing.T) {
 func TestTraversalStateDoesNotRememberDistantPassageAsFloorEntry(t *testing.T) {
 	state := &TraversalState{}
 	passage := Stair{East: 5, South: 5, Type: StairPassage}
-	entry := state.BeginFloor(699, Point{}, []Stair{passage})
+	entry := state.BeginFloor(699, "Floor 1", Point{}, []Stair{passage}, StairUp, false)
 	if entry[Point{East: 5, South: 5}] {
 		t.Fatalf("distant Passage was remembered as floor entry: %v", entry)
+	}
+}
+
+func TestTraversalStateScopesAutomaticEntryToArrivalDirection(t *testing.T) {
+	state := &TraversalState{}
+	entryPoint := Point{}
+	stairs := []Stair{{Type: StairDown}}
+
+	sameDirection := state.BeginFloor(699, "Floor 1", entryPoint, stairs, StairUp, true)
+	if !sameDirection[entryPoint] {
+		t.Fatalf("same-direction entry was not blocked: %v", sameDirection)
+	}
+	reversed := state.BeginFloor(699, "Floor 1", entryPoint, stairs, StairDown, false)
+	if reversed[entryPoint] || len(reversed) != 0 {
+		t.Fatalf("reversed direction still blocked entry: %v", reversed)
+	}
+	restored := state.BeginFloor(699, "Floor 1", entryPoint, stairs, StairUp, false)
+	if !restored[entryPoint] {
+		t.Fatalf("original direction did not restore entry block: %v", restored)
+	}
+}
+
+func TestRunnerUsesKnownEntryAfterDirectionReversal(t *testing.T) {
+	data := walkableMap(3, 1)
+	data.Stairs = []Stair{
+		{Type: StairDown},
+		{East: 2, Type: StairUp},
+	}
+	state := &TraversalState{}
+	state.BeginFloor(699, "Floor 1", Point{}, data.Stairs, StairUp, true)
+	snapshot := MovementSnapshot{
+		MapCode:         699,
+		MapName:         "Floor 1",
+		Position:        Point{East: 2},
+		PositionSettled: true,
+		Map:             data,
+		InMaze:          true,
+	}
+	var moves []Point
+	runner := Runner{
+		State:        state,
+		PollInterval: time.Millisecond,
+		ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+		CanMove:      func() bool { return true },
+		Move: func(delta Point) {
+			moves = append(moves, delta)
+			snapshot.Position = Point{}
+			snapshot.MapCode = 1401
+			snapshot.MapName = "Outside"
+			snapshot.InMaze = false
+		},
+	}
+	if err := runner.Run(make(chan struct{}), StairDown, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(moves, []Point{{East: -2}}) {
+		t.Fatalf("moves = %v, want known Down entry after reversing direction", moves)
 	}
 }
 
@@ -89,7 +221,7 @@ func TestRunnerUsesNewPassageButNotRememberedEntry(t *testing.T) {
 		{East: 2, Type: StairPassage},
 	}
 	state := &TraversalState{}
-	state.BeginFloor(699, Point{}, data.Stairs[:1])
+	state.BeginFloor(699, "Floor 1", Point{}, data.Stairs[:1], StairUp, false)
 	snapshot := MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}
 	var moves []Point
 	runner := Runner{
@@ -137,6 +269,181 @@ func TestRunnerUsesDistantPassageAlreadyVisibleOnFloorEntry(t *testing.T) {
 	}
 }
 
+func TestRunnerAvoidsSameTypeEntryTransitionAfterFloorChange(t *testing.T) {
+	for _, targetType := range []StairType{StairUp, StairDown} {
+		t.Run(string(targetType), func(t *testing.T) {
+			firstFloor := walkableMap(2, 1)
+			firstFloor.Stairs = []Stair{{East: 1, Type: targetType}}
+			secondFloor := walkableMap(3, 1)
+			secondFloor.Stairs = []Stair{
+				{Type: targetType},
+				{East: 2, Type: targetType},
+			}
+			snapshot := MovementSnapshot{MapCode: 699, MapName: "Floor 1", PositionSettled: true, Map: firstFloor, InMaze: true}
+			var moves []Point
+			runner := Runner{
+				State:        &TraversalState{},
+				PollInterval: time.Millisecond,
+				ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+				CanMove:      func() bool { return true },
+				Move: func(delta Point) {
+					moves = append(moves, delta)
+					switch len(moves) {
+					case 1:
+						snapshot.MapName = "Floor 2"
+						snapshot.Position = Point{}
+						snapshot.Map = secondFloor
+					case 2:
+						snapshot.MapCode = 1401
+						snapshot.Position = Point{East: 2}
+						snapshot.InMaze = false
+					default:
+						t.Fatalf("unexpected extra move: %v", moves)
+					}
+				},
+			}
+			if err := runner.Run(make(chan struct{}), targetType, nil); err != nil {
+				t.Fatal(err)
+			}
+			want := []Point{{East: 1}, {East: 2}}
+			if !reflect.DeepEqual(moves, want) {
+				t.Fatalf("moves = %v, want entry transition skipped and other %s used: %v", moves, targetType, want)
+			}
+		})
+	}
+}
+
+func TestRunnerReturnsAfterWrongDuplicateExitAndTriesOtherCandidate(t *testing.T) {
+	for _, targetType := range []StairType{StairUp, StairDown} {
+		t.Run(string(targetType), func(t *testing.T) {
+			probeType := oppositeStairType(targetType)
+			exitFloor := walkableMap(3, 1)
+			exitFloor.Stairs = []Stair{
+				{Type: probeType},
+				{East: 2, Type: probeType},
+			}
+			returnFloor := walkableMap(3, 1)
+			returnFloor.Stairs = []Stair{
+				{Type: targetType},
+				{East: 2, Type: probeType},
+			}
+			snapshot := MovementSnapshot{MapCode: 699, MapName: "Exit Floor", PositionSettled: true, Map: exitFloor, InMaze: true}
+			var moves []Point
+			runner := Runner{
+				State:        &TraversalState{},
+				PollInterval: time.Millisecond,
+				ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+				CanMove:      func() bool { return true },
+				Move: func(delta Point) {
+					moves = append(moves, delta)
+					switch len(moves) {
+					case 1:
+						snapshot.Position = Point{East: 1}
+					case 2:
+						snapshot.Position = Point{}
+						snapshot.MapName = "Return Floor"
+						snapshot.Map = returnFloor
+					case 3:
+						snapshot.Position = Point{East: 1}
+					case 4:
+						snapshot.Position = Point{}
+						snapshot.MapName = "Exit Floor"
+						snapshot.Map = exitFloor
+					case 5:
+						snapshot.Position = Point{East: 2}
+						snapshot.MapCode = 1401
+						snapshot.MapName = "Outside"
+						snapshot.InMaze = false
+					default:
+						t.Fatalf("unexpected extra move: %v", moves)
+					}
+				},
+			}
+			if err := runner.Run(make(chan struct{}), targetType, nil); err != nil {
+				t.Fatal(err)
+			}
+			want := []Point{{East: 1}, {East: -1}, {East: 1}, {East: -1}, {East: 2}}
+			if !reflect.DeepEqual(moves, want) {
+				t.Fatalf("moves = %v, want probe, automatic return, and other exit %v", moves, want)
+			}
+		})
+	}
+}
+
+func TestRunnerPrefersPassageOverDuplicateOppositeExit(t *testing.T) {
+	data := walkableMap(5, 1)
+	data.Stairs = []Stair{
+		{East: 2, Type: StairPassage},
+		{East: 3, Type: StairUp},
+		{East: 4, Type: StairUp},
+	}
+	snapshot := MovementSnapshot{MapCode: 699, MapName: "Floor 1", PositionSettled: true, Map: data, InMaze: true}
+	var moves []Point
+	runner := Runner{
+		PollInterval: time.Millisecond,
+		ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+		CanMove:      func() bool { return true },
+		Move: func(delta Point) {
+			moves = append(moves, delta)
+			snapshot.Position = Point{East: 2}
+			snapshot.MapCode = 1401
+			snapshot.MapName = "Outside"
+			snapshot.InMaze = false
+		},
+	}
+	if err := runner.Run(make(chan struct{}), StairDown, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(moves, []Point{{East: 2}}) {
+		t.Fatalf("moves = %v, want Passage before duplicate Up exit", moves)
+	}
+}
+
+func TestRunnerPrefersSelectedDirectionOverDuplicateOppositeExit(t *testing.T) {
+	data := walkableMap(4, 1)
+	data.Stairs = []Stair{
+		{East: 1, Type: StairDown},
+		{East: 2, Type: StairUp},
+		{East: 3, Type: StairUp},
+	}
+	snapshot := MovementSnapshot{MapCode: 699, MapName: "Floor 1", PositionSettled: true, Map: data, InMaze: true}
+	var moves []Point
+	runner := Runner{
+		PollInterval: time.Millisecond,
+		ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+		CanMove:      func() bool { return true },
+		Move: func(delta Point) {
+			moves = append(moves, delta)
+			snapshot.Position = Point{East: 1}
+			snapshot.MapCode = 1401
+			snapshot.MapName = "Outside"
+			snapshot.InMaze = false
+		},
+	}
+	if err := runner.Run(make(chan struct{}), StairDown, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(moves, []Point{{East: 1}}) {
+		t.Fatalf("moves = %v, want selected Down before duplicate Up exit", moves)
+	}
+}
+
+func TestTraversalStateClearExitAttemptsPreservesEntry(t *testing.T) {
+	state := &TraversalState{}
+	entryPoint := Point{East: 1}
+	state.BeginFloor(699, "Floor 1", Point{}, []Stair{{East: 1, Type: StairPassage}}, StairUp, false)
+	state.MarkExitAttempt(699, "Floor 1", Point{East: 2})
+	state.ClearExitAttempts()
+
+	if len(state.AttemptedExits(699, "Floor 1")) != 0 {
+		t.Fatalf("attempted exits were not cleared: %v", state.AttemptedExits(699, "Floor 1"))
+	}
+	entry := state.BeginFloor(699, "Floor 1", Point{}, nil, StairUp, false)
+	if !entry[entryPoint] {
+		t.Fatalf("entry memory was cleared with exit attempts: %v", entry)
+	}
+}
+
 func TestRunnerPrefersSelectedStairOverNewPassage(t *testing.T) {
 	data := walkableMap(3, 1)
 	data.Stairs = []Stair{
@@ -145,7 +452,7 @@ func TestRunnerPrefersSelectedStairOverNewPassage(t *testing.T) {
 		{East: 2, Type: StairPassage},
 	}
 	state := &TraversalState{}
-	state.BeginFloor(699, Point{}, data.Stairs[:1])
+	state.BeginFloor(699, "Floor 1", Point{}, data.Stairs[:1], StairDown, false)
 	snapshot := MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}
 	var moves []Point
 	runner := Runner{
@@ -406,6 +713,46 @@ func TestRunnerStepsOffSelectedStairThenReenters(t *testing.T) {
 	}
 }
 
+func TestRunnerStepsOffRememberedSelectedEntryThenReentersOnNewPlay(t *testing.T) {
+	for _, targetType := range []StairType{StairUp, StairDown} {
+		t.Run(string(targetType), func(t *testing.T) {
+			data := walkableMap(2, 1)
+			data.Stairs = []Stair{{Type: targetType}}
+			state := &TraversalState{}
+			state.BeginFloor(699, "Floor 1", Point{}, data.Stairs, targetType, true)
+			snapshot := MovementSnapshot{MapCode: 699, MapName: "Floor 1", PositionSettled: true, Map: data, InMaze: true}
+			var moves []Point
+			runner := Runner{
+				State:        state,
+				PollInterval: time.Millisecond,
+				ReadSnapshot: func() (MovementSnapshot, error) { return snapshot, nil },
+				CanMove:      func() bool { return true },
+				Move: func(delta Point) {
+					moves = append(moves, delta)
+					switch len(moves) {
+					case 1:
+						snapshot.Position = Point{East: 1}
+					case 2:
+						snapshot.Position = Point{}
+						snapshot.MapCode = 1401
+						snapshot.MapName = "Outside"
+						snapshot.InMaze = false
+					default:
+						t.Fatalf("unexpected extra move: %v", moves)
+					}
+				},
+			}
+			if err := runner.Run(make(chan struct{}), targetType, nil); err != nil {
+				t.Fatal(err)
+			}
+			want := []Point{{East: 1}, {East: -1}}
+			if !reflect.DeepEqual(moves, want) {
+				t.Fatalf("moves = %v, want explicit new-Play re-entry %v", moves, want)
+			}
+		})
+	}
+}
+
 func TestRunnerAutomaticallyRetriesAfterTransientBlock(t *testing.T) {
 	data := walkableMap(2, 1)
 	data.Stairs = []Stair{{East: 1, Type: StairUp}}
@@ -484,9 +831,9 @@ func TestRunnerFallsBackThroughMonsterInOnlyCorridor(t *testing.T) {
 	}
 }
 
-func TestRunnerSendsOneEightCellStraightWaypoint(t *testing.T) {
-	data := walkableMap(9, 1)
-	data.Stairs = []Stair{{East: 8, Type: StairUp}}
+func TestRunnerSendsOneSixCellStraightWaypoint(t *testing.T) {
+	data := walkableMap(7, 1)
+	data.Stairs = []Stair{{East: 6, Type: StairUp}}
 	snapshot := MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}
 	var moves []Point
 	runner := Runner{
@@ -495,7 +842,7 @@ func TestRunnerSendsOneEightCellStraightWaypoint(t *testing.T) {
 		CanMove:      func() bool { return true },
 		Move: func(delta Point) {
 			moves = append(moves, delta)
-			snapshot.Position = Point{East: 8}
+			snapshot.Position = Point{East: 6}
 			snapshot.MapCode = 1401
 			snapshot.InMaze = false
 		},
@@ -503,8 +850,8 @@ func TestRunnerSendsOneEightCellStraightWaypoint(t *testing.T) {
 	if err := runner.Run(make(chan struct{}), StairUp, nil); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(moves, []Point{{East: 8}}) {
-		t.Fatalf("moves = %v, want one eight-cell waypoint", moves)
+	if !reflect.DeepEqual(moves, []Point{{East: 6}}) {
+		t.Fatalf("moves = %v, want one six-cell waypoint", moves)
 	}
 }
 

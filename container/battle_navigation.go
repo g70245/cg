@@ -5,6 +5,7 @@ import (
 	"cg/game/battle"
 	"cg/game/enum/movement"
 	"cg/game/navigation"
+	"cg/utils"
 	"fmt"
 	"image/color"
 	"math"
@@ -32,6 +33,11 @@ type navigationSnapshot struct {
 	routes      []navigation.Route
 }
 
+type navigationFloorIdentity struct {
+	code uint32
+	name string
+}
+
 type battleNavigationView struct {
 	container         *fyne.Container
 	controls          *fyne.Container
@@ -54,16 +60,21 @@ type battleNavigationView struct {
 	routesMu              sync.RWMutex
 	routes                []string
 
-	games        game.Games
-	allGames     game.Games
-	gameDir      func() string
-	readSnapshot func(win.HWND) (navigationSnapshot, error)
-	newRunner    func(win.HWND) navigation.Runner
-	closeWindows func(win.HWND)
-	interval     time.Duration
-	onCollapsed  func()
+	games               game.Games
+	allGames            game.Games
+	gameDir             func() string
+	readSnapshot        func(win.HWND) (navigationSnapshot, error)
+	newRunner           func(win.HWND) navigation.Runner
+	closeWindows        func(win.HWND)
+	beeperReady         func() bool
+	playBeeper          func()
+	stopBeeper          func()
+	notifyBeeperMissing func()
+	interval            time.Duration
+	onCollapsed         func()
 
 	mu               sync.Mutex
+	mapLoadMu        sync.Mutex
 	displayMu        sync.Mutex
 	scrollRevision   uint64
 	aliases          map[string]win.HWND
@@ -75,6 +86,7 @@ type battleNavigationView struct {
 	done             chan struct{}
 	cache            navigation.FileCache
 	resolver         navigation.PathResolver
+	mapIdentities    map[win.HWND]navigationFloorIdentity
 	workers          map[win.HWND]*battle.Worker
 	navigationStates map[win.HWND]*navigation.TraversalState
 	navigationCancel chan struct{}
@@ -93,11 +105,16 @@ func newBattleNavigationView(games, allGames game.Games, gameDir func() string, 
 		status:           binding.NewString(),
 		navigationStatus: binding.NewString(),
 		navigationStates: make(map[win.HWND]*navigation.TraversalState),
+		mapIdentities:    make(map[win.HWND]navigationFloorIdentity),
 		onCollapsed:      onCollapsed,
 	}
 	view.readSnapshot = view.loadSnapshot
 	view.newRunner = view.navigationRunner
 	view.closeWindows = game.CloseAllWindows
+	view.beeperReady = utils.Beeper.IsReady
+	view.playBeeper = utils.Beeper.Play
+	view.stopBeeper = utils.Beeper.Stop
+	view.notifyBeeperMissing = func() { notifyBeeperConfig("Navigation Setup") }
 	view.refreshAliases()
 
 	view.selector = widget.NewSelect(view.aliasOptions(), view.selectAlias)
@@ -111,6 +128,7 @@ func newBattleNavigationView(games, allGames game.Games, gameDir func() string, 
 	positionRow := container.NewHBox(positionLabel, view.navigationStatusLabel)
 	view.destination = widget.NewSelect([]string{string(navigation.StairUp), string(navigation.StairDown)}, func(selected string) {
 		view.stopNavigation(true)
+		view.clearNavigationExitAttempts()
 	})
 	view.destination.Selected = string(navigation.StairUp)
 	view.navigationButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), view.toggleNavigation)
@@ -412,6 +430,10 @@ func (view *battleNavigationView) toggleNavigation() {
 }
 
 func (view *battleNavigationView) startNavigation() {
+	status, _ := view.navigationStatus.Get()
+	if status == navigation.StatusVerification && view.stopBeeper != nil {
+		view.stopBeeper()
+	}
 	view.stopNavigation(true)
 	view.mu.Lock()
 	alias := view.selected
@@ -424,6 +446,13 @@ func (view *battleNavigationView) startNavigation() {
 	}
 	if worker != nil && worker.MovementMode() != movement.None {
 		view.setNavigationStatus("Disable battle movement first.")
+		return
+	}
+	if view.beeperReady == nil || !view.beeperReady() {
+		view.setNavigationStatus("Set alert music.")
+		if view.notifyBeeperMissing != nil {
+			view.notifyBeeperMissing()
+		}
 		return
 	}
 	view.closeWindows(hWnd)
@@ -475,6 +504,10 @@ func (view *battleNavigationView) navigationRunner(hWnd win.HWND) navigation.Run
 			game.MoveMapOffset(hWnd, delta.East, delta.South)
 		},
 		State: state,
+		VerificationTriggered: func() bool {
+			return game.IsVerificationTriggered(view.gameDir())
+		},
+		OnVerification: view.playBeeper,
 	}
 }
 
@@ -487,6 +520,18 @@ func (view *battleNavigationView) navigationState(hWnd win.HWND) *navigation.Tra
 	}
 	view.mu.Unlock()
 	return state
+}
+
+func (view *battleNavigationView) clearNavigationExitAttempts() {
+	view.mu.Lock()
+	states := make([]*navigation.TraversalState, 0, len(view.navigationStates))
+	for _, state := range view.navigationStates {
+		states = append(states, state)
+	}
+	view.mu.Unlock()
+	for _, state := range states {
+		state.ClearExitAttempts()
+	}
 }
 
 func (view *battleNavigationView) stopNavigation(clearStatus bool) chan struct{} {
@@ -580,7 +625,7 @@ func (view *battleNavigationView) routeSnapshot() []string {
 }
 
 func (view *battleNavigationView) loadSnapshot(hWnd win.HWND) (navigationSnapshot, error) {
-	_, path, data, position, err := view.loadMap(hWnd)
+	_, _, path, data, position, err := view.loadMap(hWnd)
 	if err != nil {
 		return navigationSnapshot{}, err
 	}
@@ -596,7 +641,7 @@ func (view *battleNavigationView) loadSnapshot(hWnd win.HWND) (navigationSnapsho
 }
 
 func (view *battleNavigationView) loadMovementSnapshot(hWnd win.HWND) (navigation.MovementSnapshot, error) {
-	code, path, data, position, err := view.loadMap(hWnd)
+	code, name, path, data, position, err := view.loadMap(hWnd)
 	if err != nil {
 		return navigation.MovementSnapshot{}, err
 	}
@@ -604,6 +649,7 @@ func (view *battleNavigationView) loadMovementSnapshot(hWnd win.HWND) (navigatio
 	roundedSouth := math.Round(position.Y)
 	return navigation.MovementSnapshot{
 		MapCode: code,
+		MapName: name,
 		Position: navigation.Point{
 			East:  int(roundedEast),
 			South: int(roundedSouth),
@@ -616,15 +662,56 @@ func (view *battleNavigationView) loadMovementSnapshot(hWnd win.HWND) (navigatio
 	}, nil
 }
 
-func (view *battleNavigationView) loadMap(hWnd win.HWND) (uint32, string, navigation.MapData, game.GamePos, error) {
+func (view *battleNavigationView) loadMap(hWnd win.HWND) (uint32, string, string, navigation.MapData, game.GamePos, error) {
+	view.mapLoadMu.Lock()
+	defer view.mapLoadMu.Unlock()
+
 	code := game.GetMapCode(hWnd)
+	name := game.GetMapName(hWnd)
+	identity := navigationFloorIdentity{code: code, name: name}
+	if view.mapIdentities == nil {
+		view.mapIdentities = make(map[win.HWND]navigationFloorIdentity)
+	}
+	previous, knownIdentity := view.mapIdentities[hWnd]
+	floorChanged := knownIdentity && previous != identity
+	if floorChanged {
+		view.cache.Invalidate()
+	}
 	path, err := view.resolver.Resolve(view.gameDir(), code)
 	if err != nil {
-		return 0, "", navigation.MapData{}, game.GamePos{}, err
+		return 0, "", "", navigation.MapData{}, game.GamePos{}, err
 	}
 	data, err := view.cache.Load(view.gameDir(), path)
 	if err != nil {
-		return 0, "", navigation.MapData{}, game.GamePos{}, err
+		return 0, "", "", navigation.MapData{}, game.GamePos{}, err
 	}
-	return code, path, data, game.GetCurrentGamePos(hWnd), nil
+	if game.GetMapCode(hWnd) != code || game.GetMapName(hWnd) != name {
+		view.cache.Invalidate()
+		return 0, "", "", navigation.MapData{}, game.GamePos{}, navigation.ErrMapUpdating
+	}
+	position := game.GetCurrentGamePos(hWnd)
+	if floorChanged && navigation.IsMazePath(view.gameDir(), path) && !hasNearbyTransition(data.Stairs, position) {
+		view.cache.Invalidate()
+		return 0, "", "", navigation.MapData{}, game.GamePos{}, navigation.ErrMapUpdating
+	}
+	view.mapIdentities[hWnd] = identity
+	return code, name, path, data, position, nil
+}
+
+func hasNearbyTransition(stairs []navigation.Stair, position game.GamePos) bool {
+	east := int(math.Round(position.X))
+	south := int(math.Round(position.Y))
+	for _, stair := range stairs {
+		if absInt(stair.East-east) <= 1 && absInt(stair.South-south) <= 1 {
+			return true
+		}
+	}
+	return false
+}
+
+func absInt(value int) int {
+	if value < 0 {
+		return -value
+	}
+	return value
 }

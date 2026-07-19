@@ -8,26 +8,32 @@ import (
 )
 
 const (
-	StatusLoading       = "Loading route data..."
-	StatusMoving        = "Moving"
-	StatusExploring     = "Exploring"
-	StatusPaused        = "Paused for battle"
-	StatusReplanning    = "Replanning"
-	StatusCompleted     = "Maze exit reached"
-	StatusUnavailable   = "Map data unavailable."
-	StatusBlocked       = "Movement blocked"
-	StatusNoExploration = "No unexplored route"
-	StatusNotInMaze     = "Not in a maze"
-	defaultPollInterval = 50 * time.Millisecond
-	defaultStepTimeout  = 300 * time.Millisecond
-	defaultRetryLimit   = 1
-	defaultSegmentSteps = 8
+	StatusLoading               = "Loading route data..."
+	StatusMoving                = "Moving"
+	StatusExploring             = "Exploring"
+	StatusPaused                = "Paused for battle"
+	StatusReplanning            = "Replanning"
+	StatusCompleted             = "Maze exit reached"
+	StatusUnavailable           = "Map data unavailable."
+	StatusBlocked               = "Movement blocked"
+	StatusNoExploration         = "No unexplored route"
+	StatusNotInMaze             = "Not in a maze"
+	StatusVerification          = "Verification required"
+	defaultPollInterval         = 50 * time.Millisecond
+	defaultVerificationInterval = 500 * time.Millisecond
+	defaultStepTimeout          = 300 * time.Millisecond
+	defaultRetryLimit           = 1
+	defaultSegmentSteps         = 6
 )
 
-var errRunnerConfiguration = errors.New("navigation runner is not configured")
+var (
+	ErrMapUpdating         = errors.New("navigation map data is updating")
+	errRunnerConfiguration = errors.New("navigation runner is not configured")
+)
 
 type MovementSnapshot struct {
 	MapCode         uint32
+	MapName         string
 	Position        Point
 	PositionSettled bool
 	ExactEast       float64
@@ -37,39 +43,86 @@ type MovementSnapshot struct {
 }
 
 type Runner struct {
-	ReadSnapshot func() (MovementSnapshot, error)
-	CanMove      func() bool
-	Move         func(Point)
-	State        *TraversalState
-	PollInterval time.Duration
-	StepTimeout  time.Duration
-	RetryLimit   int
-	SegmentSteps int
+	ReadSnapshot          func() (MovementSnapshot, error)
+	CanMove               func() bool
+	Move                  func(Point)
+	State                 *TraversalState
+	PollInterval          time.Duration
+	StepTimeout           time.Duration
+	RetryLimit            int
+	SegmentSteps          int
+	VerificationTriggered func() bool
+	OnVerification        func()
+	VerificationInterval  time.Duration
 }
 
 type TraversalState struct {
-	mu            sync.Mutex
-	initialized   bool
-	mapCode       uint32
-	entryPassages map[Point]bool
+	mu               sync.Mutex
+	initialized      bool
+	mapCode          uint32
+	mapName          string
+	entryTransitions map[Point]bool
+	entryIntent      StairType
+	directionalEntry bool
+	attemptedExits   map[floorIdentity]map[Point]bool
 }
 
-func (state *TraversalState) BeginFloor(mapCode uint32, position Point, stairs []Stair) map[Point]bool {
+type floorIdentity struct {
+	mapCode uint32
+	mapName string
+}
+
+func (state *TraversalState) BeginFloor(mapCode uint32, mapName string, position Point, stairs []Stair, targetType StairType, includeAllTypes bool) map[Point]bool {
 	state.mu.Lock()
 	defer state.mu.Unlock()
-	if !state.initialized || state.mapCode != mapCode {
+	if !state.initialized || state.mapCode != mapCode || state.mapName != mapName {
 		state.initialized = true
 		state.mapCode = mapCode
-		state.entryPassages = nearbyPassagePoints(stairs, position)
+		state.mapName = mapName
+		state.entryTransitions = nearbyEntryTransitionPoints(stairs, position, includeAllTypes)
+		state.entryIntent = targetType
+		state.directionalEntry = includeAllTypes
 	}
-	return clonePointSet(state.entryPassages)
+	if state.directionalEntry && state.entryIntent != targetType {
+		return map[Point]bool{}
+	}
+	return clonePointSet(state.entryTransitions)
 }
 
 func (state *TraversalState) Reset() {
 	state.mu.Lock()
 	state.initialized = false
 	state.mapCode = 0
-	state.entryPassages = nil
+	state.mapName = ""
+	state.entryTransitions = nil
+	state.entryIntent = ""
+	state.directionalEntry = false
+	state.attemptedExits = nil
+	state.mu.Unlock()
+}
+
+func (state *TraversalState) AttemptedExits(mapCode uint32, mapName string) map[Point]bool {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return clonePointSet(state.attemptedExits[floorIdentity{mapCode: mapCode, mapName: mapName}])
+}
+
+func (state *TraversalState) MarkExitAttempt(mapCode uint32, mapName string, point Point) {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	if state.attemptedExits == nil {
+		state.attemptedExits = make(map[floorIdentity]map[Point]bool)
+	}
+	identity := floorIdentity{mapCode: mapCode, mapName: mapName}
+	if state.attemptedExits[identity] == nil {
+		state.attemptedExits[identity] = make(map[Point]bool)
+	}
+	state.attemptedExits[identity][point] = true
+}
+
+func (state *TraversalState) ClearExitAttempts() {
+	state.mu.Lock()
+	state.attemptedExits = nil
 	state.mu.Unlock()
 }
 
@@ -81,6 +134,13 @@ type pendingStep struct {
 	lastEast     float64
 	lastSouth    float64
 	lastProgress time.Time
+	probe        *exitProbe
+}
+
+type exitProbe struct {
+	mapCode uint32
+	mapName string
+	point   Point
 }
 
 func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report func(string)) error {
@@ -109,6 +169,10 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 	if segmentSteps <= 0 {
 		segmentSteps = defaultSegmentSteps
 	}
+	verificationInterval := runner.VerificationInterval
+	if verificationInterval <= 0 {
+		verificationInterval = defaultVerificationInterval
+	}
 
 	report(StatusLoading)
 	ticker := time.NewTicker(interval)
@@ -116,19 +180,42 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 	blocked := make(map[Point]bool)
 	failures := make(map[Point]int)
 	completedFrontiers := make(map[Point]bool)
+	localExitAttempts := make(map[floorIdentity]map[Point]bool)
 	heading := Point{}
 	var currentCode uint32
+	var currentName string
 	var initialized bool
-	var entryPassages map[Point]bool
+	var entryTransitions map[Point]bool
+	var selectedEntryOverride map[Point]bool
 	var pending *pendingStep
+	var probeInFlight *exitProbe
+	var forcedProbe *exitProbe
 	arrivedTarget := false
 	recoveryUsed := false
 	lastStatus := ""
+	var lastVerificationCheck time.Time
 	reportStatus := func(status string) {
 		if status != lastStatus {
 			lastStatus = status
 			report(status)
 		}
+	}
+	attemptedExits := func(mapCode uint32, mapName string) map[Point]bool {
+		if runner.State != nil {
+			return runner.State.AttemptedExits(mapCode, mapName)
+		}
+		return clonePointSet(localExitAttempts[floorIdentity{mapCode: mapCode, mapName: mapName}])
+	}
+	markExitAttempt := func(probe *exitProbe) {
+		if runner.State != nil {
+			runner.State.MarkExitAttempt(probe.mapCode, probe.mapName, probe.point)
+			return
+		}
+		identity := floorIdentity{mapCode: probe.mapCode, mapName: probe.mapName}
+		if localExitAttempts[identity] == nil {
+			localExitAttempts[identity] = make(map[Point]bool)
+		}
+		localExitAttempts[identity][probe.point] = true
 	}
 
 	for {
@@ -137,25 +224,49 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 			return nil
 		case <-ticker.C:
 		}
+		now := time.Now()
+		if runner.VerificationTriggered != nil && (lastVerificationCheck.IsZero() || now.Sub(lastVerificationCheck) >= verificationInterval) {
+			lastVerificationCheck = now
+			if runner.VerificationTriggered() {
+				reportStatus(StatusVerification)
+				if runner.OnVerification != nil {
+					runner.OnVerification()
+				}
+				return nil
+			}
+		}
 
 		snapshot, err := runner.ReadSnapshot()
 		if err != nil {
-			reportStatus(StatusUnavailable)
+			if errors.Is(err, ErrMapUpdating) {
+				reportStatus(StatusLoading)
+			} else {
+				reportStatus(StatusUnavailable)
+			}
 			continue
 		}
 		if !snapshot.InMaze {
 			if runner.State != nil {
 				runner.State.Reset()
 			}
-			if initialized && snapshot.MapCode != currentCode {
+			if initialized && (snapshot.MapCode != currentCode || snapshot.MapName != currentName) {
 				reportStatus(StatusCompleted)
 				return nil
 			}
 			reportStatus(StatusNotInMaze)
 			return nil
 		}
-		if !initialized || snapshot.MapCode != currentCode {
+		if !initialized || snapshot.MapCode != currentCode || snapshot.MapName != currentName {
+			firstSnapshot := !initialized
+			floorChanged := initialized && (snapshot.MapCode != currentCode || snapshot.MapName != currentName)
+			arrivedFromProbe := floorChanged && probeInFlight != nil
+			if arrivedFromProbe {
+				markExitAttempt(probeInFlight)
+				probeInFlight = nil
+			}
+			forcedProbe = nil
 			currentCode = snapshot.MapCode
+			currentName = snapshot.MapName
 			initialized = true
 			pending = nil
 			blocked = make(map[Point]bool)
@@ -165,9 +276,13 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 			arrivedTarget = false
 			recoveryUsed = false
 			if runner.State != nil {
-				entryPassages = runner.State.BeginFloor(currentCode, snapshot.Position, snapshot.Map.Stairs)
+				entryTransitions = runner.State.BeginFloor(currentCode, currentName, snapshot.Position, snapshot.Map.Stairs, targetType, floorChanged)
 			} else {
-				entryPassages = nearbyPassagePoints(snapshot.Map.Stairs, snapshot.Position)
+				entryTransitions = nearbyEntryTransitionPoints(snapshot.Map.Stairs, snapshot.Position, floorChanged)
+			}
+			selectedEntryOverride = nil
+			if (firstSnapshot || arrivedFromProbe) && entryTransitions[snapshot.Position] && stairPointHasType(snapshot.Map.Stairs, snapshot.Position, targetType) {
+				selectedEntryOverride = map[Point]bool{snapshot.Position: true}
 			}
 			reportStatus(StatusReplanning)
 		}
@@ -201,6 +316,9 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 				} else if pointOnPath(pending.path, snapshot.Position) {
 					pending.lastSettled = snapshot.Position
 				} else {
+					if pending.probe != nil {
+						probeInFlight = nil
+					}
 					pending = nil
 					reportStatus(StatusReplanning)
 				}
@@ -217,6 +335,9 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 				if failures[next] >= retryLimit {
 					blocked[next] = true
 				}
+				if pending.probe != nil {
+					probeInFlight = nil
+				}
 				pending = nil
 				reportStatus(StatusReplanning)
 			}
@@ -224,23 +345,64 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 		if !snapshot.PositionSettled {
 			continue
 		}
+		if probeInFlight != nil {
+			if snapshot.Position == probeInFlight.point {
+				reportStatus(StatusMoving)
+				continue
+			}
+			probeInFlight = nil
+		}
 
 		monsters := monsterPoints(snapshot.Map)
-		pathBlocks := mergeBlocks(blocked, blockedTransitions(snapshot.Map, targetType))
+		pathBlocks := mergeBlocks(blocked, entryTransitions, blockedTransitions(snapshot.Map, targetType))
+		for point := range selectedEntryOverride {
+			delete(pathBlocks, point)
+		}
+		routeBlocks := pathBlocks
 		path, _, targetFound := FindPath(snapshot.Map, snapshot.Position, targetType, mergeBlocks(pathBlocks, monsters))
 		if !targetFound && len(monsters) > 0 {
 			path, _, targetFound = FindPath(snapshot.Map, snapshot.Position, targetType, pathBlocks)
 		}
 		passageFound := false
 		if !targetFound {
-			passageBlocks := mergeBlocks(blocked, entryPassages, blockedTransitions(snapshot.Map, StairPassage))
+			passageBlocks := mergeBlocks(blocked, entryTransitions, blockedTransitions(snapshot.Map, StairPassage))
 			path, _, passageFound = FindPath(snapshot.Map, snapshot.Position, StairPassage, mergeBlocks(passageBlocks, monsters))
 			if !passageFound && len(monsters) > 0 {
 				path, _, passageFound = FindPath(snapshot.Map, snapshot.Position, StairPassage, passageBlocks)
 			}
 		}
-		exploring := false
+		probeFound := false
+		probeTarget := Stair{}
 		if !targetFound && !passageFound {
+			probeType := oppositeStairType(targetType)
+			if stairTypeCount(snapshot.Map.Stairs, probeType) >= 2 {
+				probeBlocks := mergeBlocks(blocked, entryTransitions, attemptedExits(currentCode, currentName), blockedTransitions(snapshot.Map, probeType))
+				if forcedProbe != nil && forcedProbe.mapCode == currentCode && forcedProbe.mapName == currentName {
+					for _, stair := range snapshot.Map.Stairs {
+						point := Point{East: stair.East, South: stair.South}
+						if stair.Type == probeType && point != forcedProbe.point {
+							probeBlocks[point] = true
+						}
+					}
+				}
+				path, probeTarget, probeFound = FindPath(snapshot.Map, snapshot.Position, probeType, mergeBlocks(probeBlocks, monsters))
+				if !probeFound && len(monsters) > 0 {
+					path, probeTarget, probeFound = FindPath(snapshot.Map, snapshot.Position, probeType, probeBlocks)
+				}
+				if probeFound {
+					routeBlocks = probeBlocks
+					if forcedProbe == nil {
+						forcedProbe = &exitProbe{
+							mapCode: currentCode,
+							mapName: currentName,
+							point:   Point{East: probeTarget.East, South: probeTarget.South},
+						}
+					}
+				}
+			}
+		}
+		exploring := false
+		if !targetFound && !passageFound && !probeFound {
 			path, exploring = FindExplorationPath(snapshot.Map, snapshot.Position, mergeBlocks(pathBlocks, monsters), completedFrontiers, heading)
 			if !exploring && len(monsters) > 0 {
 				path, exploring = FindExplorationPath(snapshot.Map, snapshot.Position, pathBlocks, completedFrontiers, heading)
@@ -267,8 +429,8 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 			if exploring {
 				completedFrontiers[snapshot.Position] = true
 				reportStatus(StatusExploring)
-			} else if targetFound && !arrivedTarget {
-				stepOff, ok := targetStepOffPoint(snapshot.Map, snapshot.Position, pathBlocks)
+			} else if (targetFound && !arrivedTarget) || probeFound {
+				stepOff, ok := targetStepOffPoint(snapshot.Map, snapshot.Position, routeBlocks)
 				if ok {
 					path = []Point{snapshot.Position, stepOff}
 				} else {
@@ -290,6 +452,11 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 		}
 		runner.Move(delta)
 		heading = direction
+		var probe *exitProbe
+		if probeFound && waypoint == (Point{East: probeTarget.East, South: probeTarget.South}) {
+			probe = &exitProbe{mapCode: currentCode, mapName: currentName, point: waypoint}
+			probeInFlight = probe
+		}
 		pending = &pendingStep{
 			target:       waypoint,
 			path:         segment,
@@ -298,6 +465,7 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 			lastEast:     snapshot.ExactEast,
 			lastSouth:    snapshot.ExactSouth,
 			lastProgress: time.Now(),
+			probe:        probe,
 		}
 		if exploring {
 			reportStatus(StatusExploring)
@@ -360,15 +528,33 @@ func mergeBlocks(blockSets ...map[Point]bool) map[Point]bool {
 	return merged
 }
 
-func nearbyPassagePoints(stairs []Stair, position Point) map[Point]bool {
+func nearbyEntryTransitionPoints(stairs []Stair, position Point, includeAllTypes bool) map[Point]bool {
 	points := make(map[Point]bool)
 	for _, stair := range stairs {
-		if stair.Type != StairPassage || absInt(stair.East-position.East) > 1 || absInt(stair.South-position.South) > 1 {
+		rememberType := includeAllTypes || stair.Type == StairPassage
+		if !rememberType || absInt(stair.East-position.East) > 1 || absInt(stair.South-position.South) > 1 {
 			continue
 		}
 		points[Point{East: stair.East, South: stair.South}] = true
 	}
 	return points
+}
+
+func oppositeStairType(stairType StairType) StairType {
+	if stairType == StairUp {
+		return StairDown
+	}
+	return StairUp
+}
+
+func stairTypeCount(stairs []Stair, stairType StairType) int {
+	count := 0
+	for _, stair := range stairs {
+		if stair.Type == stairType {
+			count++
+		}
+	}
+	return count
 }
 
 func monsterPoints(data MapData) map[Point]bool {

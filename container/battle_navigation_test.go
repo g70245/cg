@@ -13,6 +13,35 @@ import (
 	"github.com/g70245/win"
 )
 
+func TestHasNearbyTransitionRequiresFreshFloorSpawnData(t *testing.T) {
+	stairs := []navigation.Stair{{East: 25, South: 35, Type: navigation.StairUp}}
+	if !hasNearbyTransition(stairs, game.GamePos{X: 24, Y: 35}) {
+		t.Fatal("adjacent spawn transition was not recognized")
+	}
+	if hasNearbyTransition(stairs, game.GamePos{X: 36, Y: 44}) {
+		t.Fatal("distant stale-floor transition was accepted")
+	}
+}
+
+func TestClearNavigationExitAttemptsPreservesEntryState(t *testing.T) {
+	state := &navigation.TraversalState{}
+	state.BeginFloor(699, "Floor 1", navigation.Point{}, []navigation.Stair{{Type: navigation.StairDown}}, navigation.StairUp, true)
+	state.MarkExitAttempt(699, "Floor 1", navigation.Point{East: 2})
+	view := &battleNavigationView{
+		navigationStates: map[win.HWND]*navigation.TraversalState{win.HWND(123): state},
+	}
+
+	view.clearNavigationExitAttempts()
+
+	if len(state.AttemptedExits(699, "Floor 1")) != 0 {
+		t.Fatalf("exit attempts remain after selector change: %v", state.AttemptedExits(699, "Floor 1"))
+	}
+	entry := state.BeginFloor(699, "Floor 1", navigation.Point{}, nil, navigation.StairUp, false)
+	if !entry[navigation.Point{}] {
+		t.Fatalf("entry memory was cleared with selector attempts: %v", entry)
+	}
+}
+
 func TestNavigationIsOptInAndFollowsCompactLifecycle(t *testing.T) {
 	testApp := fynetest.NewApp()
 	defer testApp.Quit()
@@ -246,6 +275,7 @@ func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
 	)
 	defer view.close()
 	view.interval = time.Hour
+	view.beeperReady = func() bool { return true }
 	view.readSnapshot = func(win.HWND) (navigationSnapshot, error) {
 		return navigationSnapshot{east: 1, south: 1}, nil
 	}
@@ -269,9 +299,15 @@ func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
 		}
 		closedWindows++
 	}
+	stoppedAlerts := 0
+	view.stopBeeper = func() { stoppedAlerts++ }
 	view.setCompact(true)
 	view.selectAlias("Alpha")
+	view.setNavigationStatus(navigation.StatusVerification)
 	view.toggleNavigation()
+	if stoppedAlerts != 1 {
+		t.Fatalf("stopped verification alerts = %d, want 1 on Play", stoppedAlerts)
+	}
 	if closedWindows != 1 {
 		t.Fatalf("CloseAllWindows calls = %d, want 1 on navigation start", closedWindows)
 	}
@@ -294,6 +330,48 @@ func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("navigation runner did not stop")
+	}
+}
+
+func TestNavigationPlayRequiresAlertMusic(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	view := newBattleNavigationView(
+		game.Games{"selected": win.HWND(123)},
+		game.Games{"Alpha": win.HWND(123)},
+		func() string { return "" },
+		nil,
+	)
+	defer view.close()
+	view.interval = time.Hour
+	view.readSnapshot = func(win.HWND) (navigationSnapshot, error) {
+		return navigationSnapshot{}, nil
+	}
+	view.beeperReady = func() bool { return false }
+	notifications := 0
+	view.notifyBeeperMissing = func() { notifications++ }
+	closedWindows := 0
+	view.closeWindows = func(win.HWND) { closedWindows++ }
+	view.setCompact(true)
+	view.selectAlias("Alpha")
+
+	view.toggleNavigation()
+
+	if status, _ := view.navigationStatus.Get(); status != "Set alert music." {
+		t.Fatalf("status = %q, want alert music requirement", status)
+	}
+	if notifications != 1 {
+		t.Fatalf("missing beeper notifications = %d, want 1", notifications)
+	}
+	if closedWindows != 0 {
+		t.Fatalf("CloseAllWindows calls = %d, want none when alert music is missing", closedWindows)
+	}
+	view.mu.Lock()
+	running := view.navigationCancel != nil
+	view.mu.Unlock()
+	if running {
+		t.Fatal("navigation started without alert music")
 	}
 }
 

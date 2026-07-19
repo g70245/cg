@@ -124,8 +124,8 @@ func App(title, gameDir string, width, height float32) {
 	})
 	gameDirDialogButton.Importance = widget.HighImportance
 
-	menuButtons := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton)
-	menu := container.NewBorder(nil, nil, nil, battleCompactButton, menuButtons)
+	menuButtons := container.NewHBox(refreshButton, alertDialogButton, gameDirDialogButton, battleCompactButton)
+	menu := container.NewBorder(nil, nil, nil, nil, menuButtons)
 	content = container.NewBorder(menu, nil, nil, nil, r.main)
 
 	/* shortcuts */

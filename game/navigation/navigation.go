@@ -317,6 +317,16 @@ type FileCache struct {
 	graphicVersion string
 }
 
+func (cache *FileCache) Invalidate() {
+	cache.mu.Lock()
+	cache.path = ""
+	cache.size = 0
+	cache.modified = time.Time{}
+	cache.data = MapData{}
+	cache.graphicVersion = ""
+	cache.mu.Unlock()
+}
+
 func (cache *FileCache) Load(gameDir, path string) (MapData, error) {
 	graphics, graphicVersion, err := cache.graphics.Load(gameDir)
 	if err != nil {

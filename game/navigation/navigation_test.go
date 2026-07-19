@@ -200,6 +200,50 @@ func TestFileCacheReloadsChangedMap(t *testing.T) {
 	}
 }
 
+func TestFileCacheInvalidateReloadsSameSizeAndTimestamp(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "map.dat")
+	writeTestGraphicInfo(t, root, map[uint16]mapTileProperty{
+		12000: {East: 1, South: 1, Passable: true},
+		12002: {East: 1, South: 1, Passable: true},
+	})
+	if err := os.WriteFile(path, testMapData(1, 1, map[int]uint16{0: 12000}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cache := new(FileCache)
+	if _, err := cache.Load(root, path); err != nil {
+		t.Fatalf("first Load() error = %v", err)
+	}
+	if err := os.WriteFile(path, testMapData(1, 1, map[int]uint16{0: 12002}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+
+	stale, err := cache.Load(root, path)
+	if err != nil {
+		t.Fatalf("stale Load() error = %v", err)
+	}
+	if len(stale.Stairs) != 1 || stale.Stairs[0].Type != StairUp {
+		t.Fatalf("stale Load() = %#v, want cached Up", stale.Stairs)
+	}
+
+	cache.Invalidate()
+	fresh, err := cache.Load(root, path)
+	if err != nil {
+		t.Fatalf("fresh Load() error = %v", err)
+	}
+	if len(fresh.Stairs) != 1 || fresh.Stairs[0].Type != StairDown {
+		t.Fatalf("fresh Load() = %#v, want reloaded Down", fresh.Stairs)
+	}
+}
+
 func TestParseMapUsesTransitionHighByteForWalkability(t *testing.T) {
 	data := testMapData(5, 1, nil)
 	transitionOffset := mapHeaderSize + 5*mapCellSize*2
