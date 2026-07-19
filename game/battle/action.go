@@ -134,7 +134,7 @@ func (s *ActionState) executeFlawlessPetChecker() {
 		return
 	}
 
-	if s.searchFlawlessPet(s.enemies) {
+	if s.searchFlawlessPet(AllEnemies) {
 		s.logH("encounters a flawless pet")
 		utils.Beeper.Play()
 
