@@ -24,10 +24,14 @@ func MoveCursorWithDuration(hWnd HWND, x, y int32, d time.Duration) {
 }
 
 func LeftClick(hWnd HWND, x, y int32) {
-	MoveCursorWithDuration(hWnd, x, y, DURATION_CURSOR)
+	LeftClickWithDuration(hWnd, x, y, DURATION_CURSOR, DURATION_CLICK)
+}
+
+func LeftClickWithDuration(hWnd HWND, x, y int32, cursorDuration, clickDuration time.Duration) {
+	MoveCursorWithDuration(hWnd, x, y, cursorDuration)
 	PostCursorMsg(hWnd, x, y, WM_LBUTTONDOWN)
 	PostCursorMsg(hWnd, x, y, WM_LBUTTONUP)
-	time.Sleep(DURATION_CLICK)
+	time.Sleep(clickDuration)
 }
 
 func DoubleClickRepeatedly(hWnd HWND, x, y int32) {

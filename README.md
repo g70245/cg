@@ -12,7 +12,7 @@ Full Battle view:
 
 ![CG full battle interface](example1.png)
 
-Compact Battle view keeps the battle-group tabs and the selected group's start/stop control visible while hiding configuration controls:
+Compact Battle view keeps the battle-group controls visible while adding optional local-map routes and automatic Up/Down navigation:
 
 <img src="example2.png" alt="CG compact battle interface" width="480">
 
@@ -21,6 +21,8 @@ Compact Battle view keeps the battle-group tabs and the selected group's start/s
 - Discover and refresh multiple compatible game windows.
 - Group selected windows for coordinated battle workflows.
 - Switch the Battle tab to a compact view for group selection and start/stop control.
+- Inspect local map coordinates and nearby routes in Compact Battle view.
+- Optionally explore maze floors toward Up or Down transitions with automatic obstacle-aware routing and verification alerts.
 - Configure ordered character and pet actions, conditions, jumps, and targets.
 - Load and save battle action configurations as `.ac` files.
 - Select optional movement patterns driven by in-game map coordinates.

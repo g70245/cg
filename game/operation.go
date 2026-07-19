@@ -12,6 +12,8 @@ const (
 	DURATION_ACTION                    = 200 * time.Millisecond
 	DURATION_ACTION_SKILL              = 320 * time.Millisecond
 	DURATION_INVENTORY_CHECKER_WAITING = 400 * time.Millisecond
+	durationNavigationCursor           = 50 * time.Millisecond
+	durationNavigationClick            = 30 * time.Millisecond
 )
 
 func CloseAllWindows(hWnd win.HWND) {
@@ -65,7 +67,7 @@ func UseItem(hWnd win.HWND, x, y int32) {
 
 func MoveMapOffset(hWnd win.HWND, deltaEast, deltaSouth int) {
 	x, y := mapStepTarget(deltaEast, deltaSouth)
-	internal.LeftClick(hWnd, x, y)
+	internal.LeftClickWithDuration(hWnd, x, y, durationNavigationCursor, durationNavigationClick)
 }
 
 func mapStepTarget(deltaEast, deltaSouth int) (int32, int32) {

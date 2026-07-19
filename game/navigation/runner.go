@@ -23,7 +23,8 @@ const (
 	defaultVerificationInterval = 500 * time.Millisecond
 	defaultStepTimeout          = 300 * time.Millisecond
 	defaultRetryLimit           = 1
-	defaultSegmentSteps         = 6
+	defaultSegmentSteps         = 4
+	defaultDiagonalSegmentSteps = 2
 )
 
 var (
@@ -475,20 +476,43 @@ func (runner Runner) Run(cancel <-chan struct{}, targetType StairType, report fu
 	}
 }
 
-func buildSegment(_ MapData, path []Point, maxSteps int) (Point, Point, []Point) {
+func buildSegment(data MapData, path []Point, maxSteps int) (Point, Point, []Point) {
 	direction := Point{East: path[1].East - path[0].East, South: path[1].South - path[0].South}
-	if direction.East != 0 && direction.South != 0 && maxSteps > 4 {
-		maxSteps = 4
+	if direction.East != 0 && direction.South != 0 && maxSteps > defaultDiagonalSegmentSteps {
+		maxSteps = defaultDiagonalSegmentSteps
 	}
 	end := 1
 	for end+1 < len(path) && end < maxSteps {
 		nextDirection := Point{East: path[end+1].East - path[end].East, South: path[end+1].South - path[end].South}
 		if nextDirection != direction {
+			if shouldSmoothWallTurn(data, path[end], direction, nextDirection) {
+				end++
+				direction = nextDirection
+			}
 			break
 		}
 		end++
 	}
+	if end == maxSteps && end > 1 && end+1 < len(path) {
+		nextDirection := Point{East: path[end+1].East - path[end].East, South: path[end+1].South - path[end].South}
+		if nextDirection != direction && shouldSmoothWallTurn(data, path[end], direction, nextDirection) {
+			end--
+		}
+	}
 	return path[end], direction, append([]Point(nil), path[:end+1]...)
+}
+
+func shouldSmoothWallTurn(data MapData, corner, incoming, outgoing Point) bool {
+	if incoming.East*outgoing.East+incoming.South*outgoing.South < 0 {
+		return false
+	}
+	for _, direction := range []Point{{East: 1}, {South: 1}, {East: -1}, {South: -1}} {
+		neighbor := Point{East: corner.East + direction.East, South: corner.South + direction.South}
+		if data.IsKnown(neighbor) && !data.IsWalkable(neighbor) {
+			return true
+		}
+	}
+	return false
 }
 
 func pointOnPath(path []Point, point Point) bool {

@@ -657,8 +657,8 @@ func TestBuildSegmentCombinesOnlyMatchingDirections(t *testing.T) {
 
 	diagonal := []Point{{}, {East: 1, South: 1}, {East: 2, South: 2}, {East: 3, South: 3}, {East: 4, South: 4}, {East: 5, South: 5}}
 	target, direction, segment = buildSegment(data, diagonal, 8)
-	if target != (Point{East: 4, South: 4}) || direction != (Point{East: 1, South: 1}) || len(segment) != 5 {
-		t.Fatalf("diagonal segment = target %v direction %v path %v, want four safe steps", target, direction, segment)
+	if target != (Point{East: 2, South: 2}) || direction != (Point{East: 1, South: 1}) || len(segment) != 3 {
+		t.Fatalf("diagonal segment = target %v direction %v path %v, want two safe steps", target, direction, segment)
 	}
 }
 
@@ -678,6 +678,47 @@ func TestBuildSegmentKeepsValidatedStraightPathNearObjectsAndWalls(t *testing.T)
 	target, _, segment = buildSegment(wallMap, path, 4)
 	if target != path[3] || len(segment) != 4 {
 		t.Fatalf("wall-adjacent segment = target %v path %v, want validated full segment", target, segment)
+	}
+}
+
+func TestBuildSegmentSmoothsOnlyKnownWallTurns(t *testing.T) {
+	path := []Point{{South: 2}, {East: 1, South: 2}, {East: 2, South: 2}, {East: 2, South: 3}, {East: 2, South: 4}}
+
+	openMap := walkableMap(5, 5)
+	target, direction, segment := buildSegment(openMap, path, 4)
+	if target != (Point{East: 2, South: 2}) || direction != (Point{East: 1}) || len(segment) != 3 {
+		t.Fatalf("open turn = target %v direction %v path %v, want split at corner", target, direction, segment)
+	}
+
+	wallMap := walkableMap(5, 5)
+	wallMap.Walkable[1*wallMap.Width+2] = false
+	target, direction, segment = buildSegment(wallMap, path, 4)
+	if target != (Point{East: 2, South: 3}) || direction != (Point{South: 1}) || len(segment) != 4 {
+		t.Fatalf("wall turn = target %v direction %v path %v, want one step beyond corner", target, direction, segment)
+	}
+
+	unknownMap := walkableMap(5, 5)
+	unknownMap.Known[1*unknownMap.Width+2] = false
+	unknownMap.Walkable[1*unknownMap.Width+2] = false
+	target, direction, segment = buildSegment(unknownMap, path, 4)
+	if target != (Point{East: 2, South: 2}) || direction != (Point{East: 1}) || len(segment) != 3 {
+		t.Fatalf("unknown turn = target %v direction %v path %v, want no wall smoothing", target, direction, segment)
+	}
+
+	if shouldSmoothWallTurn(wallMap, Point{East: 2, South: 2}, Point{East: 1}, Point{East: -1, South: 1}) {
+		t.Fatal("backward wall turn was smoothed")
+	}
+
+	longPath := []Point{{South: 2}, {East: 1, South: 2}, {East: 2, South: 2}, {East: 3, South: 2}, {East: 4, South: 2}, {East: 4, South: 3}}
+	longWallMap := walkableMap(6, 5)
+	longWallMap.Walkable[1*longWallMap.Width+4] = false
+	target, direction, segment = buildSegment(longWallMap, longPath, 4)
+	if target != (Point{East: 3, South: 2}) || direction != (Point{East: 1}) || len(segment) != 4 {
+		t.Fatalf("wall turn at segment limit = target %v direction %v path %v, want stop before corner", target, direction, segment)
+	}
+	target, direction, segment = buildSegment(longWallMap, longPath[3:], 4)
+	if target != (Point{East: 4, South: 3}) || direction != (Point{South: 1}) || len(segment) != 3 {
+		t.Fatalf("wall turn after reserved step = target %v direction %v path %v, want cross corner", target, direction, segment)
 	}
 }
 
@@ -831,9 +872,9 @@ func TestRunnerFallsBackThroughMonsterInOnlyCorridor(t *testing.T) {
 	}
 }
 
-func TestRunnerSendsOneSixCellStraightWaypoint(t *testing.T) {
-	data := walkableMap(7, 1)
-	data.Stairs = []Stair{{East: 6, Type: StairUp}}
+func TestRunnerSendsOneFourCellStraightWaypoint(t *testing.T) {
+	data := walkableMap(5, 1)
+	data.Stairs = []Stair{{East: 4, Type: StairUp}}
 	snapshot := MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}
 	var moves []Point
 	runner := Runner{
@@ -842,7 +883,7 @@ func TestRunnerSendsOneSixCellStraightWaypoint(t *testing.T) {
 		CanMove:      func() bool { return true },
 		Move: func(delta Point) {
 			moves = append(moves, delta)
-			snapshot.Position = Point{East: 6}
+			snapshot.Position = Point{East: 4}
 			snapshot.MapCode = 1401
 			snapshot.InMaze = false
 		},
@@ -850,8 +891,8 @@ func TestRunnerSendsOneSixCellStraightWaypoint(t *testing.T) {
 	if err := runner.Run(make(chan struct{}), StairUp, nil); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(moves, []Point{{East: 6}}) {
-		t.Fatalf("moves = %v, want one six-cell waypoint", moves)
+	if !reflect.DeepEqual(moves, []Point{{East: 4}}) {
+		t.Fatalf("moves = %v, want one four-cell waypoint", moves)
 	}
 }
 
