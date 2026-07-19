@@ -62,3 +62,18 @@ func OpenInventory(hWnd win.HWND) {
 func UseItem(hWnd win.HWND, x, y int32) {
 	internal.DoubleClickRepeatedly(hWnd, x, y)
 }
+
+func MoveMapOffset(hWnd win.HWND, deltaEast, deltaSouth int) {
+	x, y := mapStepTarget(deltaEast, deltaSouth)
+	internal.LeftClick(hWnd, x, y)
+}
+
+func mapStepTarget(deltaEast, deltaSouth int) (int32, int32) {
+	const (
+		tileHalfWidth  = 32
+		tileHalfHeight = 24
+	)
+	x := int32(GAME_WIDTH/2 + tileHalfWidth*(deltaEast+deltaSouth))
+	y := int32(GAME_HEIGHT/2 + tileHalfHeight*(deltaSouth-deltaEast))
+	return x, y
+}

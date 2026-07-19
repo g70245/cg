@@ -196,6 +196,7 @@ func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, re
 		restoreFullView: restoreFullView,
 	})
 	navigation := newBattleNavigationView(games, allGames, r.getGameDir, resizeCollapsedView)
+	navigation.setWorkers(workers)
 
 	groupView = newBattleGroupView(menu, navigation, gameWidget)
 	return groupView, sharedStopChan

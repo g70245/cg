@@ -2,9 +2,12 @@ package container
 
 import (
 	"cg/game"
+	"cg/game/battle"
+	"cg/game/enum/movement"
 	"cg/game/navigation"
 	"fmt"
 	"image/color"
+	"math"
 	"sort"
 	"sync"
 	"time"
@@ -14,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/g70245/win"
 )
@@ -32,54 +36,68 @@ type battleNavigationView struct {
 	container         *fyne.Container
 	controls          *fyne.Container
 	selector          *widget.Select
+	destination       *widget.Select
+	navigationButton  *widget.Button
 	listFrame         *fyne.Container
 	collapsedControls []fyne.CanvasObject
 	expandedControls  []fyne.CanvasObject
 	collapsedObjects  []fyne.CanvasObject
 	expandedObjects   []fyne.CanvasObject
 
-	position    binding.String
-	status      binding.String
-	statusLabel *widget.Label
-	routeList   *widget.List
-	scrollToTop func()
-	routesMu    sync.RWMutex
-	routes      []string
+	position              binding.String
+	status                binding.String
+	statusLabel           *widget.Label
+	navigationStatus      binding.String
+	navigationStatusLabel *widget.Label
+	routeList             *widget.List
+	scrollToTop           func()
+	routesMu              sync.RWMutex
+	routes                []string
 
 	games        game.Games
 	allGames     game.Games
 	gameDir      func() string
 	readSnapshot func(win.HWND) (navigationSnapshot, error)
+	newRunner    func(win.HWND) navigation.Runner
+	closeWindows func(win.HWND)
 	interval     time.Duration
 	onCollapsed  func()
 
-	mu             sync.Mutex
-	displayMu      sync.Mutex
-	scrollRevision uint64
-	aliases        map[string]win.HWND
-	selected       string
-	compact        bool
-	revision       uint64
-	cancel         chan struct{}
-	wake           chan struct{}
-	done           chan struct{}
-	cache          navigation.FileCache
-	resolver       navigation.PathResolver
+	mu               sync.Mutex
+	displayMu        sync.Mutex
+	scrollRevision   uint64
+	aliases          map[string]win.HWND
+	selected         string
+	compact          bool
+	revision         uint64
+	cancel           chan struct{}
+	wake             chan struct{}
+	done             chan struct{}
+	cache            navigation.FileCache
+	resolver         navigation.PathResolver
+	workers          map[win.HWND]*battle.Worker
+	navigationStates map[win.HWND]*navigation.TraversalState
+	navigationCancel chan struct{}
+	navigationDone   chan struct{}
 }
 
 func newBattleNavigationView(games, allGames game.Games, gameDir func() string, onCollapsed func()) *battleNavigationView {
 	view := &battleNavigationView{
-		games:       games,
-		allGames:    allGames,
-		gameDir:     gameDir,
-		interval:    navigationUpdateInterval,
-		selected:    navigationOffOption,
-		aliases:     make(map[string]win.HWND),
-		position:    binding.NewString(),
-		status:      binding.NewString(),
-		onCollapsed: onCollapsed,
+		games:            games,
+		allGames:         allGames,
+		gameDir:          gameDir,
+		interval:         navigationUpdateInterval,
+		selected:         navigationOffOption,
+		aliases:          make(map[string]win.HWND),
+		position:         binding.NewString(),
+		status:           binding.NewString(),
+		navigationStatus: binding.NewString(),
+		navigationStates: make(map[win.HWND]*navigation.TraversalState),
+		onCollapsed:      onCollapsed,
 	}
 	view.readSnapshot = view.loadSnapshot
+	view.newRunner = view.navigationRunner
+	view.closeWindows = game.CloseAllWindows
 	view.refreshAliases()
 
 	view.selector = widget.NewSelect(view.aliasOptions(), view.selectAlias)
@@ -88,6 +106,16 @@ func newBattleNavigationView(games, allGames game.Games, gameDir func() string, 
 
 	positionLabel := widget.NewLabelWithData(view.position)
 	view.statusLabel = widget.NewLabelWithData(view.status)
+	view.navigationStatusLabel = widget.NewLabelWithData(view.navigationStatus)
+	view.navigationStatusLabel.Hide()
+	positionRow := container.NewHBox(positionLabel, view.navigationStatusLabel)
+	view.destination = widget.NewSelect([]string{string(navigation.StairUp), string(navigation.StairDown)}, func(selected string) {
+		view.stopNavigation(true)
+	})
+	view.destination.Selected = string(navigation.StairUp)
+	view.navigationButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), view.toggleNavigation)
+	view.navigationButton.Importance = widget.WarningImportance
+	navigationControls := container.NewBorder(nil, nil, nil, view.navigationButton, view.destination)
 	view.routeList = widget.NewList(
 		func() int {
 			view.routesMu.RLock()
@@ -110,7 +138,8 @@ func newBattleNavigationView(games, allGames game.Games, gameDir func() string, 
 
 	view.collapsedControls = []fyne.CanvasObject{view.selector}
 	view.expandedControls = append(append([]fyne.CanvasObject(nil), view.collapsedControls...),
-		positionLabel,
+		navigationControls,
+		positionRow,
 		view.statusLabel,
 	)
 	view.controls = container.NewVBox(view.collapsedControls...)
@@ -150,6 +179,7 @@ func (view *battleNavigationView) refreshAliases() {
 }
 
 func (view *battleNavigationView) selectAlias(alias string) {
+	view.stopNavigation(true)
 	view.refreshAliases()
 
 	view.mu.Lock()
@@ -190,6 +220,9 @@ func (view *battleNavigationView) selectAlias(alias string) {
 }
 
 func (view *battleNavigationView) setCompact(compact bool) {
+	if !compact {
+		view.stopNavigation(true)
+	}
 	view.stopUpdater()
 	view.refreshAliases()
 
@@ -320,6 +353,7 @@ func (view *battleNavigationView) resetMissingAlias(cancel <-chan struct{}) {
 		return
 	default:
 	}
+	view.stopNavigation(true)
 	view.mu.Lock()
 	view.selected = navigationOffOption
 	compact := view.compact
@@ -349,7 +383,138 @@ func (view *battleNavigationView) stopUpdater() {
 }
 
 func (view *battleNavigationView) close() {
+	done := view.stopNavigation(true)
+	if done != nil {
+		<-done
+	}
 	view.stopUpdater()
+}
+
+func (view *battleNavigationView) setWorkers(workers battle.Workers) {
+	view.mu.Lock()
+	view.workers = make(map[win.HWND]*battle.Worker, len(workers))
+	for _, worker := range workers {
+		view.workers[worker.GetHandle()] = worker
+	}
+	view.mu.Unlock()
+}
+
+func (view *battleNavigationView) toggleNavigation() {
+	view.mu.Lock()
+	running := view.navigationCancel != nil
+	view.mu.Unlock()
+	if running {
+		view.stopNavigation(false)
+		view.setNavigationStatus("Navigation stopped")
+		return
+	}
+	view.startNavigation()
+}
+
+func (view *battleNavigationView) startNavigation() {
+	view.stopNavigation(true)
+	view.mu.Lock()
+	alias := view.selected
+	hWnd, ok := view.aliases[alias]
+	compact := view.compact
+	worker := view.workers[hWnd]
+	view.mu.Unlock()
+	if !compact || !ok || alias == navigationOffOption {
+		return
+	}
+	if worker != nil && worker.MovementMode() != movement.None {
+		view.setNavigationStatus("Disable battle movement first.")
+		return
+	}
+	view.closeWindows(hWnd)
+	targetType := navigation.StairType(view.destination.Selected)
+	cancel := make(chan struct{})
+	done := make(chan struct{})
+	view.mu.Lock()
+	view.navigationCancel = cancel
+	view.navigationDone = done
+	view.mu.Unlock()
+	turn(theme.MediaStopIcon(), view.navigationButton)
+
+	runner := view.newRunner(hWnd)
+	go func() {
+		defer close(done)
+		err := runner.Run(cancel, targetType, func(status string) {
+			view.mu.Lock()
+			current := view.navigationDone == done
+			view.mu.Unlock()
+			if current {
+				view.setNavigationStatus(status)
+			}
+		})
+		view.mu.Lock()
+		current := view.navigationDone == done
+		if current {
+			view.navigationCancel = nil
+			view.navigationDone = nil
+		}
+		view.mu.Unlock()
+		if !current {
+			return
+		}
+		if err != nil {
+			view.setNavigationStatus("Navigation unavailable.")
+		}
+		turn(theme.MediaPlayIcon(), view.navigationButton)
+	}()
+}
+
+func (view *battleNavigationView) navigationRunner(hWnd win.HWND) navigation.Runner {
+	state := view.navigationState(hWnd)
+	return navigation.Runner{
+		ReadSnapshot: func() (navigation.MovementSnapshot, error) {
+			return view.loadMovementSnapshot(hWnd)
+		},
+		CanMove: view.allWindowsCanMove,
+		Move: func(delta navigation.Point) {
+			game.MoveMapOffset(hWnd, delta.East, delta.South)
+		},
+		State: state,
+	}
+}
+
+func (view *battleNavigationView) navigationState(hWnd win.HWND) *navigation.TraversalState {
+	view.mu.Lock()
+	state := view.navigationStates[hWnd]
+	if state == nil {
+		state = &navigation.TraversalState{}
+		view.navigationStates[hWnd] = state
+	}
+	view.mu.Unlock()
+	return state
+}
+
+func (view *battleNavigationView) stopNavigation(clearStatus bool) chan struct{} {
+	view.mu.Lock()
+	cancel := view.navigationCancel
+	done := view.navigationDone
+	view.navigationCancel = nil
+	view.navigationDone = nil
+	view.mu.Unlock()
+	if cancel != nil {
+		close(cancel)
+	}
+	if view.navigationButton != nil {
+		turn(theme.MediaPlayIcon(), view.navigationButton)
+	}
+	if clearStatus {
+		view.setNavigationStatus("")
+	}
+	return done
+}
+
+func (view *battleNavigationView) allWindowsCanMove() bool {
+	for _, hWnd := range view.games.GetHWNDs() {
+		if game.GetScene(hWnd) != game.NORMAL_SCENE {
+			return false
+		}
+	}
+	return true
 }
 
 func (view *battleNavigationView) setExpanded(expanded bool) {
@@ -393,6 +558,21 @@ func (view *battleNavigationView) setDisplay(position, status string, routes []s
 	view.routeList.Refresh()
 }
 
+func (view *battleNavigationView) setNavigationStatus(status string) {
+	view.navigationStatus.Set(status)
+	visible := status != ""
+	visibilityChanged := view.navigationStatusLabel.Visible() != visible
+	if visible {
+		view.navigationStatusLabel.Show()
+	} else {
+		view.navigationStatusLabel.Hide()
+	}
+	if visibilityChanged {
+		view.controls.Refresh()
+		view.container.Refresh()
+	}
+}
+
 func (view *battleNavigationView) routeSnapshot() []string {
 	view.routesMu.RLock()
 	defer view.routesMu.RUnlock()
@@ -400,19 +580,51 @@ func (view *battleNavigationView) routeSnapshot() []string {
 }
 
 func (view *battleNavigationView) loadSnapshot(hWnd win.HWND) (navigationSnapshot, error) {
-	path, err := view.resolver.Resolve(view.gameDir(), game.GetMapCode(hWnd))
+	_, path, data, position, err := view.loadMap(hWnd)
 	if err != nil {
 		return navigationSnapshot{}, err
 	}
-	stairs, err := view.cache.Load(path)
-	if err != nil {
-		return navigationSnapshot{}, err
+	if !navigation.IsMazePath(view.gameDir(), path) {
+		view.navigationState(hWnd).Reset()
 	}
-	position := game.GetCurrentGamePos(hWnd)
 	east, south := int(position.X), int(position.Y)
 	return navigationSnapshot{
 		east:   east,
 		south:  south,
-		routes: navigation.BuildRoutes(stairs, east, south),
+		routes: navigation.BuildRoutes(data.Stairs, east, south),
 	}, nil
+}
+
+func (view *battleNavigationView) loadMovementSnapshot(hWnd win.HWND) (navigation.MovementSnapshot, error) {
+	code, path, data, position, err := view.loadMap(hWnd)
+	if err != nil {
+		return navigation.MovementSnapshot{}, err
+	}
+	roundedEast := math.Round(position.X)
+	roundedSouth := math.Round(position.Y)
+	return navigation.MovementSnapshot{
+		MapCode: code,
+		Position: navigation.Point{
+			East:  int(roundedEast),
+			South: int(roundedSouth),
+		},
+		PositionSettled: math.Abs(position.X-roundedEast) < 0.1 && math.Abs(position.Y-roundedSouth) < 0.1,
+		ExactEast:       position.X,
+		ExactSouth:      position.Y,
+		Map:             data,
+		InMaze:          navigation.IsMazePath(view.gameDir(), path),
+	}, nil
+}
+
+func (view *battleNavigationView) loadMap(hWnd win.HWND) (uint32, string, navigation.MapData, game.GamePos, error) {
+	code := game.GetMapCode(hWnd)
+	path, err := view.resolver.Resolve(view.gameDir(), code)
+	if err != nil {
+		return 0, "", navigation.MapData{}, game.GamePos{}, err
+	}
+	data, err := view.cache.Load(view.gameDir(), path)
+	if err != nil {
+		return 0, "", navigation.MapData{}, game.GamePos{}, err
+	}
+	return code, path, data, game.GetCurrentGamePos(hWnd), nil
 }

@@ -44,57 +44,114 @@ type Stair struct {
 	Type  StairType
 }
 
+type Point struct {
+	East  int
+	South int
+}
+
+type MapData struct {
+	Width    int
+	Height   int
+	Known    []bool
+	Walkable []bool
+	Monsters []bool
+	Objects  []uint16
+	Stairs   []Stair
+}
+
+func (data MapData) IsKnown(point Point) bool {
+	if point.East < 0 || point.South < 0 || point.East >= data.Width || point.South >= data.Height {
+		return false
+	}
+	index := point.South*data.Width + point.East
+	return index >= 0 && index < len(data.Known) && data.Known[index]
+}
+
+func (data MapData) IsWalkable(point Point) bool {
+	if point.East < 0 || point.South < 0 || point.East >= data.Width || point.South >= data.Height {
+		return false
+	}
+	index := point.South*data.Width + point.East
+	return index >= 0 && index < len(data.Walkable) && data.Walkable[index]
+}
+
 type Route struct {
 	Stair
 	Direction       string
 	DistanceSquared int64
 }
 
-func ParseMap(reader io.Reader) ([]Stair, error) {
+func ParseMap(reader io.Reader) (MapData, error) {
+	return parseMap(reader, nil)
+}
+
+func parseMap(reader io.Reader, graphics *graphicInfoIndex) (MapData, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, fmt.Errorf("read map data: %w", err)
+		return MapData{}, fmt.Errorf("read map data: %w", err)
 	}
 	if len(data) < mapHeaderSize || !bytes.Equal(data[:3], []byte("MAP")) {
-		return nil, errInvalidMapHeader
+		return MapData{}, errInvalidMapHeader
 	}
 
 	width := int64(int32(binary.LittleEndian.Uint32(data[12:16])))
 	height := int64(int32(binary.LittleEndian.Uint32(data[16:20])))
 	if width <= 0 || height <= 0 || width > math.MaxInt32/height {
-		return nil, errInvalidMapDimensions
+		return MapData{}, errInvalidMapDimensions
 	}
 
 	cellCount := width * height
 	if cellCount > (math.MaxInt64-mapHeaderSize)/(mapCellSize*mapSectionCount) {
-		return nil, errInvalidMapDimensions
+		return MapData{}, errInvalidMapDimensions
 	}
 	sectionSize := cellCount * mapCellSize
 	requiredSize := int64(mapHeaderSize) + sectionSize*mapSectionCount
 	if requiredSize > int64(len(data)) {
-		return nil, errIncompleteMapData
+		return MapData{}, errIncompleteMapData
 	}
 
 	objectOffset := int64(mapHeaderSize) + sectionSize
 	transitionOffset := objectOffset + sectionSize
+	result := MapData{
+		Width:    int(width),
+		Height:   int(height),
+		Known:    make([]bool, int(cellCount)),
+		Walkable: make([]bool, int(cellCount)),
+		Monsters: make([]bool, int(cellCount)),
+		Objects:  make([]uint16, int(cellCount)),
+	}
 	stairs := make([]Stair, 0)
 	for index := int64(0); index < cellCount; index++ {
 		transitionIndex := transitionOffset + index*mapCellSize
 		transition := binary.LittleEndian.Uint16(data[transitionIndex : transitionIndex+mapCellSize])
+		groundIndex := int64(mapHeaderSize) + index*mapCellSize
+		objectIndex := objectOffset + index*mapCellSize
+		groundID := binary.LittleEndian.Uint16(data[groundIndex : groundIndex+mapCellSize])
+		objectID := binary.LittleEndian.Uint16(data[objectIndex : objectIndex+mapCellSize])
+		result.Known[index] = groundID != 0 || objectID != 0 || transition != 0
+		result.Walkable[index] = transition&0xff00 == 0xc000
+		result.Monsters[index] = transition == 0xc002
+		if graphics != nil {
+			if property, ok := graphics.lookup(groundID); groundID != 0 && ok && !property.Passable {
+				result.Walkable[index] = false
+			}
+			if property, ok := graphics.lookup(objectID); objectID != 0 && ok && !property.Passable {
+				result.Walkable[index] = false
+			}
+		}
+		result.Objects[index] = objectID
 		if transition != stairTransitionCode {
 			continue
 		}
 
-		objectIndex := objectOffset + index*mapCellSize
-		objectID := binary.LittleEndian.Uint16(data[objectIndex : objectIndex+mapCellSize])
 		stairs = append(stairs, Stair{
 			East:  int(index % width),
 			South: int(index / width),
 			Type:  classifyStair(objectID),
 		})
 	}
-
-	return stairs, nil
+	result.Stairs = stairs
+	return result, nil
 }
 
 func classifyStair(objectID uint16) StairType {
@@ -233,47 +290,71 @@ func isRegularFile(path string) bool {
 	return err == nil && info.Mode().IsRegular()
 }
 
-type FileCache struct {
-	mu       sync.Mutex
-	path     string
-	size     int64
-	modified time.Time
-	stairs   []Stair
+func IsMazePath(gameDir, path string) bool {
+	mapRoot, err := filepath.Abs(filepath.Join(gameDir, "map"))
+	if err != nil {
+		return false
+	}
+	resolvedPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	relative, err := filepath.Rel(mapRoot, resolvedPath)
+	if err != nil || relative == "." || filepath.IsAbs(relative) {
+		return false
+	}
+	parts := strings.Split(filepath.Clean(relative), string(filepath.Separator))
+	return len(parts) > 1 && parts[0] == "1"
 }
 
-func (cache *FileCache) Load(path string) ([]Stair, error) {
+type FileCache struct {
+	mu             sync.Mutex
+	path           string
+	size           int64
+	modified       time.Time
+	data           MapData
+	graphics       graphicInfoCache
+	graphicVersion string
+}
+
+func (cache *FileCache) Load(gameDir, path string) (MapData, error) {
+	graphics, graphicVersion, err := cache.graphics.Load(gameDir)
+	if err != nil {
+		return MapData{}, err
+	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
 	info, err := os.Stat(path)
 	if err != nil {
-		return nil, fmt.Errorf("inspect map data: %w", err)
+		return MapData{}, fmt.Errorf("inspect map data: %w", err)
 	}
 	if !info.Mode().IsRegular() {
-		return nil, errors.New("map data is not a regular file")
+		return MapData{}, errors.New("map data is not a regular file")
 	}
-	if cache.path == path && cache.size == info.Size() && cache.modified.Equal(info.ModTime()) {
-		return append([]Stair(nil), cache.stairs...), nil
+	if cache.path == path && cache.size == info.Size() && cache.modified.Equal(info.ModTime()) && cache.graphicVersion == graphicVersion {
+		return cloneMapData(cache.data), nil
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open map data: %w", err)
+		return MapData{}, fmt.Errorf("open map data: %w", err)
 	}
-	stairs, parseErr := ParseMap(file)
+	data, parseErr := parseMap(file, graphics)
 	closeErr := file.Close()
 	if parseErr != nil {
-		return nil, parseErr
+		return MapData{}, parseErr
 	}
 	if closeErr != nil {
-		return nil, fmt.Errorf("close map data: %w", closeErr)
+		return MapData{}, fmt.Errorf("close map data: %w", closeErr)
 	}
 
 	cache.path = path
 	cache.size = info.Size()
 	cache.modified = info.ModTime()
-	cache.stairs = append([]Stair(nil), stairs...)
-	return append([]Stair(nil), stairs...), nil
+	cache.graphicVersion = graphicVersion
+	cache.data = cloneMapData(data)
+	return cloneMapData(data), nil
 }
 
 func (cache *FileCache) Reset() {
@@ -281,6 +362,16 @@ func (cache *FileCache) Reset() {
 	cache.path = ""
 	cache.size = 0
 	cache.modified = time.Time{}
-	cache.stairs = nil
+	cache.data = MapData{}
+	cache.graphicVersion = ""
 	cache.mu.Unlock()
+}
+
+func cloneMapData(data MapData) MapData {
+	data.Known = append([]bool(nil), data.Known...)
+	data.Walkable = append([]bool(nil), data.Walkable...)
+	data.Monsters = append([]bool(nil), data.Monsters...)
+	data.Objects = append([]uint16(nil), data.Objects...)
+	data.Stairs = append([]Stair(nil), data.Stairs...)
+	return data
 }

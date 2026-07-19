@@ -119,6 +119,23 @@ func TestNavigationIsOptInAndFollowsCompactLifecycle(t *testing.T) {
 	}
 }
 
+func TestNavigationRunnerReusesFloorStatePerAlias(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	view := newBattleNavigationView(game.Games{}, game.Games{}, func() string { return "" }, nil)
+	defer view.close()
+	first := view.navigationRunner(win.HWND(101)).State
+	restarted := view.navigationRunner(win.HWND(101)).State
+	otherAlias := view.navigationRunner(win.HWND(202)).State
+	if first == nil || first != restarted {
+		t.Fatal("same alias did not retain its navigation floor state")
+	}
+	if first == otherAlias {
+		t.Fatal("different aliases shared navigation floor state")
+	}
+}
+
 func TestNavigationMissingAliasResetsToOff(t *testing.T) {
 	testApp := fynetest.NewApp()
 	defer testApp.Quit()
@@ -214,6 +231,69 @@ func TestNavigationHidingStatusRemovesItsLayoutSpace(t *testing.T) {
 	withoutStatus := view.listFrame.Position().Y
 	if withoutStatus >= withStatus {
 		t.Fatalf("list Y after hiding status = %.1f, want less than %.1f", withoutStatus, withStatus)
+	}
+}
+
+func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	view := newBattleNavigationView(
+		game.Games{"selected": win.HWND(123)},
+		game.Games{"Alpha": win.HWND(123)},
+		func() string { return "" },
+		nil,
+	)
+	defer view.close()
+	view.interval = time.Hour
+	view.readSnapshot = func(win.HWND) (navigationSnapshot, error) {
+		return navigationSnapshot{east: 1, south: 1}, nil
+	}
+	data := navigation.MapData{Width: 2, Height: 1, Walkable: []bool{true, true}, Stairs: []navigation.Stair{{East: 1, Type: navigation.StairUp}}}
+	view.newRunner = func(win.HWND) navigation.Runner {
+		return navigation.Runner{
+			PollInterval: time.Millisecond,
+			ReadSnapshot: func() (navigation.MovementSnapshot, error) {
+				return navigation.MovementSnapshot{MapCode: 699, PositionSettled: true, Map: data, InMaze: true}, nil
+			},
+			CanMove: func() bool { return false },
+			Move: func(navigation.Point) {
+				t.Fatal("navigation moved while paused")
+			},
+		}
+	}
+	closedWindows := 0
+	view.closeWindows = func(hWnd win.HWND) {
+		if hWnd != win.HWND(123) {
+			t.Fatalf("closed windows for HWND %v, want 123", hWnd)
+		}
+		closedWindows++
+	}
+	view.setCompact(true)
+	view.selectAlias("Alpha")
+	view.toggleNavigation()
+	if closedWindows != 1 {
+		t.Fatalf("CloseAllWindows calls = %d, want 1 on navigation start", closedWindows)
+	}
+	waitForNavigationTest(t, func() bool {
+		status, _ := view.navigationStatus.Get()
+		return status == navigation.StatusPaused
+	})
+
+	view.mu.Lock()
+	done := view.navigationDone
+	view.mu.Unlock()
+	view.toggleNavigation()
+	if closedWindows != 1 {
+		t.Fatalf("CloseAllWindows calls = %d, want no call on navigation stop", closedWindows)
+	}
+	if status, _ := view.navigationStatus.Get(); status != "Navigation stopped" {
+		t.Fatalf("status = %q, want stopped", status)
+	}
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("navigation runner did not stop")
 	}
 }
 
