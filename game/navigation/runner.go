@@ -18,7 +18,7 @@ const (
 	StatusBlocked       = "Movement blocked"
 	StatusNoExploration = "No unexplored route"
 	StatusNotInMaze     = "Not in a maze"
-	defaultPollInterval = 100 * time.Millisecond
+	defaultPollInterval = 50 * time.Millisecond
 	defaultStepTimeout  = 300 * time.Millisecond
 	defaultRetryLimit   = 1
 	defaultSegmentSteps = 8
