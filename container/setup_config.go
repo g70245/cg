@@ -29,7 +29,10 @@ func notifyBeeperAndLogConfig(title string) {
 }
 
 func notifySetupConfig(title string, alertMusicMissing, logAccessMissing bool) {
-	message := setupReminderMessage(alertMusicMissing, logAccessMissing)
+	notifySetupMessage(title, setupReminderMessage(alertMusicMissing, logAccessMissing))
+}
+
+func notifySetupMessage(title, message string) {
 	if message == "" {
 		return
 	}

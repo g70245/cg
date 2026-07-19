@@ -16,9 +16,9 @@ const (
 	actionConfigLoadError         = "Could not load the selected action configuration. Make sure it is a valid .ac file."
 	actionConfigDestinationError  = "Could not choose where to save the action configuration."
 	actionConfigSaveError         = "Could not save the action configuration file."
-	alertMusicSetupReminder       = "Alert music is not configured. Select an MP3 file before starting this feature."
-	logAccessSetupReminder        = "Game log access is not ready. Select a game folder with a readable Log folder."
-	alertMusicAndLogSetupReminder = "Alert music and game log access must be configured before starting this feature."
+	alertMusicSetupReminder       = "Select alert music."
+	logAccessSetupReminder        = "Select a game folder."
+	alertMusicAndLogSetupReminder = "Select alert music.\nSelect a game folder."
 	invalidActionIDError          = "Enter a valid action ID."
 	noAvailableActionIDError      = "No valid action ID is available."
 )

@@ -3,6 +3,7 @@ package container
 import (
 	"cg/game"
 	"cg/game/navigation"
+	"errors"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -263,7 +264,7 @@ func TestNavigationHidingStatusRemovesItsLayoutSpace(t *testing.T) {
 	}
 }
 
-func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
+func TestNavigationMapErrorPreservesPosition(t *testing.T) {
 	testApp := fynetest.NewApp()
 	defer testApp.Quit()
 
@@ -271,6 +272,39 @@ func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
 		game.Games{"selected": win.HWND(123)},
 		game.Games{"Alpha": win.HWND(123)},
 		func() string { return "" },
+		nil,
+	)
+	defer view.close()
+	view.readSnapshot = func(win.HWND) (navigationSnapshot, error) {
+		return navigationSnapshot{east: 28, south: 48}, errors.New("map unavailable")
+	}
+	view.setCompact(true)
+	view.selectAlias("Alpha")
+
+	waitForNavigationTest(t, func() bool {
+		position, _ := view.position.Get()
+		status, _ := view.status.Get()
+		return position == "Position: (28, 48)" && status == "Map data unavailable."
+	})
+}
+
+func TestRunnerNavigationStatusLeavesMapAvailabilityToUpdater(t *testing.T) {
+	if status := runnerNavigationStatus(navigation.StatusUnavailable); status != "" {
+		t.Fatalf("unavailable runner status = %q, want hidden duplicate", status)
+	}
+	if status := runnerNavigationStatus(navigation.StatusExploring); status != navigation.StatusExploring {
+		t.Fatalf("exploring runner status = %q, want %q", status, navigation.StatusExploring)
+	}
+}
+
+func TestNavigationMovementCanStartAndStopIndependently(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	view := newBattleNavigationView(
+		game.Games{"selected": win.HWND(123)},
+		game.Games{"Alpha": win.HWND(123)},
+		func() string { return "C:\\CG" },
 		nil,
 	)
 	defer view.close()
@@ -358,8 +392,8 @@ func TestNavigationPlayRequiresAlertMusic(t *testing.T) {
 
 	view.toggleNavigation()
 
-	if status, _ := view.navigationStatus.Get(); status != "Set alert music." {
-		t.Fatalf("status = %q, want alert music requirement", status)
+	if status, _ := view.navigationStatus.Get(); status != "" {
+		t.Fatalf("status = %q, want no inline alert music message", status)
 	}
 	if notifications != 1 {
 		t.Fatalf("missing beeper notifications = %d, want 1", notifications)
@@ -372,6 +406,42 @@ func TestNavigationPlayRequiresAlertMusic(t *testing.T) {
 	view.mu.Unlock()
 	if running {
 		t.Fatal("navigation started without alert music")
+	}
+}
+
+func TestNavigationPlayWithoutGameFolderDoesNotStart(t *testing.T) {
+	testApp := fynetest.NewApp()
+	defer testApp.Quit()
+
+	view := newBattleNavigationView(
+		game.Games{"selected": win.HWND(123)},
+		game.Games{"Alpha": win.HWND(123)},
+		func() string { return "" },
+		nil,
+	)
+	defer view.close()
+	view.interval = time.Hour
+	view.beeperReady = func() bool { return true }
+	notifications := 0
+	view.notifyBeeperMissing = func() { notifications++ }
+	closedWindows := 0
+	view.closeWindows = func(win.HWND) { closedWindows++ }
+	view.setCompact(true)
+	view.selectAlias("Alpha")
+
+	view.toggleNavigation()
+
+	if notifications != 0 {
+		t.Fatalf("setup notifications = %d, want none for missing game folder", notifications)
+	}
+	if closedWindows != 0 {
+		t.Fatalf("CloseAllWindows calls = %d, want none when game folder is missing", closedWindows)
+	}
+	view.mu.Lock()
+	running := view.navigationCancel != nil
+	view.mu.Unlock()
+	if running {
+		t.Fatal("navigation started without a game folder")
 	}
 }
 

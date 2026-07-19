@@ -10,9 +10,9 @@ func TestSetupReminderMessage(t *testing.T) {
 		want              string
 	}{
 		{name: "ready"},
-		{name: "alert music", alertMusicMissing: true, want: alertMusicSetupReminder},
-		{name: "log access", logAccessMissing: true, want: logAccessSetupReminder},
-		{name: "both", alertMusicMissing: true, logAccessMissing: true, want: alertMusicAndLogSetupReminder},
+		{name: "alert music", alertMusicMissing: true, want: "Select alert music."},
+		{name: "log access", logAccessMissing: true, want: "Select a game folder."},
+		{name: "both", alertMusicMissing: true, logAccessMissing: true, want: "Select alert music.\nSelect a game folder."},
 	}
 
 	for _, test := range tests {

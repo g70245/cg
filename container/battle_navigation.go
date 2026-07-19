@@ -24,8 +24,9 @@ import (
 )
 
 const (
-	navigationOffOption      = "Navigation Off"
-	navigationUpdateInterval = 500 * time.Millisecond
+	navigationOffOption          = "Navigation Off"
+	navigationAlertMusicReminder = "Select alert music before navigation."
+	navigationUpdateInterval     = 500 * time.Millisecond
 )
 
 type navigationSnapshot struct {
@@ -114,7 +115,7 @@ func newBattleNavigationView(games, allGames game.Games, gameDir func() string, 
 	view.beeperReady = utils.Beeper.IsReady
 	view.playBeeper = utils.Beeper.Play
 	view.stopBeeper = utils.Beeper.Stop
-	view.notifyBeeperMissing = func() { notifyBeeperConfig("Navigation Setup") }
+	view.notifyBeeperMissing = func() { notifySetupMessage("Navigation Setup", navigationAlertMusicReminder) }
 	view.refreshAliases()
 
 	view.selector = widget.NewSelect(view.aliasOptions(), view.selectAlias)
@@ -342,12 +343,12 @@ func (view *battleNavigationView) update(cancel <-chan struct{}) bool {
 	if !current {
 		return true
 	}
+	position := fmt.Sprintf("Position: (%d, %d)", snapshot.east, snapshot.south)
 	if err != nil {
-		view.setDisplay("", "Map data unavailable.", nil)
+		view.setDisplay(position, "Map data unavailable.", nil)
 		return true
 	}
 
-	position := fmt.Sprintf("Position: (%d, %d)", snapshot.east, snapshot.south)
 	if len(snapshot.routes) == 0 {
 		view.setDisplay(position, "No routes found.", nil)
 		return true
@@ -449,10 +450,12 @@ func (view *battleNavigationView) startNavigation() {
 		return
 	}
 	if view.beeperReady == nil || !view.beeperReady() {
-		view.setNavigationStatus("Set alert music.")
 		if view.notifyBeeperMissing != nil {
 			view.notifyBeeperMissing()
 		}
+		return
+	}
+	if view.gameDir == nil || view.gameDir() == "" {
 		return
 	}
 	view.closeWindows(hWnd)
@@ -473,7 +476,7 @@ func (view *battleNavigationView) startNavigation() {
 			current := view.navigationDone == done
 			view.mu.Unlock()
 			if current {
-				view.setNavigationStatus(status)
+				view.setNavigationStatus(runnerNavigationStatus(status))
 			}
 		})
 		view.mu.Lock()
@@ -491,6 +494,13 @@ func (view *battleNavigationView) startNavigation() {
 		}
 		turn(theme.MediaPlayIcon(), view.navigationButton)
 	}()
+}
+
+func runnerNavigationStatus(status string) string {
+	if status == navigation.StatusUnavailable {
+		return ""
+	}
+	return status
 }
 
 func (view *battleNavigationView) navigationRunner(hWnd win.HWND) navigation.Runner {
@@ -627,7 +637,8 @@ func (view *battleNavigationView) routeSnapshot() []string {
 func (view *battleNavigationView) loadSnapshot(hWnd win.HWND) (navigationSnapshot, error) {
 	_, _, path, data, position, err := view.loadMap(hWnd)
 	if err != nil {
-		return navigationSnapshot{}, err
+		position = game.GetCurrentGamePos(hWnd)
+		return navigationSnapshot{east: int(position.X), south: int(position.Y)}, err
 	}
 	if !navigation.IsMazePath(view.gameDir(), path) {
 		view.navigationState(hWnd).Reset()
