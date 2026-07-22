@@ -237,6 +237,41 @@ func (s *ActionState) searchWeightedTShapedHealthLowerThan(ratio float32) (*game
 	return nil, false
 }
 
+func findBestTShapedEnemyTarget(enemies []game.CheckTarget, randomIndex func(int) int) (*game.CheckTarget, bool) {
+	occupied := make(map[game.CheckTarget]struct{}, len(enemies))
+	for _, enemy := range enemies {
+		occupied[enemy] = struct{}{}
+	}
+
+	bestIndices := make([]int, 0, len(enemies))
+	bestCount := 1
+	for i := range enemies {
+		neighbors, knownPosition := tShapedEnemyNeighbors[enemies[i]]
+		if !knownPosition {
+			continue
+		}
+
+		count := 1
+		for _, neighbor := range neighbors {
+			if _, exists := occupied[neighbor]; exists {
+				count++
+			}
+		}
+		if count > bestCount {
+			bestCount = count
+			bestIndices = append(bestIndices[:0], i)
+		} else if count == bestCount && count >= 2 {
+			bestIndices = append(bestIndices, i)
+		}
+	}
+
+	if len(bestIndices) == 0 {
+		return nil, false
+	}
+	selectedIndex := bestIndices[randomIndex(len(bestIndices))]
+	return &enemies[selectedIndex], true
+}
+
 func (s *ActionState) getSelfTarget(characterFirst bool) (*game.CheckTarget, bool) {
 	internal.MoveCursorToNowhere(s.hWnd)
 	capture, err := internal.CaptureClientArea(s.hWnd, 0, 0, game.GAME_WIDTH, game.GAME_HEIGHT)

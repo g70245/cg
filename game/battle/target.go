@@ -36,10 +36,22 @@ var (
 	allCharacters = []game.CheckTarget{PLAYER_L_1_C, PLAYER_L_2_C, PLAYER_L_3_C, PLAYER_L_4_C, PLAYER_L_5_C}
 	allPets       = []game.CheckTarget{PLAYER_L_1_P, PLAYER_L_2_P, PLAYER_L_3_P, PLAYER_L_4_P, PLAYER_L_5_P}
 
-	F4_W         = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
-	F4_P         = []game.CheckTarget{MON_POS_B_3, MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
-	AllEnemies   = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_1, MON_POS_B_2, MON_POS_B_3, MON_POS_B_4, MON_POS_B_5}
-	EnemyEnumMap = map[enemy.Position]game.CheckTarget{enemy.T1: MON_POS_T_1, enemy.T2: MON_POS_T_2, enemy.T3: MON_POS_T_3, enemy.T4: MON_POS_T_4, enemy.T5: MON_POS_T_5, enemy.B1: MON_POS_B_1, enemy.B2: MON_POS_B_2, enemy.B3: MON_POS_B_3, enemy.B4: MON_POS_B_4, enemy.B5: MON_POS_B_5}
+	F4_W                  = []game.CheckTarget{MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_B_3, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
+	F4_P                  = []game.CheckTarget{MON_POS_B_3, MON_POS_T_5, MON_POS_B_5, MON_POS_T_4, MON_POS_B_4, MON_POS_T_3, MON_POS_T_2, MON_POS_B_2, MON_POS_T_1, MON_POS_B_1}
+	AllEnemies            = []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_T_4, MON_POS_T_5, MON_POS_B_1, MON_POS_B_2, MON_POS_B_3, MON_POS_B_4, MON_POS_B_5}
+	EnemyEnumMap          = map[enemy.Position]game.CheckTarget{enemy.T1: MON_POS_T_1, enemy.T2: MON_POS_T_2, enemy.T3: MON_POS_T_3, enemy.T4: MON_POS_T_4, enemy.T5: MON_POS_T_5, enemy.B1: MON_POS_B_1, enemy.B2: MON_POS_B_2, enemy.B3: MON_POS_B_3, enemy.B4: MON_POS_B_4, enemy.B5: MON_POS_B_5}
+	tShapedEnemyNeighbors = map[game.CheckTarget][]game.CheckTarget{
+		MON_POS_T_1: {MON_POS_T_2, MON_POS_B_1},
+		MON_POS_T_2: {MON_POS_T_1, MON_POS_T_3, MON_POS_B_2},
+		MON_POS_T_3: {MON_POS_T_2, MON_POS_T_4, MON_POS_B_3},
+		MON_POS_T_4: {MON_POS_T_3, MON_POS_T_5, MON_POS_B_4},
+		MON_POS_T_5: {MON_POS_T_4, MON_POS_B_5},
+		MON_POS_B_1: {MON_POS_B_2, MON_POS_T_1},
+		MON_POS_B_2: {MON_POS_B_1, MON_POS_B_3, MON_POS_T_2},
+		MON_POS_B_3: {MON_POS_B_2, MON_POS_B_4, MON_POS_T_3},
+		MON_POS_B_4: {MON_POS_B_3, MON_POS_B_5, MON_POS_T_4},
+		MON_POS_B_5: {MON_POS_B_4, MON_POS_T_5},
+	}
 )
 
 const (

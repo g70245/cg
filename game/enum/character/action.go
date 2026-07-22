@@ -22,6 +22,7 @@ const (
 	Steal
 	Catch
 	TrainSkill
+	TShapedSkill
 )
 
 func (a Action) String() string {
@@ -64,6 +65,8 @@ func (a Action) String() string {
 		return "Catch"
 	case TrainSkill:
 		return "Train Skill"
+	case TShapedSkill:
+		return "*T-Shaped Skill"
 	default:
 		return "Unknown"
 	}

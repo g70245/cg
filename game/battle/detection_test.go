@@ -114,6 +114,51 @@ func TestGetSelfTargetFromCaptureHandlesNilCapture(t *testing.T) {
 	}
 }
 
+func TestFindBestTShapedEnemyTarget(t *testing.T) {
+	tests := []struct {
+		name    string
+		enemies []game.CheckTarget
+		want    *game.CheckTarget
+	}{
+		{name: "no enemies"},
+		{name: "one enemy", enemies: []game.CheckTarget{MON_POS_T_3}},
+		{name: "horizontal pair", enemies: []game.CheckTarget{MON_POS_T_2, MON_POS_T_3}, want: &MON_POS_T_2},
+		{name: "vertical pair", enemies: []game.CheckTarget{MON_POS_T_3, MON_POS_B_3}, want: &MON_POS_T_3},
+		{name: "full T shape", enemies: []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_B_2}, want: &MON_POS_T_2},
+		{name: "selects largest hit count", enemies: []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_T_3, MON_POS_B_2, MON_POS_B_5}, want: &MON_POS_T_2},
+		{name: "missing center", enemies: []game.CheckTarget{MON_POS_T_3, MON_POS_B_2, MON_POS_B_4}},
+		{name: "left edge", enemies: []game.CheckTarget{MON_POS_T_1, MON_POS_T_2, MON_POS_B_1}, want: &MON_POS_T_1},
+		{name: "right edge", enemies: []game.CheckTarget{MON_POS_T_5, MON_POS_B_4, MON_POS_B_5}, want: &MON_POS_B_5},
+		{name: "tie can select first candidate", enemies: []game.CheckTarget{MON_POS_B_4, MON_POS_T_2, MON_POS_B_5, MON_POS_T_1}, want: &MON_POS_B_4},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, found := findBestTShapedEnemyTarget(test.enemies, func(int) int { return 0 })
+			if test.want == nil {
+				if got != nil || found {
+					t.Fatalf("findBestTShapedEnemyTarget() = (%v, %t), want (nil, false)", got, found)
+				}
+				return
+			}
+			if got == nil || *got != *test.want || !found {
+				t.Fatalf("findBestTShapedEnemyTarget() = (%v, %t), want (%v, true)", got, found, test.want)
+			}
+		})
+	}
+}
+
+func TestFindBestTShapedEnemyTargetCanSelectAnotherTiedCandidate(t *testing.T) {
+	enemies := []game.CheckTarget{MON_POS_B_4, MON_POS_T_2, MON_POS_B_5, MON_POS_T_1}
+
+	got, found := findBestTShapedEnemyTarget(enemies, func(candidateCount int) int {
+		return candidateCount - 1
+	})
+	if got == nil || *got != MON_POS_T_1 || !found {
+		t.Fatalf("findBestTShapedEnemyTarget() = (%v, %t), want (%v, true)", got, found, MON_POS_T_1)
+	}
+}
+
 func markSelfTarget(capture *image.RGBA, target *game.CheckTarget, nameColor win.COLORREF) {
 	setBattleCaptureColor(capture, target.X, target.Y, COLOR_BATTLE_BLOOD_UPPER)
 	setBattleCaptureColor(capture, target.X+8, target.Y-10, nameColor)

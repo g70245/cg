@@ -279,6 +279,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var moveButton *widget.Button
 			var hangButton *widget.Button
 			var skillButton *widget.Button
+			var tShapedSkillButton *widget.Button
 			var thresholdSkillButton *widget.Button
 			var stealButton *widget.Button
 			var trainButton *widget.Button
@@ -395,6 +396,19 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
 			skillButton.Importance = widget.HighImportance
+
+			tShapedSkillButton = widget.NewButton(character.TShapedSkill.String(), func() {
+				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.TShapedSkill) })
+
+				dialogs := []func(){
+					offsetSelectorDialog(role.Character),
+					levelSelectorDialog(role.Character),
+					successControlUnitSelectorDialog(role.Character),
+					failureControlUnitSelectorDialog(role.Character),
+				}
+				activateDialogs(dialogs, selectorDialogEnableChan)
+			})
+			tShapedSkillButton.Importance = widget.HighImportance
 
 			thresholdSkillButton = widget.NewButton(character.ThresholdSkill.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.ThresholdSkill) })
@@ -525,6 +539,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				escapeButton,
 				moveButton,
 				skillButton,
+				tShapedSkillButton,
 				thresholdSkillButton,
 				bombButton,
 				recallButton,
@@ -554,6 +569,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var petAttackButton *widget.Button
 			var petHangButton *widget.Button
 			var petSkillButton *widget.Button
+			var petTShapedSkillButton *widget.Button
 			var petDefendButton *widget.Button
 			var petEscapeButton *widget.Button
 			var petHealSelfButton *widget.Button
@@ -590,6 +606,18 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
 			petSkillButton.Importance = widget.HighImportance
+
+			petTShapedSkillButton = widget.NewButton(pet.TShapedSkill.String(), func() {
+				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.TShapedSkill) })
+
+				dialogs := []func(){
+					offsetSelectorDialog(role.Pet),
+					successControlUnitSelectorDialog(role.Pet),
+					failureControlUnitSelectorDialog(role.Pet),
+				}
+				activateDialogs(dialogs, selectorDialogEnableChan)
+			})
+			petTShapedSkillButton.Importance = widget.HighImportance
 
 			petDefendButton = widget.NewButton(pet.Defend.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Defend) })
@@ -681,6 +709,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				petEscapeButton,
 				petDefendButton,
 				petSkillButton,
+				petTShapedSkillButton,
 				petRideButton,
 				petOffRideButton,
 				petHealSelfButton,

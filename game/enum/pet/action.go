@@ -14,6 +14,7 @@ const (
 	OffRide
 	Catch
 	Hang
+	TShapedSkill
 )
 
 func (a Action) String() string {
@@ -38,6 +39,8 @@ func (a Action) String() string {
 		return "Pet Catch"
 	case Hang:
 		return "Pet Wait"
+	case TShapedSkill:
+		return "*Pet T-Shaped Skill"
 	default:
 		return "Unknown"
 	}

@@ -183,6 +183,34 @@ func (s *ActionState) executeCharacterStateMachine() {
 				s.logH("cannot find the position of window")
 				s.setFailureState(role.Character)
 			}
+		case character.TShapedSkill:
+			target, ok := findBestTShapedEnemyTarget(s.enemies, rand.Intn)
+			if !ok {
+				s.logH("performs next action due to too few adjacent enemies")
+				break
+			}
+
+			game.OpenWindow(s.hWnd, game.KEY_SKILL)
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.CharacterActions[s.currentCharacterActionId].Offset)
+				level := int(s.CharacterActions[s.currentCharacterActionId].Level)
+				game.UseCharacterSkill(s.hWnd, x, y, offset, level)
+				if s.didCharacterMissSkill(x, y) {
+					s.logH("missed the skill button or is out of mana")
+				} else if s.isCharacterActionSuccessful() {
+					s.logH("used a T-shaped skill")
+					s.setSuccessState(role.Character)
+				} else if s.attackTarget(target, s.isCharacterActionSuccessful) {
+					s.logH("used a T-shaped skill")
+					s.setSuccessState(role.Character)
+				} else {
+					s.logH("missed a hit")
+					s.setFailureState(role.Character)
+				}
+			} else {
+				s.logH("cannot find the position of window")
+				s.setFailureState(role.Character)
+			}
 
 		case character.ThresholdSkill:
 			threshold, _ := strconv.Atoi(strings.Split(string(s.CharacterActions[s.currentCharacterActionId].Threshold), " ")[0])
@@ -576,6 +604,30 @@ func (s *ActionState) executePetStateMachiine() {
 				s.logP("cannot find the position of window")
 				s.setFailureState(role.Pet)
 			}
+		case pet.TShapedSkill:
+			target, ok := findBestTShapedEnemyTarget(s.enemies, rand.Intn)
+			if !ok {
+				s.logP("performs next action due to too few adjacent enemies")
+				break
+			}
+
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				if s.didPetMissSkill() || s.didOnRideMissSkill() {
+					s.logP("missed the skill button or is out of mana")
+				} else if s.attackTarget(target, s.isPetActionSuccessful) {
+					s.logP("used a T-shaped skill")
+					s.setSuccessState(role.Pet)
+				} else {
+					s.logP("missed a hit")
+					s.setFailureState(role.Pet)
+				}
+			} else {
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
+			}
 		case pet.HealSelf:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
@@ -784,6 +836,12 @@ func (s *ActionState) attack(stateChecker func() bool) bool {
 		}
 	}
 	return false
+}
+
+func (s *ActionState) attackTarget(target *game.CheckTarget, stateChecker func() bool) bool {
+	internal.LeftClick(s.hWnd, target.X, target.Y)
+	time.Sleep(DURATION_BATTLE_ACTION_ATTACK)
+	return stateChecker()
 }
 
 func (s *ActionState) aim(target *game.CheckTarget, stateChecker func() bool) bool {
