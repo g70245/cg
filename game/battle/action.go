@@ -628,6 +628,30 @@ func (s *ActionState) executePetStateMachiine() {
 				s.logP("cannot find the position of window")
 				s.setFailureState(role.Pet)
 			}
+		case pet.ThresholdSkill:
+			threshold, _ := strconv.Atoi(strings.Split(string(s.PetActions[s.currentPetActionId].Threshold), " ")[0])
+			if len(s.enemies) < threshold {
+				s.logP("performs next action due to too few enemies")
+				break
+			}
+
+			s.openPetSkillWindow()
+			if x, y, ok := s.getSkillWindowPos(); ok {
+				offset := int(s.PetActions[s.currentPetActionId].Offset)
+				game.UsePetSkill(s.hWnd, x, y, offset)
+				if s.didPetMissSkill() || s.didOnRideMissSkill() {
+					s.logP("missed the skill button or is out of mana")
+				} else if s.attack(s.isPetActionSuccessful) {
+					s.logP("used a skill")
+					s.setSuccessState(role.Pet)
+				} else {
+					s.logP("missed a hit")
+					s.setFailureState(role.Pet)
+				}
+			} else {
+				s.logP("cannot find the position of window")
+				s.setFailureState(role.Pet)
+			}
 		case pet.HealSelf:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
@@ -987,7 +1011,12 @@ func (s *ActionState) AddSkillOffset(r role.Role, offset offset.Offset) {
 }
 
 func (s *ActionState) AddThreshold(r role.Role, threshold threshold.Threshold) {
-	s.CharacterActions[len(s.CharacterActions)-1].Threshold = threshold
+	switch r {
+	case role.Character:
+		s.CharacterActions[len(s.CharacterActions)-1].Threshold = threshold
+	case role.Pet:
+		s.PetActions[len(s.PetActions)-1].Threshold = threshold
+	}
 }
 
 func (s *ActionState) AddParam(r role.Role, param string) {

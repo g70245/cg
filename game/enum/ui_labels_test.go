@@ -24,6 +24,7 @@ func TestUserFacingEnumLabels(t *testing.T) {
 		{name: "pet heal ally", got: pet.HealOne.String(), want: "*Pet Heal Ally"},
 		{name: "pet dismount", got: pet.OffRide.String(), want: "*Pet Dismount"},
 		{name: "pet T-shaped skill", got: pet.TShapedSkill.String(), want: "*Pet T-Shaped Skill"},
+		{name: "pet threshold skill", got: pet.ThresholdSkill.String(), want: "*Pet Threshold Skill"},
 	}
 
 	for _, test := range tests {
@@ -39,7 +40,7 @@ func TestActionEnumValuesRemainCompatible(t *testing.T) {
 	if character.TrainSkill != 18 || character.TShapedSkill != 19 {
 		t.Fatalf("character action values = (TrainSkill: %d, TShapedSkill: %d), want (18, 19)", character.TrainSkill, character.TShapedSkill)
 	}
-	if pet.Hang != 10 || pet.TShapedSkill != 11 {
-		t.Fatalf("pet action values = (Hang: %d, TShapedSkill: %d), want (10, 11)", pet.Hang, pet.TShapedSkill)
+	if pet.Hang != 10 || pet.TShapedSkill != 11 || pet.ThresholdSkill != 12 {
+		t.Fatalf("pet action values = (Hang: %d, TShapedSkill: %d, ThresholdSkill: %d), want (10, 11, 12)", pet.Hang, pet.TShapedSkill, pet.ThresholdSkill)
 	}
 }

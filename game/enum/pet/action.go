@@ -15,6 +15,7 @@ const (
 	Catch
 	Hang
 	TShapedSkill
+	ThresholdSkill
 )
 
 func (a Action) String() string {
@@ -41,6 +42,8 @@ func (a Action) String() string {
 		return "Pet Wait"
 	case TShapedSkill:
 		return "*Pet T-Shaped Skill"
+	case ThresholdSkill:
+		return "*Pet Threshold Skill"
 	default:
 		return "Unknown"
 	}

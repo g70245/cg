@@ -9,6 +9,9 @@ import (
 
 	"cg/game/enum/character"
 	"cg/game/enum/movement"
+	"cg/game/enum/pet"
+	"cg/game/enum/role"
+	"cg/game/enum/threshold"
 )
 
 func TestManaCheckerConcurrentAccess(t *testing.T) {
@@ -157,5 +160,21 @@ func TestActionStateJSONRoundTrip(t *testing.T) {
 	}
 	if len(decoded.PetActions) != len(actionState.PetActions) {
 		t.Fatalf("pet action count = %d, want %d", len(decoded.PetActions), len(actionState.PetActions))
+	}
+}
+
+func TestActionStateAddThresholdByRole(t *testing.T) {
+	actionState := ActionState{}
+	actionState.AddCharacterAction(character.ThresholdSkill)
+	actionState.AddPetAction(pet.ThresholdSkill)
+
+	actionState.AddThreshold(role.Character, threshold.TwoFoes)
+	actionState.AddThreshold(role.Pet, threshold.ThreeFoes)
+
+	if got := actionState.CharacterActions[0].Threshold; got != threshold.TwoFoes {
+		t.Fatalf("character threshold = %q, want %q", got, threshold.TwoFoes)
+	}
+	if got := actionState.PetActions[0].Threshold; got != threshold.ThreeFoes {
+		t.Fatalf("pet threshold = %q, want %q", got, threshold.ThreeFoes)
 	}
 }
