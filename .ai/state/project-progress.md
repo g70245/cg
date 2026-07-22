@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-07-19
+Last updated: 2026-07-23
 
 ## Project direction
 
@@ -42,6 +42,8 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added opt-in local-map navigation beneath Compact Battle: `Navigation Off` is the collapsed default, one alias controls the monitored window, its map code resolves a numeric `.dat` at supported shallow levels under the selected Game Folder's `map` directory without a recursive fallback, routes are sorted by distance in a scrollable list that grows with the window, and all displayed text is neutral English without map names or filesystem paths.
 - Added opt-in automatic maze traversal to Compact Battle: Play requires configured alert music, closes open client windows once before movement, then the selected alias explores branches as its moving field of view expands the local map, combines transition data with per-cell GraphicInfo MapID passability, never crosses opposite-direction transitions, remembers only a nearby Passage on initial start, and uses map code plus map name to recognize automatic floor changes, invalidate same-file map caches, wait for a transition near the new spawn, and remember that entry transition together with the arrival direction, follows a reachable requested Up/Down stair once revealed, accepts any other Passage as an exit, and when neither exists tries the nearest of duplicate opposite-direction stairs, remembers failed candidates separately from floor entries, automatically re-enters the selected stair after a wrong candidate returns to a normal floor, clears only candidate attempts when the selector changes, and applies entry blocking only while continuing the arrival direction so an explicit reversal uses the known entry, uses validated eight-direction paths with four-cell cardinal and two-cell diagonal waypoints plus 50 ms navigation polling and a navigation-only 50 ms cursor plus 30 ms click delay that does not affect shared item, skill, battle, or production input timing, independently checks the existing verification-log predicate every 500 ms before map reads or movement, stops with `Verification required` and plays the configured beeper when triggered, stops that alert when Play is pressed again while retaining the global Ctrl+0 mute shortcut, prefers routes around current `0xC002` monster cells but falls back through them when they are the only route, waits for every grouped window to leave battle, temporarily excludes only an exact stalled cell, retries once with clean transient state if that block leaves no route, keeps entry avoidance during continuous traversal but lets a new Play step off and re-enter a remembered entry when its type is explicitly selected, and stops on exit or any navigation lifecycle change.
 - Smoothed known wall-adjacent navigation turns by extending a validated waypoint one cell beyond the corner while leaving open turns, fog boundaries, and backward turns unchanged.
+- Added character and pet T-shaped skill actions that require at least two adjacent enemies, select a maximum-coverage landing point with random tie-breaking, preserve existing action configuration values, and share focused target-selection tests.
+- Added Pet Threshold Skill with role-aware threshold configuration, existing Pet Skill targeting behavior, and enum compatibility coverage.
 
 ## Current repository facts
 
@@ -55,7 +57,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 
 ## Active tasks
 
-- None.
+- [`activity-monitor-custom-phrases`](tasks/activity-monitor-custom-phrases.md) (`planned`): add group-local runtime activity phrases through a separate UI control while retaining the existing monitoring toggle.
 
 ## Important decisions
 
