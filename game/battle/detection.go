@@ -117,8 +117,10 @@ func getInventoryPosFromCapture(capture *image.RGBA) (int32, int32, bool) {
 	return x - 78, y + 20, true
 }
 
-func (s *ActionState) isInventoryStuck() bool {
-	return internal.GetColor(s.hWnd, BATTLE_COMMAND_ITEM.X, BATTLE_COMMAND_ITEM.Y) == COLOR_BATTLE_COMMAND_ENABLE
+func (s *ActionState) isBattleCommandStuck() bool {
+	return s.isBattleCommandEnable(BATTLE_COMMAND_SKILL) ||
+		s.isBattleCommandEnable(BATTLE_COMMAND_ITEM) ||
+		s.isBattleCommandEnable(BATTLE_COMMAND_PET)
 }
 
 func (s *ActionState) isInventoryStillOpened(x, y int32) bool {

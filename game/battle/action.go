@@ -1085,7 +1085,7 @@ func (s *ActionState) detectEnemies() {
 		return
 	}
 
-	if s.isInventoryStuck() {
+	if s.isBattleCommandStuck() {
 		s.openSkillWindowWithMouse()
 	}
 	game.CloseAllWindows(s.hWnd)
