@@ -1,12 +1,15 @@
 package battle
 
 import (
+	"image"
 	"log"
 	"time"
 
 	"cg/game"
 	"cg/game/enum/enemy"
 	"cg/internal"
+
+	"github.com/g70245/win"
 )
 
 var (
@@ -59,6 +62,12 @@ const (
 	flawlessPetRetryInterval = 50 * time.Millisecond
 )
 
+var flawlessPetColors = []win.COLORREF{
+	COLOR_BATTLE_FLAWLESS_PET,
+	COLOR_BATTLE_FLAWLESS_PET_WARM,
+	COLOR_BATTLE_FLAWLESS_PET_BLUE,
+}
+
 func (s *ActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTarget {
 	targets := []game.CheckTarget{}
 
@@ -90,16 +99,34 @@ func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
 			destinationX := checkTargets[i].X + 26
 			destinationY := checkTargets[i].Y + 18
 
-			if err == nil && internal.RGBAAreaContainsColor(capture, originX, originY, destinationX, destinationY, COLOR_BATTLE_FLAWLESS_PET) {
+			if err == nil && captureContainsFlawlessPetColor(capture, originX, originY, destinationX, destinationY) {
 				return true
 			}
-			if err != nil && game.CheckAreaColor(s.hWnd, originX, originY, destinationX, destinationY, COLOR_BATTLE_FLAWLESS_PET) {
+			if err != nil && windowContainsFlawlessPetColor(s.hWnd, originX, originY, destinationX, destinationY) {
 				return true
 			}
 		}
 
 		if attempt+1 < flawlessPetMaxRetries {
 			time.Sleep(flawlessPetRetryInterval)
+		}
+	}
+	return false
+}
+
+func captureContainsFlawlessPetColor(capture *image.RGBA, originX, originY, destinationX, destinationY int32) bool {
+	for _, expectedColor := range flawlessPetColors {
+		if internal.RGBAAreaContainsColor(capture, originX, originY, destinationX, destinationY, expectedColor) {
+			return true
+		}
+	}
+	return false
+}
+
+func windowContainsFlawlessPetColor(hWnd win.HWND, originX, originY, destinationX, destinationY int32) bool {
+	for _, expectedColor := range flawlessPetColors {
+		if game.CheckAreaColor(hWnd, originX, originY, destinationX, destinationY, expectedColor) {
+			return true
 		}
 	}
 	return false

@@ -114,6 +114,35 @@ func TestGetSelfTargetFromCaptureHandlesNilCapture(t *testing.T) {
 	}
 }
 
+func TestCaptureContainsFlawlessPetColorRecognizesKnownSparkles(t *testing.T) {
+	tests := []struct {
+		name       string
+		color      win.COLORREF
+		wantFound  bool
+		wantAbsent bool
+	}{
+		{name: "original sparkle", color: COLOR_BATTLE_FLAWLESS_PET, wantFound: true},
+		{name: "warm sparkle", color: COLOR_BATTLE_FLAWLESS_PET_WARM, wantFound: true},
+		{name: "blue sparkle", color: COLOR_BATTLE_FLAWLESS_PET_BLUE, wantFound: true},
+		{name: "unlisted color", color: 0xffff00, wantAbsent: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			capture := image.NewRGBA(image.Rect(0, 0, game.GAME_WIDTH, game.GAME_HEIGHT))
+			setBattleCaptureColor(capture, PLAYER_L_3_C.X+3, PLAYER_L_3_C.Y+3, test.color)
+
+			got := captureContainsFlawlessPetColor(capture, PLAYER_L_3_C.X-38, PLAYER_L_3_C.Y-10, PLAYER_L_3_C.X+26, PLAYER_L_3_C.Y+18)
+			if got != test.wantFound {
+				t.Fatalf("captureContainsFlawlessPetColor() = %t, want %t", got, test.wantFound)
+			}
+			if test.wantAbsent && got {
+				t.Fatal("captureContainsFlawlessPetColor() accepted an unlisted color")
+			}
+		})
+	}
+}
+
 func TestFindBestTShapedEnemyTarget(t *testing.T) {
 	tests := []struct {
 		name    string
