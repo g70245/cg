@@ -121,9 +121,11 @@ func TestCaptureContainsFlawlessPetColorRecognizesKnownSparkles(t *testing.T) {
 		wantFound  bool
 		wantAbsent bool
 	}{
-		{name: "original sparkle", color: COLOR_BATTLE_FLAWLESS_PET, wantFound: true},
-		{name: "warm sparkle", color: COLOR_BATTLE_FLAWLESS_PET_WARM, wantFound: true},
-		{name: "blue sparkle", color: COLOR_BATTLE_FLAWLESS_PET_BLUE, wantFound: true},
+		{name: "morning sparkle", color: COLOR_BATTLE_FLAWLESS_PET_MORNING, wantFound: true},
+		{name: "day sparkle", color: COLOR_BATTLE_FLAWLESS_PET_DAY, wantFound: true},
+		{name: "dusk sparkle", color: COLOR_BATTLE_FLAWLESS_PET_DUSK, wantFound: true},
+		{name: "night sparkle", color: COLOR_BATTLE_FLAWLESS_PET_NIGHT, wantFound: true},
+		{name: "unconfirmed dusk sparkle", color: 11528959, wantAbsent: true},
 		{name: "unlisted color", color: 0xffff00, wantAbsent: true},
 	}
 
