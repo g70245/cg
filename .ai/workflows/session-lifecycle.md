@@ -24,7 +24,7 @@ Startup confirmation acknowledges repository and task context only; it does not 
 
 Treat every new request to change project source, configuration, documentation, architecture, or Git-tracked state as a proposal rather than implementation authorization.
 
-1. Discuss the objective, relevant impact, and material choices when they are not already clear. Read-only repository inspection is allowed.
+1. Discuss and clarify the objective, relevant impact, and material choices when they are not already clear. Ask focused questions when needed. Read-only repository inspection is allowed.
 2. When the request is sufficiently defined, use `.ai/skills/implementation-plan/SKILL.md` even if the user did not explicitly ask for a plan.
 3. Produce the repository-grounded plan and stop without modifying project or Git state.
 4. Implement only after the user gives an unambiguous execution instruction for that plan, such as `Execute the plan`, `Start implementation`, `Proceed`, `Implement the plan`, or `執行計畫`.
