@@ -94,17 +94,22 @@ func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
 			captureFailureLogged = true
 		}
 
-		for i := range checkTargets {
-			originX := checkTargets[i].X - 38
-			originY := checkTargets[i].Y - 10
-			destinationX := checkTargets[i].X + 26
-			destinationY := checkTargets[i].Y + 18
-
-			if err == nil && captureContainsFlawlessPetColor(capture, originX, originY, destinationX, destinationY) {
+		if err == nil {
+			if captureContainsFlawlessPetColor(capture) {
 				return true
 			}
-			if err != nil && windowContainsFlawlessPetColor(s.hWnd, originX, originY, destinationX, destinationY) {
-				return true
+		}
+
+		if err != nil {
+			for i := range checkTargets {
+				originX := checkTargets[i].X - 38
+				originY := checkTargets[i].Y - 10
+				destinationX := checkTargets[i].X + 26
+				destinationY := checkTargets[i].Y + 18
+
+				if windowContainsFlawlessPetColor(s.hWnd, originX, originY, destinationX, destinationY) {
+					return true
+				}
 			}
 		}
 
@@ -115,10 +120,35 @@ func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
 	return false
 }
 
-func captureContainsFlawlessPetColor(capture *image.RGBA, originX, originY, destinationX, destinationY int32) bool {
-	for _, expectedColor := range flawlessPetColors {
-		if internal.RGBAAreaContainsColor(capture, originX, originY, destinationX, destinationY, expectedColor) {
-			return true
+func captureContainsFlawlessPetColor(capture *image.RGBA) bool {
+	if capture == nil {
+		return false
+	}
+
+	bounds := capture.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	if width == 0 || height == 0 {
+		return false
+	}
+
+	for y := 0; y < height; y++ {
+		maxX := width - 1
+		if height > 1 {
+			maxX = (width - 1) * (height - 1 - y) / (height - 1)
+		}
+
+		offset := capture.PixOffset(bounds.Min.X, bounds.Min.Y+y)
+		for x := 0; x <= maxX; x++ {
+			actualColor := win.COLORREF(capture.Pix[offset]) |
+				win.COLORREF(capture.Pix[offset+1])<<8 |
+				win.COLORREF(capture.Pix[offset+2])<<16
+			for _, expectedColor := range flawlessPetColors {
+				if actualColor == expectedColor {
+					return true
+				}
+			}
+			offset += 4
 		}
 	}
 	return false

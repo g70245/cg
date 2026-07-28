@@ -116,32 +116,43 @@ func TestGetSelfTargetFromCaptureHandlesNilCapture(t *testing.T) {
 
 func TestCaptureContainsFlawlessPetColorRecognizesKnownSparkles(t *testing.T) {
 	tests := []struct {
-		name       string
-		color      win.COLORREF
-		wantFound  bool
-		wantAbsent bool
+		name      string
+		color     win.COLORREF
+		wantFound bool
 	}{
 		{name: "morning sparkle", color: COLOR_BATTLE_FLAWLESS_PET_MORNING, wantFound: true},
 		{name: "day sparkle", color: COLOR_BATTLE_FLAWLESS_PET_DAY, wantFound: true},
 		{name: "dusk sparkle", color: COLOR_BATTLE_FLAWLESS_PET_DUSK, wantFound: true},
 		{name: "night sparkle", color: COLOR_BATTLE_FLAWLESS_PET_NIGHT, wantFound: true},
-		{name: "unconfirmed dusk sparkle", color: 11528959, wantAbsent: true},
-		{name: "unlisted color", color: 0xffff00, wantAbsent: true},
+		{name: "unconfirmed dusk sparkle", color: 11528959},
+		{name: "unlisted color", color: 0xffff00},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			capture := image.NewRGBA(image.Rect(0, 0, game.GAME_WIDTH, game.GAME_HEIGHT))
-			setBattleCaptureColor(capture, PLAYER_L_3_C.X+3, PLAYER_L_3_C.Y+3, test.color)
+			setBattleCaptureColor(capture, 100, 100, test.color)
 
-			got := captureContainsFlawlessPetColor(capture, PLAYER_L_3_C.X-38, PLAYER_L_3_C.Y-10, PLAYER_L_3_C.X+26, PLAYER_L_3_C.Y+18)
+			got := captureContainsFlawlessPetColor(capture)
 			if got != test.wantFound {
 				t.Fatalf("captureContainsFlawlessPetColor() = %t, want %t", got, test.wantFound)
 			}
-			if test.wantAbsent && got {
-				t.Fatal("captureContainsFlawlessPetColor() accepted an unlisted color")
-			}
 		})
+	}
+}
+
+func TestCaptureContainsFlawlessPetColorExcludesLowerRightTriangle(t *testing.T) {
+	capture := image.NewRGBA(image.Rect(0, 0, game.GAME_WIDTH, game.GAME_HEIGHT))
+	setBattleCaptureColor(capture, 500, 400, COLOR_BATTLE_FLAWLESS_PET_NIGHT)
+
+	if captureContainsFlawlessPetColor(capture) {
+		t.Fatal("captureContainsFlawlessPetColor() included the lower-right player area")
+	}
+}
+
+func TestCaptureContainsFlawlessPetColorHandlesNilCapture(t *testing.T) {
+	if captureContainsFlawlessPetColor(nil) {
+		t.Fatal("captureContainsFlawlessPetColor(nil) = true, want false")
 	}
 }
 
