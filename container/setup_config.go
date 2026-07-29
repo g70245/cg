@@ -12,10 +12,6 @@ func notifyBeeperConfig(title string) {
 	notifySetupConfig(title, !utils.Beeper.IsReady(), false)
 }
 
-func notifyLogConfig(title string) {
-	notifySetupConfig(title, false, game.ValidateLogDirectory(r.getGameDir()) != nil)
-}
-
 func validateLogConfig(title string) bool {
 	if err := game.ValidateLogDirectory(r.getGameDir()); err != nil {
 		dialog.NewInformation(title, err.Error(), window).Show()

@@ -272,12 +272,12 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var attackButton *widget.Button
 			var defendButton *widget.Button
 			var escapeButton *widget.Button
-			var catchButton *widget.Button
+			var healthButton *widget.Button
 			var bombButton *widget.Button
 			var potionButton *widget.Button
 			var recallButton *widget.Button
 			var moveButton *widget.Button
-			var hangButton *widget.Button
+			var waitButton *widget.Button
 			var skillButton *widget.Button
 			var tShapedSkillButton *widget.Button
 			var thresholdSkillButton *widget.Button
@@ -321,18 +321,16 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			escapeButton.Importance = widget.WarningImportance
 
-			catchButton = widget.NewButton(character.Catch.String(), func() {
-				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Catch) })
+			healthButton = widget.NewButton(character.Health.String(), func() {
+				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Health) })
 				refreshActionViewer()
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(role.Character),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
-
-				notifyLogConfig("Catch Setup")
 			})
-			catchButton.Importance = widget.SuccessImportance
+			healthButton.Importance = widget.SuccessImportance
 
 			bombButton = widget.NewButton(character.Bomb.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Bomb) })
@@ -378,11 +376,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			moveButton.Importance = widget.WarningImportance
 
-			hangButton = widget.NewButton(character.Hang.String(), func() {
+			waitButton = widget.NewButton(character.Hang.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Hang) })
 				refreshActionViewer()
 			})
-			hangButton.Importance = widget.SuccessImportance
+			waitButton.Importance = widget.SuccessImportance
 
 			skillButton = widget.NewButton(character.Skill.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Skill) })
@@ -550,9 +548,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				healOneButton,
 				healTShapeButton,
 				healMultiButton,
-				hangButton,
-				catchButton,
+				healthButton,
 				trainButton,
+				waitButton,
 			)
 
 			actionsDialog := dialog.NewCustom("Add Character Actions in Order", "Close", actionsContainer, window)
@@ -567,7 +565,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			refreshActionViewer()
 
 			var petAttackButton *widget.Button
-			var petHangButton *widget.Button
+			var petWaitButton *widget.Button
 			var petSkillButton *widget.Button
 			var petTShapedSkillButton *widget.Button
 			var petThresholdSkillButton *widget.Button
@@ -577,7 +575,7 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
 			var petOffRideButton *widget.Button
-			var petCatchButton *widget.Button
+			var petHealthButton *widget.Button
 
 			petAttackButton = widget.NewButton(pet.Attack.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Attack) })
@@ -590,11 +588,11 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petAttackButton.Importance = widget.WarningImportance
 
-			petHangButton = widget.NewButton(pet.Hang.String(), func() {
+			petWaitButton = widget.NewButton(pet.Hang.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Hang) })
 				refreshActionViewer()
 			})
-			petHangButton.Importance = widget.SuccessImportance
+			petWaitButton.Importance = widget.SuccessImportance
 
 			petSkillButton = widget.NewButton(pet.Skill.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Skill) })
@@ -705,18 +703,16 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petEscapeButton.Importance = widget.WarningImportance
 
-			petCatchButton = widget.NewButton(pet.Catch.String(), func() {
-				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Catch) })
+			petHealthButton = widget.NewButton(pet.Health.String(), func() {
+				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Health) })
 				refreshActionViewer()
-
-				notifyLogConfig("Catch Setup")
 
 				dialogs := []func(){
 					healingRatioSelectorDialog(role.Pet),
 				}
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
-			petCatchButton.Importance = widget.SuccessImportance
+			petHealthButton.Importance = widget.SuccessImportance
 
 			actionsContainer := container.NewGridWithColumns(4,
 				petAttackButton,
@@ -729,8 +725,8 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				petOffRideButton,
 				petHealSelfButton,
 				petHealOneButton,
-				petCatchButton,
-				petHangButton,
+				petHealthButton,
+				petWaitButton,
 			)
 
 			actionsDialog := dialog.NewCustom("Add Pet Actions in Order", "Close", actionsContainer, window)

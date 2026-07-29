@@ -20,7 +20,7 @@ const (
 	Ride
 	Hang
 	Steal
-	Catch
+	Health
 	TrainSkill
 	TShapedSkill
 )
@@ -61,8 +61,8 @@ func (a Action) String() string {
 		return "Wait"
 	case Steal:
 		return "Steal"
-	case Catch:
-		return "Catch"
+	case Health:
+		return "Health"
 	case TrainSkill:
 		return "Train Skill"
 	case TShapedSkill:

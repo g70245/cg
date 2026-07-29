@@ -12,7 +12,7 @@ const (
 	HealOne
 	Ride
 	OffRide
-	Catch
+	Health
 	Hang
 	TShapedSkill
 	ThresholdSkill
@@ -36,8 +36,8 @@ func (a Action) String() string {
 		return "*Pet Ride"
 	case OffRide:
 		return "*Pet Dismount"
-	case Catch:
-		return "Pet Catch"
+	case Health:
+		return "Pet Health"
 	case Hang:
 		return "Pet Wait"
 	case TShapedSkill:

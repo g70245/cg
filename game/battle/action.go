@@ -253,7 +253,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 			s.logH("escaped")
 			s.setFailureState(role.Character)
 		case character.Hang:
-			s.logH("is hanging")
+			s.logH("is waiting")
 			s.isCharacterHanging = true
 			s.currentCU = controlunit.Repeat
 		case character.Bomb:
@@ -517,7 +517,7 @@ func (s *ActionState) executeCharacterStateMachine() {
 				s.logH("cannot find the position of window")
 				s.setFailureState(role.Character)
 			}
-		case character.Catch:
+		case character.Health:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
 			if self, ok := s.getSelfTarget(true); ok {
@@ -737,7 +737,7 @@ func (s *ActionState) executePetStateMachiine() {
 				s.logP("cannot find the position of window")
 				s.setFailureState(role.Pet)
 			}
-		case pet.Catch:
+		case pet.Health:
 			game.CloseAllWindows(s.hWnd)
 			game.ClearChat(s.hWnd)
 			if self, ok := s.getSelfTarget(s.isOnRide()); ok {
@@ -748,7 +748,7 @@ func (s *ActionState) executePetStateMachiine() {
 				}
 			}
 		case pet.Hang:
-			s.logP("is hanging")
+			s.logP("is waiting")
 			s.isPetHanging = true
 			s.currentCU = controlunit.Repeat
 		}
