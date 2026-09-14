@@ -23,6 +23,34 @@ func TestGetSkillWindowPosFromCapture(t *testing.T) {
 	}
 }
 
+func TestIsHealthRatioLowerThan(t *testing.T) {
+	tests := []struct {
+		name      string
+		current   uint32
+		maximum   uint32
+		ratio     float32
+		want      bool
+		wantError bool
+	}{
+		{name: "below threshold", current: 499, maximum: 1000, ratio: 0.5, want: true},
+		{name: "equal to threshold", current: 500, maximum: 1000, ratio: 0.5},
+		{name: "above threshold", current: 501, maximum: 1000, ratio: 0.5},
+		{name: "zero maximum", current: 0, maximum: 0, ratio: 0.5, wantError: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isHealthRatioLowerThan(tt.current, tt.maximum, tt.ratio)
+			if (err != nil) != tt.wantError {
+				t.Fatalf("isHealthRatioLowerThan() error = %v, wantError %t", err, tt.wantError)
+			}
+			if got != tt.want {
+				t.Errorf("isHealthRatioLowerThan() = %t, want %t", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetInventoryPosFromCapture(t *testing.T) {
 	capture := image.NewRGBA(image.Rect(0, 0, game.GAME_WIDTH, game.GAME_HEIGHT))
 	pivotX := BATTLE_INVENTORY_MONEY_PIVOT.X + 1

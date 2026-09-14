@@ -518,14 +518,14 @@ func (s *ActionState) executeCharacterStateMachine() {
 				s.setFailureState(role.Character)
 			}
 		case character.Health:
-			game.CloseAllWindows(s.hWnd)
-			game.ClearChat(s.hWnd)
-			if self, ok := s.getSelfTarget(true); ok {
-				ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
-				if s.isHealthLowerThan(float32(ratio), self) {
-					s.isOutOfHealth = true
-					s.logH("is out of health")
-				}
+			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
+			isLower, err := s.isCharacterHealthLowerThan(float32(ratio))
+			if err != nil {
+				s.isOutOfHealth = true
+				s.logH("cannot read character health")
+			} else if isLower {
+				s.isOutOfHealth = true
+				s.logH("is out of health")
 			}
 		}
 

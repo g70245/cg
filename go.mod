@@ -7,6 +7,7 @@ require (
 	github.com/faiface/beep v1.1.0
 	github.com/g70245/win v0.0.0-20250117095612-913c9f118832
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+	golang.org/x/sys v0.12.0
 	golang.org/x/text v0.13.0
 )
 
@@ -38,7 +39,6 @@ require (
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/mobile v0.0.0-20230922142353-e2f452493d57 // indirect
 	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/js/dom v0.0.0-20230808055721-96db8f4d5e3b // indirect
 )

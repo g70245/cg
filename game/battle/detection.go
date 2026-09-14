@@ -1,6 +1,7 @@
 package battle
 
 import (
+	"fmt"
 	"image"
 	"log"
 	"time"
@@ -175,6 +176,21 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 
 	return internal.GetColor(s.hWnd, checkTarget.X-2, checkTarget.Y-2) == COLOR_BATTLE_STATUS_PIVOT &&
 		internal.GetColor(s.hWnd, healthPoint+1, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
+}
+
+func (s *ActionState) isCharacterHealthLowerThan(ratio float32) (bool, error) {
+	current, maximum, err := game.ReadCharacterHealth(s.hWnd)
+	if err != nil {
+		return false, err
+	}
+	return isHealthRatioLowerThan(current, maximum, ratio)
+}
+
+func isHealthRatioLowerThan(current, maximum uint32, ratio float32) (bool, error) {
+	if maximum == 0 {
+		return false, fmt.Errorf("character maximum health is zero")
+	}
+	return float32(current)/float32(maximum) < ratio, nil
 }
 
 func (s *ActionState) searchHealthLowerThan(ratio float32) (*game.CheckTarget, bool) {
