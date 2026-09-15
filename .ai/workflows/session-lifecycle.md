@@ -59,10 +59,11 @@ Implementation normally occurs on `dev`. Immediately before the first modificati
 
 After an independent unit of work:
 
-1. Run proportionate tests and static checks.
-2. Run `git status --short`.
-3. Report the change summary, validation results, remaining concerns, and changed files.
-4. Do not commit automatically.
+1. Review whether the work changed durable product behavior, supported-client constraints, architecture or APIs, operator workflows, project milestones, or other stable facts. Update the appropriate product documentation or `.ai/state/` in the same unit of work when it did; if no update is needed, record the reason in the completion report and any later commit proposal. Do not treat implementation code alone as sufficient documentation for these changes unless the user explicitly defers the documentation.
+2. Run proportionate tests and static checks.
+3. Run `git status --short`.
+4. Report the change summary, documentation and state outcome, validation results, remaining concerns, and changed files.
+5. Do not commit automatically.
 
 ## Commit workflow
 

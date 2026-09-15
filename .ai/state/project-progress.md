@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-07-23
+Last updated: 2026-09-15
 
 ## Project direction
 
@@ -44,6 +44,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Smoothed known wall-adjacent navigation turns by extending a validated waypoint one cell beyond the corner while leaving open turns, fog boundaries, and backward turns unchanged.
 - Added character and pet T-shaped skill actions that require at least two adjacent enemies, select a maximum-coverage landing point with random tie-breaking, preserve existing action configuration values, and share focused target-selection tests.
 - Added Pet Threshold Skill with role-aware threshold configuration, existing Pet Skill targeting behavior, and enum compatibility coverage.
+- Added module-relative character HP reads in `0f6fb45`: the character `Health` action now decodes current and maximum HP from the compatible client's main module instead of locating and clicking a self target, while pet health and other target-dependent actions retain their pixel/target behavior.
 
 ## Current repository facts
 
@@ -53,7 +54,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Fyne CLI v1.7.2 requires `--app-id com.github.g70245.cg` for Windows packaging.
 - `scripts/package.ps1` successfully produces `dist\CG.exe` with the required app ID in the verified environment.
 - `go run ./cmd/cg-helper windows`, `capture -handle <HWND>`, and `scratch` provide live-window diagnostics without changing the application entry path.
-- Automated tests cover selected enum, process-memory ownership, log/filesystem, audio lifecycle, user-facing setup messages and action-ID validation, action-configuration I/O, synchronized worker configuration, duplicate worker-start prevention, captured-image color/boundary scanning, local map parsing/path validation, walkability, shortest-path routing, maze-runner cancellation, route ordering, and Compact Battle navigation lifecycle behavior.
+- Automated tests cover selected enum, process-memory ownership, module-relative address resolution and exact reads, character-HP XOR decoding and ratio comparison, log/filesystem, audio lifecycle, user-facing setup messages and action-ID validation, action-configuration I/O, synchronized worker configuration, duplicate worker-start prevention, captured-image color/boundary scanning, local map parsing/path validation, walkability, shortest-path routing, maze-runner cancellation, route ordering, and Compact Battle navigation lifecycle behavior.
 
 ## Active tasks
 
@@ -78,6 +79,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Background dialog calls remain unchanged under Fyne v2.4; `notifySetupConfig` and `activateDialogs` must be reassessed and dispatched with `fyne.Do` if the project upgrades to Fyne v2.6 or later.
 - User-facing file, audio, and setup errors omit machine-specific paths and low-level provider details; subsystem errors retain detailed context for diagnostics.
 - Fixed-pixel checks may continue using `GetPixel`, but dense or repeated region scans should capture once per observation frame and scan the resulting memory buffer; animated checks must recapture on each retry rather than reuse a stale frame.
+- Character HP uses the supported client's main-module offset `0xB4C308`; its current and maximum values are adjacent 16-byte XOR-encoded blocks. This is a client-specific compatibility constraint, while pet health and other target-dependent actions continue using the existing pixel and target-selection paths.
 - Compact Battle navigation is explicitly opt-in: it reads only while compact mode is active and a current alias is selected, retains that alias when temporarily returning to full view, and resets to `Navigation Off` if the alias is no longer available.
 - Navigation output remains neutral English and must not expose the compatible client name, map name, raw map filename, or local path.
 - Automatic maze traversal is explicitly started and stopped independently of battle automation, controls only the selected alias, requires configured battle movement to remain `None`, and pauses until every grouped window is back in the normal scene.

@@ -12,9 +12,10 @@ Reconstruct pending work from Git rather than conversation history.
 1. Inspect the current branch, status, unstaged and staged diffs, untracked files, and recent commit conventions.
 2. Stop if the branch is not `dev` and ask how to proceed; never switch automatically.
 3. Group changes by concern and exclude unrelated, generated, sensitive, or uncertain content.
-4. Determine appropriate validation without running modifying commands unless authorized.
-5. Present the exact included and excluded files, diff summary, validation status, and proposed English commit message.
-6. Obtain explicit approval of that exact proposal before staging.
+4. Confirm that the completion review required by `.ai/workflows/session-lifecycle.md` was performed. Include required product-documentation and `.ai/state/` updates in the same proposal, or state why neither needs an update.
+5. Determine appropriate validation without running modifying commands unless authorized.
+6. Present the exact included and excluded files, diff summary, documentation and state outcome, validation status, and proposed English commit message.
+7. Obtain explicit approval of that exact proposal before staging.
 
 ## Commit
 

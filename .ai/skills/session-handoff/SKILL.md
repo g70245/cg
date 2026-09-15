@@ -15,7 +15,7 @@ Create a reliable handoff that lets another session resume a specific task witho
 4. Run necessary validation unless it already ran and remains valid. Record skipped or failed checks honestly.
 5. Update each affected file under `.ai/state/tasks/` with concise, durable working context. Preserve still-valid facts and remove stale statements.
 6. Update `.ai/state/project-progress.md` only when project direction, major milestones, stable repository facts, cross-task decisions, or the active-task index changed.
-7. If a task is complete, preserve its durable result in code, product documentation, or project milestones, remove it from the active-task index, and delete its task file. Do not create a completed-task archive.
+7. If a task is complete, preserve its durable result in code and update product documentation or project milestones when it changed durable behavior, supported constraints, architecture or APIs, operator workflows, milestones, or other stable facts. Do not treat code alone as sufficient documentation for those changes unless the user explicitly deferred the documentation. Remove the task from the active-task index and delete its task file. Do not create a completed-task archive.
 8. If no durable task or project state changed, do not create a handoff-only diff.
 9. Review `git diff --check`, the handoff diff, and final status.
 10. Report the outcome, validation, changed files, diff summary, and recommended task-specific next step.
