@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 ## Project direction
 
@@ -45,6 +45,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added character and pet T-shaped skill actions that require at least two adjacent enemies, select a maximum-coverage landing point with random tie-breaking, preserve existing action configuration values, and share focused target-selection tests.
 - Added Pet Threshold Skill with role-aware threshold configuration, existing Pet Skill targeting behavior, and enum compatibility coverage.
 - Added module-relative character HP reads in `0f6fb45`: the character `Health` action now decodes current and maximum HP from the compatible client's main module instead of locating and clicking a self target, while pet health and other target-dependent actions retain their pixel/target behavior.
+- Documented the confirmed character, local-pet, and party-actor process-memory layouts in `docs/game-memory-layout.md`, including XOR decoding, stable module-relative entry points, pointer and slot strides, validation boundaries, and unresolved identity/riding behavior.
 
 ## Current repository facts
 

@@ -94,7 +94,7 @@ cg/
 ├── internal/                      # Win32, memory, color, and file primitives
 ├── utils/                         # Audio alerts
 ├── scripts/                       # Windows build and Fyne packaging scripts
-├── docs/                          # Build, progress, and architecture documentation
+├── docs/                          # Build, memory-layout, progress, and architecture documentation
 ├── .codex/skills/session-handoff/ # Project-local Codex handoff workflow
 ├── app.png                        # Fyne packaging icon
 ├── example1.png / example2.png    # Full and compact Battle UI screenshots
@@ -117,6 +117,7 @@ cg/
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
 | `game/instance.go` | Represents discovered windows as `Games map[string]win.HWND`. | Initial keys are decimal handle strings; UI aliases mutate this map in memory only. |
 | `game/character_status.go` | Reads and decodes the current and maximum character HP from the compatible client's main module. | Uses module-relative offset `0xB4C308`; each HP value occupies a 16-byte block and is decoded by XORing the little-endian `uint32` values at block offsets `+4` and `+8`. |
+| `docs/game-memory-layout.md` | Records confirmed client-specific memory layouts for character, pet, and party-actor status. | Keeps reusable module offsets, pointer relationships, validation boundaries, and unresolved items separate from process-specific diagnostic addresses. |
 | `game/operation.go` | Provides timed, game-level input operations such as opening windows, using skills, and using items. | Delegates to `internal/message.go`. |
 | `game/detection.go` | Shared scene, inventory, item, map-name, map-code, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
 | `game/navigation/` | Resolves map codes beneath the selected Game Folder, parses walkability and transitions, caches unchanged files, supports explicit cache invalidation on floor changes, orders displayed routes, finds shortest reachable stairs, and runs cancellable maze traversal. | Checks numeric `.dat` files at the supported shallow `map` directory layouts without a recursive fallback scan. |
