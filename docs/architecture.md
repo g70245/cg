@@ -37,7 +37,7 @@ The application targets Windows x64. Its primary technologies are Go, Fyne, CGO-
 | `github.com/faiface/beep` | `v1.1.0` | MP3 decoding, looping playback, playback control, and speaker output in `utils/beeper.go`. |
 | `github.com/g70245/win` | `v0.0.0-20250117095612-913c9f118832` | Win32 types and calls for window discovery, messages, device contexts, pixels, and process-memory access. |
 | `golang.org/x/exp` | `v0.0.0-20230905200255-921286631fa9` | `maps.Keys`, `maps.Values`, and `slices.Contains` in game collection, UI selection, and diagnostic code. |
-| `golang.org/x/sys` | `v0.12.0` | Windows module snapshots and narrow-rights process-memory reads for module-relative character status. |
+| `golang.org/x/sys` | `v0.12.0` | Narrow-rights Windows process-memory reads for character status. |
 | `golang.org/x/text` | `v0.13.0` | Big5 decoding for game logs and strings read from game memory. |
 
 Important indirect dependencies include:
@@ -56,7 +56,7 @@ Important indirect dependencies include:
 | --- | --- | --- |
 | Windows desktop APIs | The application is not portable because it relies on Windows window handles and system calls. | Supported Windows versions are **To be confirmed**. |
 | `user32.dll` through `github.com/g70245/win` | `EnumChildWindows`, `GetClassNameW`, `GetWindowThreadProcessId`, `GetDC`, `GetPixel`, `ReleaseDC`, `PostMessageW`, and virtual-key mapping. | The code sends messages directly to other process windows. |
-| `kernel32.dll` through `github.com/g70245/win` and `golang.org/x/sys/windows` | Module snapshots, `OpenProcess`, and `ReadProcessMemory`. | Legacy absolute-address reads request access mask `0x1F0FFF`; module-relative reads request only `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`. Required privileges and cross-integrity behavior are **To be confirmed**. |
+| `kernel32.dll` through `github.com/g70245/win` and `golang.org/x/sys/windows` | `OpenProcess` and `ReadProcessMemory`. | Legacy reads request access mask `0x1F0FFF`; error-returning status reads request only `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`. Required privileges and cross-integrity behavior are **To be confirmed**. |
 | Windows graphics stack | Used indirectly by Fyne's GLFW/OpenGL desktop driver. | Exact runtime driver requirements are managed by Fyne and are not documented in this repository. |
 | Windows audio stack | Used indirectly by `beep` through `oto`. | Audio device requirements and failure behavior are **To be confirmed**. |
 | Compatible game client | Supplies matching windows, fixed-size UI, memory layout, and Big5 logs. | Client name, supported versions, permissions, and layout assumptions are **To be confirmed**. |
@@ -109,6 +109,7 @@ cg/
 | `container/main.go` | Creates the Fyne application, global window, root tabs, refresh controls, path/audio selectors, and shutdown closures used during refresh. | Contains package-level `window` and `r`. |
 | `container/battle.go` | Creates battle groups and workers and coordinates group shutdown. | Keeps battle-group lifecycle separate from editor and menu composition. |
 | `container/battle_navigation.go` | Builds the Compact Battle navigation panel and controls its opt-in alias updater and maze runner. | Reads only while Compact Battle is active and an alias is selected; automatic movement requires an explicit Up/Down choice and Play action, and displayed text omits map names and paths. |
+| `container/riding_steps_view.go` | Continuously reads remaining riding steps for every alias in a battle group. | Displays only nonzero values in Compact Battle, keeps reading in full view, and stops its updater when the group closes. |
 | `container/battle_action_editor.go` | Builds each game's action editor and coordinates its selector dialogs. | Retains the existing stateful editor callback flow without adding an abstraction layer. |
 | `container/battle_group_menu.go` | Builds group-level battle, monitoring, target-priority, and configuration controls. | Applies shared controls across the group's workers. |
 | `container/battle_tags.go` | Renders character and pet action summaries as colored tags. | Preserves the internal `*` and `**` action classifications. |
@@ -116,7 +117,7 @@ cg/
 | `container/setup_config.go` | Validates log/audio setup and shows shared battle/production reminders. | Used by both battle and production UI paths. |
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
 | `game/instance.go` | Represents discovered windows as `Games map[string]win.HWND`. | Initial keys are decimal handle strings; UI aliases mutate this map in memory only. |
-| `game/character_status.go` | Reads and decodes the current and maximum character HP from the compatible client's main module. | Uses module-relative offset `0xB4C308`; each HP value occupies a 16-byte block and is decoded by XORing the little-endian `uint32` values at block offsets `+4` and `+8`. |
+| `game/character_status.go` | Reads and decodes character HP and remaining riding steps from fixed supported-client addresses. | HP uses module offset `0xB4C308`; riding steps use `0xB4C464`; `game/constant.go` derives both addresses from the fixed `0x00400000` module base. |
 | `docs/game-memory-layout.md` | Records confirmed client-specific memory layouts for character, pet, and party-actor status. | Keeps reusable module offsets, pointer relationships, validation boundaries, and unresolved items separate from process-specific diagnostic addresses. |
 | `game/operation.go` | Provides timed, game-level input operations such as opening windows, using skills, and using items. | Delegates to `internal/message.go`. |
 | `game/detection.go` | Shared scene, inventory, item, map-name, map-code, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
@@ -130,7 +131,7 @@ cg/
 | `internal/message.go` | Sends mouse and keyboard window messages with fixed sleeps. | Uses a dot import of the Win32 package. |
 | `internal/color.go` | Reads a pixel from a target window device context. | Pairs `GetDC` with `ReleaseDC`. |
 | `internal/capture.go` | Copies a client-area rectangle into a Go RGBA image through GDI. | Restores selected objects and releases the source DC, memory DC, and bitmap on every path. |
-| `internal/memory.go` | Reads absolute-address scalar/string values and error-returning byte ranges at offsets from another process's main module. | The module-relative path resolves the module base for each read, uses narrow process rights, requires an exact byte count, and closes both snapshot and process handles. The legacy absolute-address path retains its zero-filled failure behavior. |
+| `internal/memory.go` | Reads absolute-address scalar/string values and error-returning byte ranges from another process. | Error-returning reads use narrow process rights, require an exact byte count, and close the process handle. The legacy path retains its zero-filled failure behavior. |
 | `internal/file.go` | Finds the newest log file, reads trailing lines, and decodes Big5. | Returns contextual errors for missing or unreadable logs and safely handles empty files. |
 | `utils/beeper.go` | Owns global looping MP3 playback. | Uses a synchronized audio-session lifecycle with error-returning initialization and fake-session test seams. |
 | `scripts/build.ps1` | Verifies Go/GCC/modules and builds `dist\cg.exe`. | Supports skipping module download. |
@@ -342,7 +343,7 @@ Independent ticker cases check inventory, map/log teleport state, resource phras
 **Failure points and handling:**
 
 - Missing pixel pivots or action windows generally produce `log.Printf` messages and state-machine failure transitions.
-- Legacy absolute-address reads still consume zero-filled results on open failure. Module-relative character-HP reads return contextual errors for process-ID, module, process-open, memory-read, short-read, and handle-close failures; the battle action logs a concise failure and stops the health action instead of treating a failed read as valid HP.
+- Legacy absolute-address reads still consume zero-filled results on open failure. Error-returning character-status reads report process-ID, process-open, memory-read, short-read, and handle-close failures; the battle action logs a concise HP-read failure instead of treating it as valid HP, while Compact Battle displays riding-step read failures as `ERR`.
 - Missing or invalid log paths return contextual filesystem errors and runtime phrase checks safely report no match.
 - MP3 open, decode, speaker-initialization, and cleanup failures return contextual errors; selection failures are shown without terminating the process.
 - Action-configuration load/save callbacks use the Fyne-provided streams, close them on every path, and show contextual errors without replacing the current state after a failed load or terminating the process after a failed save.
@@ -503,7 +504,7 @@ Fyne `v2.4.0` predates the single-UI-goroutine model and public `fyne.Do` API in
 - `internal.GetColor` correctly calls `ReleaseDC` after `GetDC`.
 - Closing an audio session stops playback, clears the speaker, and closes the MP3 streamer.
 - Fyne-provided `.ac` readers and writers are closed by the action-configuration I/O helpers on success and failure paths.
-- `internal.readMemory` closes each process handle after its read attempt, including read-failure paths. `ReadMemoryAtModuleOffset` also closes its module snapshot and narrow-rights process handle and reports close failures.
+- `internal.readMemory` closes each process handle after its read attempt, including read-failure paths. `ReadMemoryAtAddress` closes its narrow-rights process handle and reports read, short-read, and close failures.
 - Tickers are stopped on worker-goroutine exit, but the ticker objects and worker goroutines can remain reachable through UI structures.
 - Normal window close has no explicit application-level worker/audio shutdown hook.
 
@@ -519,7 +520,7 @@ The project uses several inconsistent error strategies:
 - Action-configuration read, JSON, write, and close failures retain contextual subsystem errors while Fyne dialogs show operation-level guidance without paths or decoder details.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
 - Missing or unreadable game logs return path-rich errors at the filesystem boundary; preflight validation maps them to concise path-free UI reasons, while runtime phrase checks treat unavailable logs as no match.
-- Legacy process-memory read failures are not surfaced to users. Character-HP module-relative failures are returned to the battle action, logged as `cannot read character health`, and treated as an out-of-health stop condition.
+- Legacy process-memory read failures are not surfaced to users. Character-HP read failures are returned to the battle action and logged as `cannot read character health`; riding-step failures are displayed as `ERR` beside the affected alias.
 
 Fyne information dialogs use feature-specific setup titles and report only the missing audio/log requirements. Error dialogs report game-directory, action-configuration, and audio-selection failures with concise actionable text. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
@@ -606,7 +607,7 @@ There is no installer, code signing, update mechanism, or release workflow. Cros
 
 ### 12.1 Existing automated coverage
 
-The repository contains focused unit tests for enum option conversion, process-handle ownership, module-relative address resolution and exact reads, character-HP XOR decoding and ratio comparison, log/filesystem behavior, log-directory validation, user-facing setup messages and action-ID validation, action-configuration I/O, and the synchronized audio lifecycle. These tests use pure values, fake native operations, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
+The repository contains focused unit tests for enum option conversion, process-handle ownership, exact fixed-address reads, character-HP XOR decoding and ratio comparison, riding-step decoding and Compact Battle presentation, log/filesystem behavior, log-directory validation, user-facing setup messages and action-ID validation, action-configuration I/O, and the synchronized audio lifecycle. These tests use pure values, fake native operations, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
 
 The following commands passed in the verified Windows environment on 2026-07-16:
 

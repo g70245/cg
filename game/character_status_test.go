@@ -25,6 +25,25 @@ func TestDecodeCharacterHealthRejectsShortData(t *testing.T) {
 	}
 }
 
+func TestDecodeRidingSteps(t *testing.T) {
+	data := make([]byte, ridingStepsSize)
+	binary.LittleEndian.PutUint32(data, 480)
+
+	steps, err := decodeRidingSteps(data)
+	if err != nil {
+		t.Fatalf("decodeRidingSteps() error = %v", err)
+	}
+	if steps != 480 {
+		t.Fatalf("decodeRidingSteps() = %d, want 480", steps)
+	}
+}
+
+func TestDecodeRidingStepsRejectsShortData(t *testing.T) {
+	if _, err := decodeRidingSteps(make([]byte, ridingStepsSize-1)); err == nil {
+		t.Fatal("decodeRidingSteps() error = nil, want an error")
+	}
+}
+
 func encodeTestXORValue(data []byte, value, key uint32) {
 	binary.LittleEndian.PutUint32(data[4:8], value^key)
 	binary.LittleEndian.PutUint32(data[8:12], key)

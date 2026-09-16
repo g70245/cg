@@ -6,7 +6,7 @@ This document records reusable process-memory knowledge confirmed through live r
 
 All offsets are relative to the compatible client's main module unless stated otherwise. The layout is client-version-specific and must be revalidated after a client update.
 
-The observations below were last validated on 2026-09-16. Only the character-health reader is currently implemented in the application; the pet and party-actor layouts remain documented knowledge for future work.
+The observations below were last validated on 2026-09-16. The character-health and remaining-riding-steps readers are currently implemented in the application; the pet and party-actor layouts remain documented knowledge for future work.
 
 ## XOR-encoded values
 
@@ -34,7 +34,7 @@ The local character's HP blocks are stored directly at a stable module-relative 
 hpBase = module + 0x00B4C308
 ```
 
-The application currently implements this layout in `game/character_status.go`.
+The application currently implements this layout in `game/character_status.go`. Runtime addresses are derived in `game/constant.go` from the supported client's fixed `0x00400000` module base so repeated reads do not create module snapshots.
 
 ## Local pet slots
 
@@ -87,9 +87,15 @@ Some non-null entries decode as `0/0` when the character HP offset is applied. T
 
 Two dynamic teammate HP records in one process were observed `0x12000` bytes apart. That spacing is not the stable lookup mechanism and must not replace the module-relative pointer table.
 
-## Riding observations
+## Riding state and remaining steps
 
-The value at `module + 0x00B4C464` was observed as `0` while unmounted and `480` while mounted across repeated state changes. This is a strong riding-state candidate, but its exact semantics and value range have not been established. Treat a future implementation as requiring additional validation rather than assuming a Boolean representation.
+The value at `module + 0x00B4C464` stores the remaining riding steps. The initial allowance is calculated as `800 * pet loyalty ratio`; for example, `60%` loyalty produces `480` steps. The field was observed as `480` after mounting, `439` after movement, and `0` while unmounted. A value greater than zero confirms riding with steps remaining, but zero is not yet a complete unmounted predicate because behavior at step exhaustion has not been verified. Implementations must not compare the field with one fixed nonzero value.
+
+Each battle escape attempt consumes `50` riding steps. Escape can fail at most twice and succeeds on the third attempt, so movement monitoring must preserve `150` steps. While riding, fewer than `150` remaining steps should stop movement. In this low-step condition, the configured character-HP ratio remains unchanged; the riding adjustment of `ratio / 2` applies only when at least `150` steps remain.
+
+Repeated riding-related operations during battle can crash the game client. Low-step monitoring must therefore remain read-only: stop movement and notify the user to refresh riding before another battle, rather than automatically issuing repeated ride or dismount operations in battle.
+
+The application reads this field once per second for every window in a battle group. Compact Battle displays only aliases whose value is nonzero as `alias: steps` pairs separated by ` | `, with two spaces after the `R` label, for example `R  1: 475 | 2: 320`; if all values are zero, the entire riding-steps row is removed. Reads continue while the group is in full view so compact view can immediately show the latest values without affecting the full-view group controls.
 
 Mounted combined HP was not found as one exact XOR-encoded value during live scans. The displayed total may be calculated from the separate character and mounted-pet HP values.
 
@@ -103,6 +109,8 @@ Confirmed:
 - The party actor pointer-table base, `0x28` pointer-entry stride, and character actor HP field offset.
 - The pointer table includes the local character as well as remote party actors.
 - Dynamic absolute actor addresses differ between client processes.
+- The remaining-riding-steps field and its `800 * pet loyalty ratio` initial value.
+- The `50`-steps-per-escape cost and the resulting `150`-step movement reserve.
 
 Not yet confirmed:
 
@@ -110,5 +118,5 @@ Not yet confirmed:
 - The party actor table's total entry count and empty/stale-entry lifecycle.
 - Whether the non-character entries are pet actors, wrappers, or another actor type.
 - Teammate pet access.
-- A definitive riding flag contract.
+- The exact riding-step decrement behavior and whether reaching zero automatically ends riding.
 - Compatibility of these offsets with other client versions.

@@ -99,19 +99,17 @@ func TestReadMemoryWithManagesProcessHandle(t *testing.T) {
 	}
 }
 
-func TestReadMemoryAtModuleOffsetWith(t *testing.T) {
+func TestReadMemoryAtAddressWith(t *testing.T) {
 	const (
-		windowHandle  = win.HWND(11)
-		processID     = uint32(33)
-		snapshot      = windows.Handle(44)
-		processHandle = windows.Handle(55)
-		moduleBase    = uintptr(0x400000)
-		offset        = uint32(0x1234)
-		readSize      = uint(4)
+		windowHandle    = win.HWND(11)
+		processID       = uint32(33)
+		processHandle   = windows.Handle(55)
+		expectedAddress = uint32(0xF4C464)
+		readSize        = uint(4)
 	)
 
 	var events []string
-	operations := moduleMemoryOperations{
+	operations := addressMemoryOperations{
 		getWindowThreadProcessID: func(hWnd win.HWND, targetProcessID *uint32) uint32 {
 			events = append(events, "get process ID")
 			if hWnd != windowHandle {
@@ -119,28 +117,6 @@ func TestReadMemoryAtModuleOffsetWith(t *testing.T) {
 			}
 			*targetProcessID = processID
 			return 1
-		},
-		createSnapshot: func(flags uint32, actualProcessID uint32) (windows.Handle, error) {
-			events = append(events, "create snapshot")
-			wantFlags := uint32(windows.TH32CS_SNAPMODULE | windows.TH32CS_SNAPMODULE32)
-			if flags != wantFlags {
-				t.Errorf("CreateToolhelp32Snapshot() flags = %#x, want %#x", flags, wantFlags)
-			}
-			if actualProcessID != processID {
-				t.Errorf("CreateToolhelp32Snapshot() process ID = %d, want %d", actualProcessID, processID)
-			}
-			return snapshot, nil
-		},
-		moduleFirst: func(actualSnapshot windows.Handle, module *windows.ModuleEntry32) error {
-			events = append(events, "get main module")
-			if actualSnapshot != snapshot {
-				t.Errorf("Module32First() snapshot = %d, want %d", actualSnapshot, snapshot)
-			}
-			if module.Size != uint32(windows.SizeofModuleEntry32) {
-				t.Errorf("Module32First() size = %d, want %d", module.Size, windows.SizeofModuleEntry32)
-			}
-			module.ModBaseAddr = moduleBase
-			return nil
 		},
 		openProcess: func(access uint32, inheritHandle bool, actualProcessID uint32) (windows.Handle, error) {
 			events = append(events, "open process")
@@ -156,13 +132,13 @@ func TestReadMemoryAtModuleOffsetWith(t *testing.T) {
 			}
 			return processHandle, nil
 		},
-		readProcessMemory: func(handle windows.Handle, address uintptr, data *byte, size uintptr, bytesRead *uintptr) error {
+		readProcessMemory: func(handle windows.Handle, actualAddress uintptr, data *byte, size uintptr, bytesRead *uintptr) error {
 			events = append(events, "read memory")
 			if handle != processHandle {
 				t.Errorf("ReadProcessMemory() handle = %d, want %d", handle, processHandle)
 			}
-			if address != moduleBase+uintptr(offset) {
-				t.Errorf("ReadProcessMemory() address = %#x, want %#x", address, moduleBase+uintptr(offset))
+			if actualAddress != uintptr(expectedAddress) {
+				t.Errorf("ReadProcessMemory() address = %#x, want %#x", actualAddress, uintptr(expectedAddress))
 			}
 			if size != uintptr(readSize) {
 				t.Errorf("ReadProcessMemory() size = %d, want %d", size, readSize)
@@ -173,40 +149,31 @@ func TestReadMemoryAtModuleOffsetWith(t *testing.T) {
 			return nil
 		},
 		closeHandle: func(handle windows.Handle) error {
-			switch handle {
-			case processHandle:
-				events = append(events, "close process")
-			case snapshot:
-				events = append(events, "close snapshot")
-			default:
-				t.Errorf("CloseHandle() handle = %d, want process or snapshot", handle)
+			if handle != processHandle {
+				t.Errorf("CloseHandle() handle = %d, want %d", handle, processHandle)
 			}
+			events = append(events, "close process")
 			return nil
 		},
 	}
 
-	got, err := readMemoryAtModuleOffsetWith(operations, windowHandle, offset, readSize)
+	got, err := readMemoryAtAddressWith(operations, windowHandle, expectedAddress, readSize)
 	if err != nil {
-		t.Fatalf("readMemoryAtModuleOffsetWith() error = %v", err)
+		t.Fatalf("readMemoryAtAddressWith() error = %v", err)
 	}
 	if want := []byte{1, 2, 3, 4}; !reflect.DeepEqual(got, want) {
-		t.Errorf("readMemoryAtModuleOffsetWith() = %v, want %v", got, want)
+		t.Errorf("readMemoryAtAddressWith() = %v, want %v", got, want)
 	}
-	wantEvents := []string{"get process ID", "create snapshot", "get main module", "open process", "read memory", "close process", "close snapshot"}
+	wantEvents := []string{"get process ID", "open process", "read memory", "close process"}
 	if !reflect.DeepEqual(events, wantEvents) {
 		t.Errorf("operation order = %v, want %v", events, wantEvents)
 	}
 }
 
-func TestReadMemoryAtModuleOffsetWithRejectsShortRead(t *testing.T) {
-	operations := moduleMemoryOperations{
+func TestReadMemoryAtAddressWithRejectsShortRead(t *testing.T) {
+	operations := addressMemoryOperations{
 		getWindowThreadProcessID: func(win.HWND, *uint32) uint32 { return 1 },
-		createSnapshot:           func(uint32, uint32) (windows.Handle, error) { return 1, nil },
-		moduleFirst: func(_ windows.Handle, module *windows.ModuleEntry32) error {
-			module.ModBaseAddr = 0x400000
-			return nil
-		},
-		openProcess: func(uint32, bool, uint32) (windows.Handle, error) { return 2, nil },
+		openProcess:              func(uint32, bool, uint32) (windows.Handle, error) { return 2, nil },
 		readProcessMemory: func(windows.Handle, uintptr, *byte, uintptr, *uintptr) error {
 			return nil
 		},
@@ -220,8 +187,8 @@ func TestReadMemoryAtModuleOffsetWithRejectsShortRead(t *testing.T) {
 		return 1
 	}
 
-	if _, err := readMemoryAtModuleOffsetWith(operations, 11, 0x1234, 4); err == nil {
-		t.Fatal("readMemoryAtModuleOffsetWith() error = nil, want a short-read error")
+	if _, err := readMemoryAtAddressWith(operations, 11, 0x401234, 4); err == nil {
+		t.Fatal("readMemoryAtAddressWith() error = nil, want a short-read error")
 	}
 	if processID == 0 {
 		t.Fatal("process ID was not resolved")

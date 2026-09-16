@@ -26,10 +26,11 @@ import (
 const separator = "    "
 
 type gameWidgeOptions struct {
-	games       game.Games
-	allGames    game.Games
-	manaChecker *battle.ManaChecker
-	workers     battle.Workers
+	games            game.Games
+	allGames         game.Games
+	manaChecker      *battle.ManaChecker
+	workers          battle.Workers
+	onAliasesChanged func()
 }
 
 func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, actionViewers []*fyne.Container) {
@@ -54,6 +55,9 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				options.allGames.RemoveValue(worker.GetHandle())
 				options.allGames.Add(aliasEntry.Text, worker.GetHandle())
 				aliasButton.SetText(aliasEntry.Text)
+				if options.onAliasesChanged != nil {
+					options.onAliasesChanged()
+				}
 			})
 			aliasDialog.Show()
 		})

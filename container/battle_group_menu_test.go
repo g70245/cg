@@ -4,7 +4,9 @@ import (
 	"cg/game"
 	"cg/game/battle"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"fyne.io/fyne/v2"
 	fynecontainer "fyne.io/fyne/v2/container"
@@ -50,7 +52,12 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	}
 	menu := newBattleGroupMenu(fullMenuObjects, switchButton, restoreButton)
 	navigation := newBattleNavigationView(game.Games{}, game.Games{}, func() string { return "" }, nil)
-	view := newBattleGroupView(menu, navigation, fynecontainer.NewVBox(widget.NewLabel("Worker settings")))
+	testGames := game.Games{"1": win.HWND(1)}
+	steps := new(atomic.Uint32)
+	steps.Store(480)
+	ridingSteps := newRidingStepsViewWith(testGames, testGames, func(win.HWND) (uint32, error) { return steps.Load(), nil }, time.Hour)
+	view := newBattleGroupView(menu, navigation, ridingSteps, fynecontainer.NewVBox(widget.NewLabel("Worker settings")))
+	defer view.close()
 
 	view.setCompact(true)
 	if got, want := len(view.container.Objects), len(view.compactObjects); got != want {
@@ -74,6 +81,49 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	if !foundNavigation {
 		t.Fatal("compact group does not contain navigation")
 	}
+	foundRidingSteps := false
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			foundRidingSteps = true
+		}
+	}
+	if !foundRidingSteps {
+		t.Fatal("compact group does not contain riding steps")
+	}
+	steps.Store(0)
+	ridingSteps.update()
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			t.Fatal("compact group retained an empty riding steps row")
+		}
+	}
+	steps.Store(480)
+	ridingSteps.update()
+	foundRidingSteps = false
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			foundRidingSteps = true
+		}
+	}
+	if !foundRidingSteps {
+		t.Fatal("compact group did not restore riding steps row")
+	}
+	view.setSelected(false)
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			t.Fatal("unselected compact group retained its riding steps row")
+		}
+	}
+	view.setSelected(true)
+	foundRidingSteps = false
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			foundRidingSteps = true
+		}
+	}
+	if !foundRidingSteps {
+		t.Fatal("selected compact group did not restore its riding steps row")
+	}
 
 	view.setCompact(false)
 	if got, want := len(view.container.Objects), len(view.fullObjects); got != want {
@@ -85,6 +135,16 @@ func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	for _, object := range view.container.Objects {
 		if object == navigation.container {
 			t.Fatal("full group unexpectedly contains navigation")
+		}
+		if object == ridingSteps.container {
+			t.Fatal("full group unexpectedly contains riding steps")
+		}
+	}
+	steps.Store(480)
+	ridingSteps.update()
+	for _, object := range view.compactHeader.Objects {
+		if object == ridingSteps.container {
+			t.Fatal("riding steps update added its row to the full group header")
 		}
 	}
 }
