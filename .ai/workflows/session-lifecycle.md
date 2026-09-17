@@ -29,6 +29,8 @@ Treat every new request to change project source, configuration, documentation, 
 3. Produce the repository-grounded plan and stop without modifying project or Git state.
 4. Implement only after the user gives an unambiguous execution instruction for that plan, such as `Execute the plan`, `Start implementation`, `Proceed`, `Implement the plan`, or `執行計畫`.
 
+When the user explicitly frames a request as discussion, remain in discussion until the user clearly requests or permits planning, for example with `plan` or `$implementation-plan`. The agent having no further questions, considering the available information sufficient, or receiving answers to its current questions does not end discussion. A direct change request that was not framed as discussion continues to enter the normal proposal and planning flow above.
+
 An idea, requested outcome, startup confirmation, general approval, or instruction to continue discussion does not skip this gate. Before a plan exists, responses such as `continue`, `繼續`, `OK`, `looks good`, or `符合` mean to continue discussion or planning, not to implement. After a plan is presented, only wording that unambiguously directs execution authorizes modification. Do not produce a duplicate plan when the user is explicitly executing an existing reviewed plan.
 
 The following are not new change implementation and continue to use their applicable authorization and workflow rules without requiring an implementation plan:
