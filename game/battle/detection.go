@@ -143,6 +143,11 @@ func (s *ActionState) didOnRideMissSkill() bool {
 }
 
 func (s *ActionState) isOnRide() bool {
+	steps, err := game.ReadRidingSteps(s.hWnd)
+	if err == nil {
+		return steps > 0
+	}
+
 	internal.MoveCursorToNowhere(s.hWnd)
 	time.Sleep(DRUATION_IS_ON_RIDE)
 

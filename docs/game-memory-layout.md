@@ -97,6 +97,8 @@ Repeated riding-related operations during battle can crash the game client. Low-
 
 The application reads this field once per second for every window in a battle group. Compact Battle displays only aliases whose value is nonzero as `alias: steps` pairs separated by ` | `, with two spaces after the `R` label, for example `R  1: 475 | 2: 320`; if all values are zero, the entire riding-steps row is removed. Reads continue while the group is in full view so compact view can immediately show the latest values without affecting the full-view group controls.
 
+Battle actions also treat a nonzero remaining-step value as riding and zero as not riding. If the memory read fails, they fall back to the legacy battle-command color check.
+
 Mounted combined HP was not found as one exact XOR-encoded value during live scans. The displayed total may be calculated from the separate character and mounted-pet HP values.
 
 ## Confirmed and unresolved boundaries

@@ -46,7 +46,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added Pet Threshold Skill with role-aware threshold configuration, existing Pet Skill targeting behavior, and enum compatibility coverage.
 - Added module-relative character HP reads in `0f6fb45`: the character `Health` action now decodes current and maximum HP from the compatible client's main module instead of locating and clicking a self target, while pet health and other target-dependent actions retain their pixel/target behavior.
 - Documented the confirmed character, local-pet, and party-actor process-memory layouts in `docs/game-memory-layout.md`, including XOR decoding, stable module-relative entry points, pointer and slot strides, validation boundaries, and unresolved identity/riding behavior.
-- Added continuous remaining-riding-step reads for every alias in a battle group and a Compact Battle status row that omits zero values, stays current while full view is active, follows alias changes, and stops with the group; fixed supported-client addresses now avoid repeated module snapshots while preserving exact-read errors.
+- Added continuous remaining-riding-step reads for every alias in a battle group and a Compact Battle status row that omits zero values, stays current while full view is active, follows alias changes, and stops with the group; battle riding checks now use the same memory value with the legacy color check as a read-error fallback, and fixed supported-client addresses avoid repeated module snapshots while preserving exact-read errors.
 
 ## Current repository facts
 
