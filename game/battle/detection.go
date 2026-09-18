@@ -183,14 +183,6 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 		internal.GetColor(s.hWnd, healthPoint+1, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
 }
 
-func (s *ActionState) isCharacterHealthLowerThan(ratio float32) (bool, error) {
-	current, maximum, err := game.ReadCharacterHealth(s.hWnd)
-	if err != nil {
-		return false, err
-	}
-	return isHealthRatioLowerThan(current, maximum, ratio)
-}
-
 func isHealthRatioLowerThan(current, maximum uint32, ratio float32) (bool, error) {
 	if maximum == 0 {
 		return false, fmt.Errorf("character maximum health is zero")

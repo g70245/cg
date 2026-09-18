@@ -6,7 +6,7 @@ This document records reusable process-memory knowledge confirmed through live r
 
 All offsets are relative to the compatible client's main module unless stated otherwise. The layout is client-version-specific and must be revalidated after a client update.
 
-The observations below were last validated on 2026-09-16. The character-health and remaining-riding-steps readers are currently implemented in the application; the pet and party-actor layouts remain documented knowledge for future work.
+The observations below were last validated on 2026-09-16. The character-health, local-pet, and remaining-riding-steps readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
 
 ## XOR-encoded values
 
@@ -65,6 +65,8 @@ Observed pet-state values are:
 
 State value `2` does not by itself distinguish ordinary battle use from riding. The five slots describe the local character's pet roster; access to teammates' pets has not been confirmed.
 
+The application implements this layout in `game/pet_status.go`. It reads the state byte first and decodes the two HP blocks only for state `2`. Group Pet HP monitoring repeats that local-slot scan for every game window in the external application group, so it does not depend on access to teammates through one process.
+
 ## Party actor pointer table
 
 Local and remote party actors are reached through a stable pointer table rather than through reusable absolute actor addresses:
@@ -91,7 +93,7 @@ Two dynamic teammate HP records in one process were observed `0x12000` bytes apa
 
 The value at `module + 0x00B4C464` stores the remaining riding steps. The initial allowance is calculated as `800 * pet loyalty ratio`; for example, `60%` loyalty produces `480` steps. The field was observed as `480` after mounting, `439` after movement, and `0` while unmounted. A value greater than zero confirms riding with steps remaining, but zero is not yet a complete unmounted predicate because behavior at step exhaustion has not been verified. Implementations must not compare the field with one fixed nonzero value.
 
-Each battle escape attempt consumes `50` riding steps. Escape can fail at most twice and succeeds on the third attempt, so movement monitoring must preserve `150` steps. While riding, fewer than `150` remaining steps should stop movement. In this low-step condition, the configured character-HP ratio remains unchanged; the riding adjustment of `ratio / 2` applies only when at least `150` steps remain.
+Each battle escape attempt consumes `50` riding steps. Escape can fail at most twice and succeeds on the third attempt, so a future dedicated riding-step monitor should preserve `150` steps. The current HP monitor does not stop movement based on the step count alone. Its configured character-HP ratio remains unchanged below `150` steps; the riding adjustment of `ratio / 2` applies only when at least `150` steps remain.
 
 Repeated riding-related operations during battle can crash the game client. Low-step monitoring must therefore remain read-only: stop movement and notify the user to refresh riding before another battle, rather than automatically issuing repeated ride or dismount operations in battle.
 

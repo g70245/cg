@@ -37,6 +37,15 @@ func TestManaCheckerOptionsFollowCurrentAliases(t *testing.T) {
 	}
 }
 
+func TestHealthMonitorButtonText(t *testing.T) {
+	if got := healthMonitorButtonText("HP", 0.5); got != "HP: 50%" {
+		t.Fatalf("healthMonitorButtonText() = %q, want %q", got, "HP: 50%")
+	}
+	if got := healthMonitorButtonText("Pet HP", 0.4); got != "Pet HP: 40%" {
+		t.Fatalf("healthMonitorButtonText() = %q, want %q", got, "Pet HP: 40%")
+	}
+}
+
 func TestBattleGroupViewCompactModeKeepsSwitchAndRestoreButtons(t *testing.T) {
 	testApp := fynetest.NewApp()
 	defer testApp.Quit()

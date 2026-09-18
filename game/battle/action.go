@@ -76,7 +76,6 @@ type ActionState struct {
 	EnemyOrder    enemy.Position     `json:"-"`
 	CustomEnemies []game.CheckTarget `json:"-"`
 
-	isOutOfHealth      bool `json:"-"`
 	isOutOfMana        bool `json:"-"`
 	isCharacterHanging bool `json:"-"`
 	isPetHanging       bool `json:"-"`
@@ -517,16 +516,6 @@ func (s *ActionState) executeCharacterStateMachine() {
 				s.logH("cannot find the position of window")
 				s.setFailureState(role.Character)
 			}
-		case character.Health:
-			ratio, _ := strconv.ParseFloat(s.CharacterActions[s.currentCharacterActionId].Param, 32)
-			isLower, err := s.isCharacterHealthLowerThan(float32(ratio))
-			if err != nil {
-				s.isOutOfHealth = true
-				s.logH("cannot read character health")
-			} else if isLower {
-				s.isOutOfHealth = true
-				s.logH("is out of health")
-			}
 		}
 
 		s.updateCurrentActionId(role.Character)
@@ -736,16 +725,6 @@ func (s *ActionState) executePetStateMachiine() {
 			} else {
 				s.logP("cannot find the position of window")
 				s.setFailureState(role.Pet)
-			}
-		case pet.Health:
-			game.CloseAllWindows(s.hWnd)
-			game.ClearChat(s.hWnd)
-			if self, ok := s.getSelfTarget(s.isOnRide()); ok {
-				ratio, _ := strconv.ParseFloat(s.PetActions[s.currentPetActionId].Param, 32)
-				if s.isHealthLowerThan(float32(ratio), self) {
-					s.isOutOfHealth = true
-					s.logP("is out of health")
-				}
 			}
 		case pet.Hang:
 			s.logP("is waiting")

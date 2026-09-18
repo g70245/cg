@@ -5,6 +5,7 @@ import (
 	"cg/game/battle"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -21,6 +22,7 @@ type menuWidgetOptions struct {
 	games            game.Games
 	allGames         game.Games
 	manaChecker      *battle.ManaChecker
+	healthMonitor    *battle.HealthMonitor
 	customEnemyOrder []string
 	workers          battle.Workers
 	sharedStopChan   chan bool
@@ -161,6 +163,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
+			options.healthMonitor.Reset()
 			started := false
 			for i := range options.workers {
 				if options.workers[i].Work() {
@@ -231,15 +234,18 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 			}
 			turn(theme.CheckButtonIcon(), flawlessPetCheckerButton)
 		case theme.CheckButtonIcon():
+			if !validateBeeperConfig("Flawless Pet Monitoring") {
+				return
+			}
 			for i := range options.workers {
 				options.workers[i].SetFlawlessPetCheckerEnabled(true)
 			}
 			turn(theme.CheckButtonCheckedIcon(), flawlessPetCheckerButton)
-
-			notifyBeeperConfig("Flawless Pet Monitoring")
 		}
 	})
 	flawlessPetCheckerButton.Importance = widget.HighImportance
+	healthCheckerButton := newHealthMonitorButton("HP", "HP Monitoring", options.healthMonitor.SetCharacter)
+	petHealthCheckerButton := newHealthMonitorButton("Pet HP", "Pet HP Monitoring", options.healthMonitor.SetPet)
 	var inventoryCheckerButton *widget.Button
 	inventoryCheckerButton = widget.NewButtonWithIcon("Inventory", theme.CheckButtonIcon(), func() {
 		switch inventoryCheckerButton.Icon {
@@ -258,7 +264,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
-	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, teleportAndResourceCheckerButton, activitiesCheckerButton, flawlessPetCheckerButton, inventoryCheckerButton), window)
+	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, healthCheckerButton, petHealthCheckerButton, flawlessPetCheckerButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window)
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
 		refreshManaCheckerSelector()
 		monitoringDialog.Show()
@@ -298,6 +304,48 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 
 	fullObjects := []fyne.CanvasObject{checkersButton, enemyOrderButton, loadSettingButton, deleteButton, switchButton}
 	return newBattleGroupMenu(fullObjects, switchButton, restoreButton)
+}
+
+func newHealthMonitorButton(label, title string, set func(bool, float32)) *widget.Button {
+	var ratio float32
+	ratioSelector := widget.NewRadioGroup(battle.Ratios.GetOptions(), nil)
+	ratioSelector.Horizontal = true
+	ratioSelector.Required = true
+
+	var button *widget.Button
+	ratioDialog := dialog.NewCustomConfirm(title, "Apply", "Cancel", ratioSelector, func(apply bool) {
+		if !apply || ratioSelector.Selected == "" {
+			return
+		}
+		value, err := strconv.ParseFloat(ratioSelector.Selected, 32)
+		if err != nil {
+			return
+		}
+		ratio = float32(value)
+		set(true, ratio)
+		button.SetText(healthMonitorButtonText(label, ratio))
+		turn(theme.CheckButtonCheckedIcon(), button)
+	}, window)
+
+	button = widget.NewButtonWithIcon(label, theme.CheckButtonIcon(), func() {
+		switch button.Icon {
+		case theme.CheckButtonCheckedIcon():
+			set(false, ratio)
+			turn(theme.CheckButtonIcon(), button)
+		case theme.CheckButtonIcon():
+			if !validateBeeperConfig(title) {
+				return
+			}
+			ratioDialog.Show()
+			ratioDialog.Resize(ratioDialog.MinSize())
+		}
+	})
+	button.Importance = widget.HighImportance
+	return button
+}
+
+func healthMonitorButtonText(label string, ratio float32) string {
+	return fmt.Sprintf("%s: %.0f%%", label, ratio*100)
 }
 
 func turn(icon fyne.Resource, button *widget.Button) {

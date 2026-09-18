@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-09-16
+Last updated: 2026-09-18
 
 ## Project direction
 
@@ -47,6 +47,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added module-relative character HP reads in `0f6fb45`: the character `Health` action now decodes current and maximum HP from the compatible client's main module instead of locating and clicking a self target, while pet health and other target-dependent actions retain their pixel/target behavior.
 - Documented the confirmed character, local-pet, and party-actor process-memory layouts in `docs/game-memory-layout.md`, including XOR decoding, stable module-relative entry points, pointer and slot strides, validation boundaries, and unresolved identity/riding behavior.
 - Added continuous remaining-riding-step reads for every alias in a battle group and a Compact Battle status row that omits zero values, stays current while full view is active, follows alias changes, and stops with the group; battle riding checks now use the same memory value with the legacy color check as a read-error fallback, and fixed supported-client addresses avoid repeated module snapshots while preserving exact-read errors.
+- Replaced the character and pet Health battle actions with independent runtime-only `HP` and `Pet HP` group monitors. Each moving worker checks every group window before movement, character checks adjust the configured ratio only while riding with at least 150 steps, pet checks decode every active local slot from memory, a low result blocks group movement and alerts once, and a read failure blocks without audio while the existing pause path finishes battle cleanup.
 
 ## Current repository facts
 
@@ -81,7 +82,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Background dialog calls remain unchanged under Fyne v2.4; `notifySetupConfig` and `activateDialogs` must be reassessed and dispatched with `fyne.Do` if the project upgrades to Fyne v2.6 or later.
 - User-facing file, audio, and setup errors omit machine-specific paths and low-level provider details; subsystem errors retain detailed context for diagnostics.
 - Fixed-pixel checks may continue using `GetPixel`, but dense or repeated region scans should capture once per observation frame and scan the resulting memory buffer; animated checks must recapture on each retry rather than reuse a stale frame.
-- Character HP uses the supported client's main-module offset `0xB4C308`; its current and maximum values are adjacent 16-byte XOR-encoded blocks. This is a client-specific compatibility constraint, while pet health and other target-dependent actions continue using the existing pixel and target-selection paths.
+- Character HP uses the supported client's main-module offset `0xB4C308`; local pet slots use base `0xAD4FF4`, stride `0x5110`, and state byte `+0x69E`. Their current and maximum values are adjacent 16-byte XOR-encoded blocks. HP monitoring is group-level runtime state rather than an `.ac` battle action, and low or unreadable HP pauses movement without coupling the shared block to `MovementState`.
 - Compact Battle navigation is explicitly opt-in: it reads only while compact mode is active and a current alias is selected, retains that alias when temporarily returning to full view, and resets to `Navigation Off` if the alias is no longer available.
 - Navigation output remains neutral English and must not expose the compatible client name, map name, raw map filename, or local path.
 - Automatic maze traversal is explicitly started and stopped independently of battle automation, controls only the selected alias, requires configured battle movement to remain `None`, and pauses until every grouped window is back in the normal scene.

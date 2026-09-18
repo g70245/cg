@@ -52,6 +52,7 @@ type Worker struct {
 	hWnd                  win.HWND
 	gameDir               func() string
 	manaChecker           *ManaChecker
+	healthMonitor         *HealthMonitor
 	sharedInventoryStatus *atomic.Bool
 	sharedStopChan        chan bool
 	sharedWaitGroup       *sync.WaitGroup
@@ -75,7 +76,7 @@ type Worker struct {
 
 type Workers []*Worker
 
-func CreateWorkers(games game.Games, gameDir func() string, manaChecker *ManaChecker, sharedInventoryStatus *atomic.Bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) Workers {
+func CreateWorkers(games game.Games, gameDir func() string, manaChecker *ManaChecker, healthMonitor *HealthMonitor, sharedInventoryStatus *atomic.Bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) Workers {
 	workers := make(Workers, 0, len(games))
 	for _, hWnd := range games.GetHWNDs() {
 		newWorkerTicker := time.NewTicker(time.Hour)
@@ -90,6 +91,7 @@ func CreateWorkers(games game.Games, gameDir func() string, manaChecker *ManaChe
 			hWnd:                             hWnd,
 			gameDir:                          gameDir,
 			manaChecker:                      manaChecker,
+			healthMonitor:                    healthMonitor,
 			sharedInventoryStatus:            sharedInventoryStatus,
 			sharedStopChan:                   sharedStopChan,
 			sharedWaitGroup:                  sharedWaitGroup,
@@ -172,14 +174,37 @@ func (w *Worker) Work() bool {
 						break
 					}
 
-					if isOutOfResource || w.sharedInventoryStatus.Load() || actionState.isOutOfHealth || actionState.isOutOfMana {
+					if isOutOfResource || w.sharedInventoryStatus.Load() || actionState.isOutOfMana {
 						w.pause(&actionState)
 						utils.Beeper.Play()
+						break
+					}
+					if w.healthMonitor.IsBlocked() {
+						w.pause(&actionState)
+						break
+					}
+					isHealthLow, err := w.healthMonitor.Check()
+					if err != nil {
+						w.healthMonitor.Block()
+						log.Printf("Handle %d health monitoring failed: %v\n", w.hWnd, err)
+						w.pause(&actionState)
+						break
+					}
+					if isHealthLow {
+						if w.healthMonitor.Block() {
+							log.Printf("Handle %d health is below the monitoring ratio\n", w.hWnd)
+							utils.Beeper.Play()
+						}
+						w.pause(&actionState)
 						break
 					}
 					movementState.Mode = mode
 					if w.isGrouping() {
 						w.sharedWaitGroup.Wait()
+					}
+					if w.healthMonitor.IsBlocked() {
+						w.pause(&actionState)
+						break
 					}
 					movementState.Move()
 				default:

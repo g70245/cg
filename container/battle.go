@@ -201,8 +201,9 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 
 func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, restoreFullView, resizeCollapsedView func()) (groupView *battleGroupView, sharedStopChan chan bool) {
 	manaChecker := battle.NewManaChecker()
+	healthMonitor := battle.NewHealthMonitor(games)
 	sharedStopChan = make(chan bool, len(games))
-	workers := battle.CreateWorkers(games, r.getGameDir, manaChecker, new(atomic.Bool), sharedStopChan, new(sync.WaitGroup))
+	workers := battle.CreateWorkers(games, r.getGameDir, manaChecker, healthMonitor, new(atomic.Bool), sharedStopChan, new(sync.WaitGroup))
 	ridingSteps := newRidingStepsView(games, allGames)
 
 	gameWidget, actionViewers := generateGameWidget(gameWidgeOptions{
@@ -216,6 +217,7 @@ func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, re
 		games:           games,
 		allGames:        allGames,
 		manaChecker:     manaChecker,
+		healthMonitor:   healthMonitor,
 		workers:         workers,
 		sharedStopChan:  sharedStopChan,
 		actionViewers:   actionViewers,

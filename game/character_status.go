@@ -42,8 +42,16 @@ func ReadRidingSteps(hWnd win.HWND) (uint32, error) {
 }
 
 func decodeCharacterHealth(data []byte) (uint32, uint32, error) {
+	current, maximum, err := decodeHealth(data)
+	if err != nil {
+		return 0, 0, fmt.Errorf("decode character health: %w", err)
+	}
+	return current, maximum, nil
+}
+
+func decodeHealth(data []byte) (uint32, uint32, error) {
 	if len(data) < characterHealthSize {
-		return 0, 0, fmt.Errorf("decode character health: got %d bytes, want %d", len(data), characterHealthSize)
+		return 0, 0, fmt.Errorf("got %d bytes, want %d", len(data), characterHealthSize)
 	}
 
 	return decodeXORValue(data[:xorValueSize]), decodeXORValue(data[xorValueSize:characterHealthSize]), nil

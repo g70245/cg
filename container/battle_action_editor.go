@@ -276,7 +276,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var attackButton *widget.Button
 			var defendButton *widget.Button
 			var escapeButton *widget.Button
-			var healthButton *widget.Button
 			var bombButton *widget.Button
 			var potionButton *widget.Button
 			var recallButton *widget.Button
@@ -324,17 +323,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				activateDialogs(dialogs, selectorDialogEnableChan)
 			})
 			escapeButton.Importance = widget.WarningImportance
-
-			healthButton = widget.NewButton(character.Health.String(), func() {
-				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Health) })
-				refreshActionViewer()
-
-				dialogs := []func(){
-					healingRatioSelectorDialog(role.Character),
-				}
-				activateDialogs(dialogs, selectorDialogEnableChan)
-			})
-			healthButton.Importance = widget.SuccessImportance
 
 			bombButton = widget.NewButton(character.Bomb.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddCharacterAction(character.Bomb) })
@@ -552,7 +540,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				healOneButton,
 				healTShapeButton,
 				healMultiButton,
-				healthButton,
 				trainButton,
 				waitButton,
 			)
@@ -579,7 +566,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			var petHealOneButton *widget.Button
 			var petRideButton *widget.Button
 			var petOffRideButton *widget.Button
-			var petHealthButton *widget.Button
 
 			petAttackButton = widget.NewButton(pet.Attack.String(), func() {
 				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Attack) })
@@ -707,17 +693,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 			})
 			petEscapeButton.Importance = widget.WarningImportance
 
-			petHealthButton = widget.NewButton(pet.Health.String(), func() {
-				updateActionState(func(actionState *battle.ActionState) { actionState.AddPetAction(pet.Health) })
-				refreshActionViewer()
-
-				dialogs := []func(){
-					healingRatioSelectorDialog(role.Pet),
-				}
-				activateDialogs(dialogs, selectorDialogEnableChan)
-			})
-			petHealthButton.Importance = widget.SuccessImportance
-
 			actionsContainer := container.NewGridWithColumns(4,
 				petAttackButton,
 				petEscapeButton,
@@ -729,7 +704,6 @@ func generateGameWidget(options gameWidgeOptions) (gameWidget *fyne.Container, a
 				petOffRideButton,
 				petHealSelfButton,
 				petHealOneButton,
-				petHealthButton,
 				petWaitButton,
 			)
 
