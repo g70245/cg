@@ -1,10 +1,8 @@
 package container
 
 import (
-	"cg/game"
 	"cg/game/battle"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -19,10 +17,8 @@ import (
 )
 
 type menuWidgetOptions struct {
-	games            game.Games
-	allGames         game.Games
-	manaChecker      *battle.ManaChecker
-	healthMonitor    *battle.HealthMonitor
+	partyState       *battle.PartyState
+	vitalsMonitor    *battle.VitalsMonitor
 	customEnemyOrder []string
 	workers          battle.Workers
 	sharedStopChan   chan bool
@@ -58,62 +54,7 @@ func (menu *battleGroupMenu) setCompact(compact bool) {
 	menu.container.Refresh()
 }
 
-func currentManaCheckerOptions(games, allGames game.Games) []string {
-	aliases := make([]string, 0, len(games))
-	for _, hWnd := range games.GetHWNDs() {
-		if alias := allGames.FindKey(hWnd); alias != "" {
-			aliases = append(aliases, alias)
-		}
-	}
-	sort.Strings(aliases)
-
-	return append([]string{battle.NO_MANA_CHECKER}, aliases...)
-}
-
-func currentManaCheckerAlias(manaChecker *battle.ManaChecker, allGames game.Games) string {
-	selectedHandle := manaChecker.Get()
-	if selectedHandle == battle.NO_MANA_CHECKER {
-		return battle.NO_MANA_CHECKER
-	}
-
-	for alias, hWnd := range allGames {
-		if fmt.Sprint(hWnd) == selectedHandle {
-			return alias
-		}
-	}
-	return battle.NO_MANA_CHECKER
-}
-
 func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
-	var manaCheckerSelectorDialog *dialog.CustomDialog
-	var manaCheckerSelectorButton *widget.Button
-	manaCheckerOptions := currentManaCheckerOptions(options.games, options.allGames)
-	manaCheckerSelector := widget.NewRadioGroup(manaCheckerOptions, func(s string) {
-		if hWnd, ok := options.allGames[s]; ok {
-			options.manaChecker.Set(fmt.Sprint(hWnd))
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", s))
-		} else {
-			options.manaChecker.Set(battle.NO_MANA_CHECKER)
-			manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", options.manaChecker.Get()))
-		}
-		manaCheckerSelectorDialog.Hide()
-	})
-	manaCheckerSelector.Required = true
-	manaCheckerSelectorDialog = dialog.NewCustomWithoutButtons("Select Game for Mana Monitoring", manaCheckerSelector, window)
-	manaCheckerSelectorButton = widget.NewButton(fmt.Sprintf("Mana: %s", options.manaChecker.Get()), func() {
-		manaCheckerSelectorDialog.Show()
-
-		notifyBeeperConfig("Mana Monitoring Setup")
-	})
-	manaCheckerSelectorButton.Importance = widget.HighImportance
-	refreshManaCheckerSelector := func() {
-		selectedAlias := currentManaCheckerAlias(options.manaChecker, options.allGames)
-		manaCheckerSelector.Options = currentManaCheckerOptions(options.games, options.allGames)
-		manaCheckerSelector.Selected = selectedAlias
-		manaCheckerSelectorButton.SetText(fmt.Sprintf("Mana: %s", selectedAlias))
-		manaCheckerSelector.Refresh()
-	}
-
 	loadSettingButton := widget.NewButtonWithIcon("Load", theme.FolderOpenIcon(), func() {
 		fileOpenDialog := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -163,7 +104,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	switchButton = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), func() {
 		switch switchButton.Icon {
 		case theme.MediaPlayIcon():
-			options.healthMonitor.Reset()
+			options.vitalsMonitor.Reset()
 			started := false
 			for i := range options.workers {
 				if options.workers[i].Work() {
@@ -184,7 +125,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	restoreButton := widget.NewButtonWithIcon("", theme.ViewFullScreenIcon(), options.restoreFullView)
 
 	var teleportAndResourceCheckerButton *widget.Button
-	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Teleport / Resources", theme.CheckButtonIcon(), func() {
+	teleportAndResourceCheckerButton = widget.NewButtonWithIcon("Teleport / Lure", theme.CheckButtonIcon(), func() {
 		switch teleportAndResourceCheckerButton.Icon {
 		case theme.CheckButtonCheckedIcon():
 			for i := range options.workers {
@@ -192,7 +133,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 			}
 			turn(theme.CheckButtonIcon(), teleportAndResourceCheckerButton)
 		case theme.CheckButtonIcon():
-			if !validateLogConfig("Teleport and Resource Monitoring") {
+			if !validateLogConfig("Teleport and Lure Monitoring") {
 				return
 			}
 			for i := range options.workers {
@@ -200,7 +141,7 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 			}
 			turn(theme.CheckButtonCheckedIcon(), teleportAndResourceCheckerButton)
 
-			notifyBeeperAndLogConfig("Teleport and Resource Monitoring")
+			notifyBeeperAndLogConfig("Teleport and Lure Monitoring")
 		}
 	})
 	teleportAndResourceCheckerButton.Importance = widget.HighImportance
@@ -244,8 +185,21 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	flawlessPetCheckerButton.Importance = widget.HighImportance
-	healthCheckerButton := newHealthMonitorButton("HP", "HP Monitoring", options.healthMonitor.SetCharacter)
-	petHealthCheckerButton := newHealthMonitorButton("Pet HP", "Pet HP Monitoring", options.healthMonitor.SetPet)
+	var partyButton *widget.Button
+	partyButton = widget.NewButtonWithIcon("Party", theme.CheckButtonIcon(), func() {
+		enabled := partyButton.Icon == theme.CheckButtonIcon()
+		options.partyState.SetEnabled(enabled)
+		if enabled {
+			turn(theme.CheckButtonCheckedIcon(), partyButton)
+		} else {
+			turn(theme.CheckButtonIcon(), partyButton)
+		}
+	})
+	partyButton.Importance = widget.HighImportance
+	mpCheckerButton := newRatioMonitorButton("MP", "MP Monitoring", battle.MPRatios.GetOptions(), options.vitalsMonitor.SetCharacterMana)
+	petMPCheckerButton := newRatioMonitorButton("Pet MP", "Pet MP Monitoring", battle.MPRatios.GetOptions(), options.vitalsMonitor.SetPetMana)
+	healthCheckerButton := newRatioMonitorButton("HP", "HP Monitoring", battle.Ratios.GetOptions(), options.vitalsMonitor.SetCharacterHealth)
+	petHealthCheckerButton := newRatioMonitorButton("Pet HP", "Pet HP Monitoring", battle.Ratios.GetOptions(), options.vitalsMonitor.SetPetHealth)
 	var inventoryCheckerButton *widget.Button
 	inventoryCheckerButton = widget.NewButtonWithIcon("Inventory", theme.CheckButtonIcon(), func() {
 		switch inventoryCheckerButton.Icon {
@@ -264,9 +218,11 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
-	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(4, manaCheckerSelectorButton, healthCheckerButton, petHealthCheckerButton, flawlessPetCheckerButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton), window)
+	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(5,
+		partyButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton, flawlessPetCheckerButton,
+		mpCheckerButton, petMPCheckerButton, healthCheckerButton, petHealthCheckerButton,
+	), window)
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
-		refreshManaCheckerSelector()
 		monitoringDialog.Show()
 		monitoringDialog.Resize(monitoringDialog.MinSize())
 	})
@@ -306,9 +262,9 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	return newBattleGroupMenu(fullObjects, switchButton, restoreButton)
 }
 
-func newHealthMonitorButton(label, title string, set func(bool, float32)) *widget.Button {
+func newRatioMonitorButton(label, title string, ratioOptions []string, set func(bool, float32)) *widget.Button {
 	var ratio float32
-	ratioSelector := widget.NewRadioGroup(battle.Ratios.GetOptions(), nil)
+	ratioSelector := widget.NewRadioGroup(ratioOptions, nil)
 	ratioSelector.Horizontal = true
 	ratioSelector.Required = true
 
@@ -323,7 +279,7 @@ func newHealthMonitorButton(label, title string, set func(bool, float32)) *widge
 		}
 		ratio = float32(value)
 		set(true, ratio)
-		button.SetText(healthMonitorButtonText(label, ratio))
+		button.SetText(ratioMonitorButtonText(label, ratio))
 		turn(theme.CheckButtonCheckedIcon(), button)
 	}, window)
 
@@ -344,7 +300,7 @@ func newHealthMonitorButton(label, title string, set func(bool, float32)) *widge
 	return button
 }
 
-func healthMonitorButtonText(label string, ratio float32) string {
+func ratioMonitorButtonText(label string, ratio float32) string {
 	return fmt.Sprintf("%s: %.0f%%", label, ratio*100)
 }
 

@@ -11,21 +11,28 @@ import (
 
 const (
 	xorValueSize        = 16
-	characterHealthSize = xorValueSize * 2
+	characterStatusSize = xorValueSize * 4
 	ridingStepsSize     = 4
 )
 
-func ReadCharacterHealth(hWnd win.HWND) (uint32, uint32, error) {
-	data, err := internal.ReadMemoryAtAddress(hWnd, MEMORY_CHARACTER_HEALTH, characterHealthSize)
+type CharacterStatus struct {
+	CurrentHP uint32
+	MaximumHP uint32
+	CurrentMP uint32
+	MaximumMP uint32
+}
+
+func ReadCharacterStatus(hWnd win.HWND) (CharacterStatus, error) {
+	data, err := internal.ReadMemoryAtAddress(hWnd, MEMORY_CHARACTER_STATUS, characterStatusSize)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read character health: %w", err)
+		return CharacterStatus{}, fmt.Errorf("read character status: %w", err)
 	}
 
-	current, maximum, err := decodeCharacterHealth(data)
+	status, err := decodeCharacterStatus(data)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read character health: %w", err)
+		return CharacterStatus{}, fmt.Errorf("read character status: %w", err)
 	}
-	return current, maximum, nil
+	return status, nil
 }
 
 func ReadRidingSteps(hWnd win.HWND) (uint32, error) {
@@ -41,20 +48,16 @@ func ReadRidingSteps(hWnd win.HWND) (uint32, error) {
 	return steps, nil
 }
 
-func decodeCharacterHealth(data []byte) (uint32, uint32, error) {
-	current, maximum, err := decodeHealth(data)
-	if err != nil {
-		return 0, 0, fmt.Errorf("decode character health: %w", err)
+func decodeCharacterStatus(data []byte) (CharacterStatus, error) {
+	if len(data) < characterStatusSize {
+		return CharacterStatus{}, fmt.Errorf("got %d bytes, want %d", len(data), characterStatusSize)
 	}
-	return current, maximum, nil
-}
-
-func decodeHealth(data []byte) (uint32, uint32, error) {
-	if len(data) < characterHealthSize {
-		return 0, 0, fmt.Errorf("got %d bytes, want %d", len(data), characterHealthSize)
-	}
-
-	return decodeXORValue(data[:xorValueSize]), decodeXORValue(data[xorValueSize:characterHealthSize]), nil
+	return CharacterStatus{
+		CurrentHP: decodeXORValue(data[0*xorValueSize : 1*xorValueSize]),
+		MaximumHP: decodeXORValue(data[1*xorValueSize : 2*xorValueSize]),
+		CurrentMP: decodeXORValue(data[2*xorValueSize : 3*xorValueSize]),
+		MaximumMP: decodeXORValue(data[3*xorValueSize : 4*xorValueSize]),
+	}, nil
 }
 
 func decodeXORValue(data []byte) uint32 {

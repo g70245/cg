@@ -5,23 +5,26 @@ import (
 	"testing"
 )
 
-func TestDecodeCharacterHealth(t *testing.T) {
-	data := make([]byte, characterHealthSize)
-	encodeTestXORValue(data[:xorValueSize], 2540, 0x12345678)
-	encodeTestXORValue(data[xorValueSize:], 3000, 0x87654321)
-
-	current, maximum, err := decodeCharacterHealth(data)
-	if err != nil {
-		t.Fatalf("decodeCharacterHealth() error = %v", err)
+func TestDecodeCharacterStatus(t *testing.T) {
+	data := make([]byte, characterStatusSize)
+	values := []uint32{2540, 3000, 480, 1079}
+	for index, value := range values {
+		start := index * xorValueSize
+		encodeTestXORValue(data[start:start+xorValueSize], value, uint32(index+1)*0x11111111)
 	}
-	if current != 2540 || maximum != 3000 {
-		t.Fatalf("decodeCharacterHealth() = (%d, %d), want (2540, 3000)", current, maximum)
+
+	status, err := decodeCharacterStatus(data)
+	if err != nil {
+		t.Fatalf("decodeCharacterStatus() error = %v", err)
+	}
+	if status.CurrentHP != 2540 || status.MaximumHP != 3000 || status.CurrentMP != 480 || status.MaximumMP != 1079 {
+		t.Fatalf("decodeCharacterStatus() = %+v", status)
 	}
 }
 
-func TestDecodeCharacterHealthRejectsShortData(t *testing.T) {
-	if _, _, err := decodeCharacterHealth(make([]byte, characterHealthSize-1)); err == nil {
-		t.Fatal("decodeCharacterHealth() error = nil, want an error")
+func TestDecodeCharacterStatusRejectsShortData(t *testing.T) {
+	if _, err := decodeCharacterStatus(make([]byte, characterStatusSize-1)); err == nil {
+		t.Fatal("decodeCharacterStatus() error = nil, want an error")
 	}
 }
 

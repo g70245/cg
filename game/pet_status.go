@@ -13,6 +13,8 @@ const petStateSize = 1
 type PetStatus struct {
 	CurrentHP uint32
 	MaximumHP uint32
+	CurrentMP uint32
+	MaximumMP uint32
 	State     uint8
 }
 
@@ -32,14 +34,18 @@ func ReadPetStatus(hWnd win.HWND, index int) (PetStatus, error) {
 		return status, nil
 	}
 
-	healthData, err := internal.ReadMemoryAtAddress(hWnd, base, characterHealthSize)
+	statusData, err := internal.ReadMemoryAtAddress(hWnd, base, characterStatusSize)
 	if err != nil {
-		return PetStatus{}, fmt.Errorf("read pet %d health: %w", index, err)
+		return PetStatus{}, fmt.Errorf("read pet %d status: %w", index, err)
 	}
-	status.CurrentHP, status.MaximumHP, err = decodeHealth(healthData)
+	decoded, err := decodeCharacterStatus(statusData)
 	if err != nil {
-		return PetStatus{}, fmt.Errorf("read pet %d health: %w", index, err)
+		return PetStatus{}, fmt.Errorf("read pet %d status: %w", index, err)
 	}
+	status.CurrentHP = decoded.CurrentHP
+	status.MaximumHP = decoded.MaximumHP
+	status.CurrentMP = decoded.CurrentMP
+	status.MaximumMP = decoded.MaximumMP
 	return status, nil
 }
 

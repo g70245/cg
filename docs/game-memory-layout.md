@@ -6,35 +6,37 @@ This document records reusable process-memory knowledge confirmed through live r
 
 All offsets are relative to the compatible client's main module unless stated otherwise. The layout is client-version-specific and must be revalidated after a client update.
 
-The observations below were last validated on 2026-09-16. The character-health, local-pet, and remaining-riding-steps readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
+The observations below were last validated on 2026-09-18. The character-status, local-pet-status, and remaining-riding-steps readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
 
 ## XOR-encoded values
 
-Character, pet, and party-actor HP values use the same 16-byte XOR-encoded block:
+Character, pet, and party-actor status values use the same 16-byte XOR-encoded block:
 
 ```text
 decodedValue(block) = littleEndianUint32(block + 0x04)
                     XOR littleEndianUint32(block + 0x08)
 ```
 
-Current and maximum HP are adjacent blocks:
+Current and maximum HP/MP are four adjacent blocks:
 
 ```text
 currentHP = decodedValue(hpBase + 0x00)
 maximumHP = decodedValue(hpBase + 0x10)
+currentMP = decodedValue(hpBase + 0x20)
+maximumMP = decodedValue(hpBase + 0x30)
 ```
 
-A maximum HP value of zero must not be used as a ratio denominator. Memory-read failures must remain distinguishable from a legitimate zero value.
+A maximum HP or MP value of zero must not be used as a ratio denominator. Memory-read failures must remain distinguishable from a legitimate zero value.
 
-## Local character HP
+## Local character status
 
-The local character's HP blocks are stored directly at a stable module-relative address:
+The local character's four HP/MP blocks are stored directly at a stable module-relative address:
 
 ```text
 hpBase = module + 0x00B4C308
 ```
 
-The application currently implements this layout in `game/character_status.go`. Runtime addresses are derived in `game/constant.go` from the supported client's fixed `0x00400000` module base so repeated reads do not create module snapshots.
+The application currently implements this layout in `game/character_status.go` and reads all four blocks in one 64-byte operation. A live read decoded character MP as `480/1079`, confirming the MP block positions. Runtime addresses are derived in `game/constant.go` from the supported client's fixed `0x00400000` module base so repeated reads do not create module snapshots.
 
 ## Local pet slots
 
@@ -65,7 +67,7 @@ Observed pet-state values are:
 
 State value `2` does not by itself distinguish ordinary battle use from riding. The five slots describe the local character's pet roster; access to teammates' pets has not been confirmed.
 
-The application implements this layout in `game/pet_status.go`. It reads the state byte first and decodes the two HP blocks only for state `2`. Group Pet HP monitoring repeats that local-slot scan for every game window in the external application group, so it does not depend on access to teammates through one process.
+The application implements this layout in `game/pet_status.go`. It reads the state byte first and decodes all four HP/MP blocks in one 64-byte operation only for state `2`. Group Pet HP and Pet MP monitoring repeat that local-slot scan for every game window in the external application group, so they do not depend on access to teammates through one process.
 
 ## Party actor pointer table
 
@@ -108,7 +110,7 @@ Mounted combined HP was not found as one exact XOR-encoded value during live sca
 Confirmed:
 
 - The common 16-byte XOR decoding layout.
-- The local-character HP module offset.
+- The local-character HP/MP module offset and four-block layout.
 - Five local pet slots, their stride, HP/MP block positions, and observed state byte.
 - The party actor pointer-table base, `0x28` pointer-entry stride, and character actor HP field offset.
 - The pointer table includes the local character as well as remote party actors.

@@ -117,7 +117,7 @@ cg/
 | `container/setup_config.go` | Validates log/audio setup and shows shared battle/production reminders. | Used by both battle and production UI paths. |
 | `container/production.go` | Builds production UI and creates/removes one production worker per selected game. | Directly controls concrete `production.Worker` values. |
 | `game/instance.go` | Represents discovered windows as `Games map[string]win.HWND`. | Initial keys are decimal handle strings; UI aliases mutate this map in memory only. |
-| `game/character_status.go` | Reads and decodes character HP and remaining riding steps from fixed supported-client addresses. | HP uses module offset `0xB4C308`; riding steps use `0xB4C464`; `game/constant.go` derives both addresses from the fixed `0x00400000` module base. |
+| `game/character_status.go` | Reads and decodes character HP/MP and remaining riding steps from fixed supported-client addresses. | Four adjacent HP/MP XOR blocks use module offset `0xB4C308`; riding steps use `0xB4C464`; `game/constant.go` derives both addresses from the fixed `0x00400000` module base. |
 | `docs/game-memory-layout.md` | Records confirmed client-specific memory layouts for character, pet, and party-actor status. | Keeps reusable module offsets, pointer relationships, validation boundaries, and unresolved items separate from process-specific diagnostic addresses. |
 | `game/operation.go` | Provides timed, game-level input operations such as opening windows, using skills, and using items. | Delegates to `internal/message.go`. |
 | `game/detection.go` | Shared scene, inventory, item, map-name, map-code, and map-position detection. | Uses fixed pixels, captured RGBA buffers, and fixed memory addresses. |
@@ -280,7 +280,8 @@ Failure handling is minimal: Win32 return values are not checked, regex compilat
    - `sharedStopChan`
    - `sharedWaitGroup`
    - `sharedInventoryStatus`
-   - a synchronized `ManaChecker` selection
+   - an atomic `PartyState`
+   - a `VitalsMonitor` containing HP/MP settings and one atomic movement block
 
 The Battle-only compact view temporarily replaces the normal root content, preserves the group tabs, and reduces each group to its existing start/stop control, a full-view restore control, and an alias selector for local-map navigation. Navigation defaults to `Navigation Off` and remains collapsed to that selector in the off state. Selecting one current window alias expands a scrollable list with a minimum height that grows with manual window resizing, and starts a single updater that reads the current map code and coordinates from that process, finds the matching numeric `.dat` file at the supported shallow levels beneath the selected Game Folder's `map` directory, caches unchanged map data, and lists all detected routes by distance. Missing files report unavailable immediately without recursively scanning the map tree. Selecting `Navigation Off` stops the updater, collapses the panel, and restores the compact content's minimum window height; deleting the group, refreshing the application, or leaving compact view also stops the updater. Returning to compact view restarts it when the selected alias still exists. The panel uses neutral English position, direction, and route-type text and does not show the map name, raw filename, path, or compatible client identity. The full Battle view and Production view do not expose this panel.
 
@@ -299,7 +300,7 @@ Navigation Play requires configured alert music so verification monitoring canno
 4. Character and pet actions are appended in UI order. Optional parameters, offsets, thresholds, success/failure `ControlUnit` values, and jump IDs are collected through sequenced dialogs.
 5. Save marshals an `ActionState` snapshot; load unmarshals JSON and replaces worker configuration through its synchronized API. Runtime-only dependencies are attached to the execution snapshot.
 
-Magic Baby uses random encounters on normal maps and turn-based party battles. Party windows can leave the battle scene at different times. `sharedWaitGroup` deliberately tracks party members still executing battle actions: a character already back in the normal scene waits before moving so the leader cannot trigger another encounter while teammates remain in battle.
+Magic Baby uses random encounters on normal maps and turn-based party battles. Party windows can leave the battle scene at different times. When the group-level `Party` control is enabled, `sharedWaitGroup` deliberately tracks party members still executing battle actions: a character already back in the normal scene waits before moving so the leader cannot trigger another encounter while teammates remain in battle. The control is off by default because windows in one application group do not necessarily form one in-game party.
 
 **Execution flow:**
 
@@ -310,16 +311,19 @@ flowchart TD
     Reset --> Loop[worker goroutine select loop]
     Loop --> Scene{game.GetScene}
     Scene -->|BATTLE_SCENE| Act[ActionState.Act]
-    Scene -->|NORMAL_SCENE| StopReason{resource, inventory, or mana stop?}
-    StopReason -->|No| Health{Group HP monitors enabled?}
-    Health -->|Yes| ScanHP[Read every group window's character and active-pet HP]
-    Health -->|No| MoveGuard{Group health blocked?}
-    ScanHP --> HealthResult{Low or unreadable HP?}
-    HealthResult -->|Low| HealthAlert[Block group movement and play alert once]
-    HealthResult -->|Read failure| Pause
-    HealthResult -->|Healthy| MoveGuard
-    HealthAlert --> Pause
-    MoveGuard -->|No| Move[MovementState.Move]
+    Scene -->|NORMAL_SCENE| StopReason{lure or inventory stop?}
+    StopReason -->|No| Vitals{Any HP/MP monitor enabled?}
+    Vitals -->|Yes| ScanVitals[Read every group window's character and active-pet status]
+    Vitals -->|No| MoveGuard{Group vitals blocked?}
+    ScanVitals --> VitalsResult{Low or unreadable value?}
+    VitalsResult -->|Low| VitalsAlert[Block group movement and play alert once]
+    VitalsResult -->|Read failure| Pause
+    VitalsResult -->|Healthy| MoveGuard
+    VitalsAlert --> Pause
+    MoveGuard -->|No| PartyWait{Party enabled?}
+    PartyWait -->|Yes| WaitParty[Wait for group battle actions]
+    PartyWait -->|No| Move[MovementState.Move]
+    WaitParty --> Move
     MoveGuard -->|Yes| Pause[Pause worker and finish battle cleanup]
     StopReason -->|Yes| Alert[Pause worker and play alert]
     Scene -->|Unknown| Loop
@@ -329,19 +333,18 @@ flowchart TD
     Enemies --> Flawless{Flawless Pet enabled and sparkle found?}
     Flawless -->|Yes| FlawlessAlert[Play alert and wait for battle end or Stop]
     FlawlessAlert --> Loop
-    Flawless -->|No| Mana[Optional party mana check]
-    Mana --> Character[Character action state machine]
+    Flawless -->|No| Character[Character action state machine]
     Character --> Pet[Pet action state machine]
     Pet --> BattleEnd{Battle scene ended or disabled?}
     BattleEnd -->|No| Activity
     BattleEnd -->|Yes| Loop
 ```
 
-`ActionState` transforms configured action records into mouse/key operations. It detects stages and results by pixels, changes action IDs according to `StartOver`, `Continue`, `Repeat`, or `Jump`, and resets IDs after battle. Targeted character and pet actions still inspect fixed player/enemy coordinates. Character and pet Health are not battle actions; they are independent runtime-only group monitors. Movement reads current map coordinates from process memory and clicks a point around the 640×480 center.
+`ActionState` transforms configured action records into mouse/key operations. It detects stages and results by pixels, changes action IDs according to `StartOver`, `Continue`, `Repeat`, or `Jump`, and resets IDs after battle. Targeted character and pet actions still inspect fixed player/enemy coordinates. HP and MP checks are not battle actions; they are independent runtime-only group monitors. Movement reads current map coordinates from process memory and clicks a point around the 640×480 center.
 
-The optional `HP` and `Pet HP` controls store separate group-level ratios. Before each movement attempt, any worker whose movement mode is not `None` scans every game window in its external application group. Character HP uses the fixed local-character blocks in each process. While riding with at least 150 remaining steps, the configured character ratio is halved; at zero through 149 steps it remains unchanged. Pet HP scans all five local slots in each process and compares only state-2 pets. A below-ratio result atomically blocks group movement, starts the shared alert once, and pauses each moving worker when it next reaches the normal scene. A required memory-read failure also blocks and pauses movement but does not start audio. Healthy reads never clear the block; the next group Play resets it. Workers revalidate the shared block immediately before `MovementState.Move`, while movement itself remains independent and unchanged.
+The optional `HP`, `Pet HP`, `MP`, and `Pet MP` controls store separate group-level ratios. HP options range from 10% through 100%; MP options range from 5% through 55% in 5% increments. Before each movement attempt, any worker whose movement mode is not `None` scans every game window in its external application group. One 64-byte read obtains all four character HP/MP blocks whenever either character monitor is enabled. Character HP alone also reads remaining riding steps: while riding with at least 150 remaining steps, its configured ratio is halved; at zero through 149 steps it remains unchanged. MP ratios are never adjusted for riding. Pet monitors scan all five local slots in each process, compare only state-2 pets, and use one four-block status read per active slot. A below-ratio result atomically blocks group movement, starts the shared alert once, and pauses each moving worker when it next reaches the normal scene. A required memory-read failure also blocks and pauses movement but does not start audio. Healthy reads never clear the block; the next group Play resets it. Workers revalidate the shared block immediately before `MovementState.Move`, while movement itself remains independent and unchanged.
 
-HP, Pet HP, and Flawless Pet cannot be enabled until alert music is configured. Other monitoring controls retain their existing reminder or validation behavior.
+HP, Pet HP, MP, Pet MP, and Flawless Pet cannot be enabled until alert music is configured. Party requires no alert configuration. Other monitoring controls retain their existing reminder or validation behavior.
 
 Battle skill-window and inventory-window position detection captures the current 640×480 client area once and searches the corresponding pivot region at single-pixel granularity in the RGBA buffer. Capture failures are logged and cause that position lookup to fail without retrying through the legacy per-pixel window scan.
 
@@ -349,7 +352,7 @@ Self-target detection also captures one current client frame, then checks player
 
 Bomb and potion actions locate items by capturing the current 640×480 client area once and scanning the 5×4 inventory slots at single-pixel granularity in the resulting RGBA buffer. The scan preserves the existing slot order and skips a slot when it encounters the disabled-item color. If client-area capture fails, item lookup logs the failure and falls back to the existing per-pixel window scan with the previous granularity of two for bombs and three for potions.
 
-The optional Flawless Pet checker runs after enemy detection and before mana and action processing. For each detected enemy, it scans the inclusive 65×29 area from `(X-38, Y-10)` through `(X+26, Y+18)` for the configured sparkle color. This area covers the moving, blinking star effect rather than a fixed monster-body pixel. The checker performs five complete scans separated by 50 ms, with no delay after the final attempt. Each attempt captures the current 640×480 client area once and scans every detected enemy region in the resulting RGBA buffer; out-of-bounds region coordinates are clipped to the image. If capture fails, that attempt falls back to the existing per-pixel window scan and later attempts retry capture. A match starts the repeating audio alert and keeps that window out of its battle action state machines until the battle scene ends or the worker is stopped.
+The optional Flawless Pet checker runs after enemy detection and before action processing. For each detected enemy, it scans the inclusive 65×29 area from `(X-38, Y-10)` through `(X+26, Y+18)` for the configured sparkle color. This area covers the moving, blinking star effect rather than a fixed monster-body pixel. The checker performs five complete scans separated by 50 ms, with no delay after the final attempt. Each attempt captures the current 640×480 client area once and scans every detected enemy region in the resulting RGBA buffer; out-of-bounds region coordinates are clipped to the image. If capture fails, that attempt falls back to the existing per-pixel window scan and later attempts retry capture. A match starts the repeating audio alert and keeps that window out of its battle action state machines until the battle scene ends or the worker is stopped.
 
 Independent ticker cases check inventory, map/log teleport state, resource phrases, and verification phrases. When a stop condition occurs, tickers stop and audio is requested.
 
@@ -458,7 +461,7 @@ Go's compiler-enforced import graph is acyclic. The current graph has no import 
 | `PetAction` | `game/battle` | Configures one pet action and its control transitions. | Action/offset/threshold/control enums | `ActionState`, UI JSON load/save | Same compatibility concern as `CharacterAction`. |
 | `Worker` | `game/battle` | Schedules battle, movement, inventory, and log/memory checks for one window. | `ActionState`, `MovementState`, tickers, synchronized group state, shared channel/WaitGroup | `container/battle*.go` | Configuration is synchronized and each run owns an action snapshot; `Work` can still start a new goroutine each time it is called. |
 | `Workers` | `game/battle` | Slice of battle worker pointers. | `Worker` | Battle-group UI | Pointer identity prevents copying mutex and atomic fields after use. |
-| `HealthMonitor` | `game/battle` | Holds runtime-only group HP/Pet HP ratios and the atomic movement block, and scans every group window before movement. | `game.ReadCharacterHealth`, `game.ReadRidingSteps`, `game.ReadPetStatus` | `battle.Worker`, battle-group Monitoring UI | Each moving worker scans independently; only the block state is shared. |
+| `VitalsMonitor` | `game/battle` | Holds four runtime-only group HP/MP ratio settings and the atomic movement block, and scans every group window before movement. | `game.ReadCharacterStatus`, `game.ReadRidingSteps`, `game.ReadPetStatus` | `battle.Worker`, battle-group Monitoring UI | Each moving worker scans independently; only the block state is shared. |
 | `MovementState` | `game/battle` | Chooses a movement click based on mode, origin, and current memory position. | `game.GetCurrentGamePos`, `internal.LeftClick` | `battle.Worker` | `origin` and `hWnd` are unexported runtime state. |
 | `Worker` | `game/production` | Schedules production, log, inventory, and manual-attention checks for one window. | `game`, `internal`, tickers, `utils.Beeper` | `container/production.go` | Name access is mutex-protected; manual and gathering flags are atomic. |
 | `Item` and `Bombs` | `game/items` | Associate item labels with detection colors. | `enum.GenericEnum`, `win.COLORREF` | Battle action configuration and item lookup | Potion is represented only by a color constant. |
@@ -476,7 +479,7 @@ There are no repository/service interfaces, controllers, or repository objects i
 - Detection targets, colors, option lists, and item lists are package-level variables/constants.
 - Fyne widgets retain selection, icon, text, and dialog state. UI callbacks directly update workers and the `Games` map.
 - No state is persisted automatically. Aliases, selected directories, enabled checkers, groups, and production settings are lost on exit.
-- The Flawless Pet checker is a per-worker atomic runtime flag. HP and Pet HP settings plus their movement block are shared within one battle group. Like the other enabled checkers, none are part of saved `.ac` action configuration.
+- The Flawless Pet checker is a per-worker atomic runtime flag. Party, all four HP/MP settings, and the shared vitals movement block are runtime-only group state. Like the other enabled checkers, none are part of saved `.ac` action configuration.
 
 ### 9.2 Configuration state
 
@@ -500,13 +503,13 @@ There are no repository/service interfaces, controllers, or repository objects i
 
 The following are evidence-based risk assessments; actual failure frequency requires runtime testing.
 
-- Worker checker/stop flags and the group inventory status use atomics. Movement, enemy-order, action, mana-checker, game-directory, and production-name access use synchronized APIs. Battle execution uses a deep action snapshot rather than UI-owned slices.
+- Worker checker/stop flags, `PartyState`, the group inventory status, and the vitals movement block use atomics. Movement, enemy-order, action, game-directory, and production-name access use synchronized APIs. Battle execution uses a deep action snapshot rather than UI-owned slices.
 - Both worker types use an atomic running gate so repeated `Work()` calls cannot create duplicate goroutines for the same worker.
 - Pausing after an alert intentionally stops ticker events without terminating the worker goroutine. The goroutine remains available until the operator acknowledges the condition with Stop, handles it, and starts the worker again when ready.
 - **Inference — dialog goroutine retention:** `activateDialogs` depends on every expected dialog closure sending to the channel. Unexpected UI lifecycle paths may leave a goroutine waiting.
-- `sharedWaitGroup` intentionally represents party windows still in Magic Baby's turn-based battle scene. A party member back in the normal scene waits before moving, preventing the leader from starting another random encounter while teammates are still leaving battle. `Done` is deferred around each grouped action so the count is released on every action return path.
+- While Party is enabled, `sharedWaitGroup` represents group windows still in Magic Baby's turn-based battle scene. A window back in the normal scene waits before moving, preventing the leader from starting another random encounter while teammates are still leaving battle. `Done` is deferred around each grouped action so the count is released on every action return path.
 - `sharedInventoryStatus` is a shared `atomic.Bool`.
-- `HealthMonitor.blocked` is a shared `atomic.Bool`. Workers scan independently and revalidate it immediately before movement; this guard deliberately avoids synchronizing their movement schedules.
+- `VitalsMonitor.blocked` is a shared `atomic.Bool`. Workers scan independently and revalidate it immediately before movement; this guard deliberately avoids synchronizing their movement schedules.
 
 ### 9.5 Fyne thread model
 
@@ -535,7 +538,7 @@ The project uses several inconsistent error strategies:
 - Action-configuration read, JSON, write, and close failures retain contextual subsystem errors while Fyne dialogs show operation-level guidance without paths or decoder details.
 - Audio initialization returns errors to the file-selection UI rather than terminating the process.
 - Missing or unreadable game logs return path-rich errors at the filesystem boundary; preflight validation maps them to concise path-free UI reasons, while runtime phrase checks treat unavailable logs as no match.
-- Legacy process-memory read failures are not surfaced to users. Character-HP read failures are returned to the battle action and logged as `cannot read character health`; riding-step failures are displayed as `ERR` beside the affected alias.
+- Legacy process-memory read failures are not surfaced to users. Character and active-pet status readers return exact-read errors; the vitals monitor logs the failure, blocks movement, and does not play audio. Riding-step display failures appear as `ERR` beside the affected alias.
 
 Fyne information dialogs use feature-specific setup titles and report only the missing audio/log requirements. Error dialogs report game-directory, action-configuration, and audio-selection failures with concise actionable text. Operational worker failures are logged and may trigger audio; they are not presented as structured UI errors.
 
@@ -622,7 +625,7 @@ There is no installer, code signing, update mechanism, or release workflow. Cros
 
 ### 12.1 Existing automated coverage
 
-The repository contains focused unit tests for enum option conversion, process-handle ownership, exact fixed-address reads, character-HP XOR decoding and ratio comparison, riding-step decoding and Compact Battle presentation, log/filesystem behavior, log-directory validation, user-facing setup messages and action-ID validation, action-configuration I/O, and the synchronized audio lifecycle. These tests use pure values, fake native operations, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
+The repository contains focused unit tests for enum option conversion, process-handle ownership, exact fixed-address reads, four-block character HP/MP XOR decoding and ratio comparison, group vitals scanning and blocking, riding-step decoding and Compact Battle presentation, log/filesystem behavior, log-directory validation, user-facing setup messages and action-ID validation, action-configuration I/O, and the synchronized audio lifecycle. These tests use pure values, fake native operations, temporary filesystem fixtures, and fake audio sessions; they do not require a live game window, process memory, user log directory, or audio device.
 
 The following commands passed in the verified Windows environment on 2026-07-16:
 
@@ -651,7 +654,7 @@ No repeatable manual test checklist or expected fixture data is stored in the re
 
 - Action-state control transitions, jumps, and hanging behavior.
 - Movement calculations and boundary decisions.
-- Pet health, mana, target, inventory, item, and production pixel detection; live compatible-client validation of character HP remains manual even though its decoding and ratio logic are unit tested.
+- Pet target, inventory, item, and production pixel detection; live compatible-client validation of character and pet HP/MP remains manual even though decoding, ratio logic, and monitor coordination are unit tested.
 - Game-log tail reading, timestamp filtering, rotation, missing paths, short files, and Big5 decoding.
 - Process-memory read errors and client-version changes.
 - Worker start/stop/restart, group coordination, refresh cleanup, and application shutdown.

@@ -2,7 +2,6 @@ package container
 
 import (
 	"cg/game"
-	"cg/game/battle"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -15,34 +14,12 @@ import (
 	"github.com/g70245/win"
 )
 
-func TestManaCheckerOptionsFollowCurrentAliases(t *testing.T) {
-	groupGames := game.Games{
-		"123": win.HWND(123),
-		"456": win.HWND(456),
+func TestRatioMonitorButtonText(t *testing.T) {
+	if got := ratioMonitorButtonText("HP", 0.5); got != "HP: 50%" {
+		t.Fatalf("ratioMonitorButtonText() = %q, want %q", got, "HP: 50%")
 	}
-	allGames := game.Games{
-		"1": win.HWND(123),
-		"4": win.HWND(456),
-	}
-
-	wantOptions := []string{battle.NO_MANA_CHECKER, "1", "4"}
-	if got := currentManaCheckerOptions(groupGames, allGames); !reflect.DeepEqual(got, wantOptions) {
-		t.Fatalf("mana checker options = %v, want %v", got, wantOptions)
-	}
-
-	manaChecker := battle.NewManaChecker()
-	manaChecker.Set("456")
-	if got := currentManaCheckerAlias(manaChecker, allGames); got != "4" {
-		t.Fatalf("mana checker alias = %q, want %q", got, "4")
-	}
-}
-
-func TestHealthMonitorButtonText(t *testing.T) {
-	if got := healthMonitorButtonText("HP", 0.5); got != "HP: 50%" {
-		t.Fatalf("healthMonitorButtonText() = %q, want %q", got, "HP: 50%")
-	}
-	if got := healthMonitorButtonText("Pet HP", 0.4); got != "Pet HP: 40%" {
-		t.Fatalf("healthMonitorButtonText() = %q, want %q", got, "Pet HP: 40%")
+	if got := ratioMonitorButtonText("Pet MP", 0.15); got != "Pet MP: 15%" {
+		t.Fatalf("ratioMonitorButtonText() = %q, want %q", got, "Pet MP: 15%")
 	}
 }
 

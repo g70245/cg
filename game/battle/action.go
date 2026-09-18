@@ -30,6 +30,7 @@ var (
 	Offsets        = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
 	Levels         = enum.GenericEnum[offset.Offset]{List: []offset.Offset{offset.One, offset.Two, offset.Three, offset.Four, offset.Five, offset.Six, offset.Seven, offset.Eight, offset.Nine, offset.Ten}}
 	Ratios         = enum.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.OneTenth, ratio.TwoTenth, ratio.ThreeTenth, ratio.FourTenth, ratio.FiveTenth, ratio.SixTenth, ratio.SevenTenth, ratio.EightTenth, ratio.NineTenth, ratio.One}}
+	MPRatios       = enum.GenericEnum[ratio.Ratio]{List: []ratio.Ratio{ratio.FiveHundredths, ratio.OneTenth, ratio.FifteenHundredths, ratio.TwoTenth, ratio.TwentyFiveHundredths, ratio.ThreeTenth, ratio.ThirtyFiveHundredths, ratio.FourTenth, ratio.FortyFiveHundredths, ratio.FiveTenth, ratio.FiftyFiveHundredths}}
 	Thresholds     = enum.GenericEnum[threshold.Threshold]{List: []threshold.Threshold{threshold.OneFoe, threshold.TwoFoes, threshold.ThreeFoes, threshold.FourFoes, threshold.FiveFoes, threshold.SixFoes, threshold.SevenFoes, threshold.EightFoes, threshold.NineFoes, threshold.TenFoes}}
 	EnemyPositions = enum.GenericEnum[enemy.Position]{List: []enemy.Position{enemy.T1, enemy.T2, enemy.T3, enemy.T4, enemy.T5, enemy.B1, enemy.B2, enemy.B3, enemy.B4, enemy.B5}}
 )
@@ -76,7 +77,6 @@ type ActionState struct {
 	EnemyOrder    enemy.Position     `json:"-"`
 	CustomEnemies []game.CheckTarget `json:"-"`
 
-	isOutOfMana        bool `json:"-"`
 	isCharacterHanging bool `json:"-"`
 	isPetHanging       bool `json:"-"`
 
@@ -84,7 +84,6 @@ type ActionState struct {
 	activityCheckerEnabled    func() bool
 	flawlessPetCheckerEnabled func() bool
 	gameDir                   func() string
-	manaChecker               *ManaChecker
 
 	enemies         []game.CheckTarget `json:"-"`
 	trainingCounter int                `json:"-"`
@@ -98,7 +97,6 @@ func (s *ActionState) Act() {
 		s.executeActivity()
 		s.detectEnemies()
 		s.executeFlawlessPetChecker()
-		s.checkCharacterMana()
 		s.executeCharacterStateMachine()
 		s.wait()
 		s.executeCharacterStateMachine()
@@ -809,10 +807,6 @@ func (s *ActionState) updateCurrentActionId(r role.Role) {
 	s.currentJumpId = 0
 }
 
-func (s ActionState) isManaChecker() bool {
-	return s.manaChecker.Get() == fmt.Sprint(s.hWnd)
-}
-
 func (s *ActionState) enableBattleCommandAttack() {
 	if !s.isBattleCommandEnable(BATTLE_COMMAND_ATTACK) {
 		internal.LeftClick(s.hWnd, BATTLE_COMMAND_ATTACK.X, BATTLE_COMMAND_ATTACK.Y)
@@ -925,12 +919,11 @@ func CreateNewBattleActionState(hWnd win.HWND) ActionState {
 	}
 }
 
-func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, flawlessPetCheckerEnabled func() bool, gameDir func() string, manaChecker *ManaChecker) {
+func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, flawlessPetCheckerEnabled func() bool, gameDir func() string) {
 	s.enabled = enabled
 	s.activityCheckerEnabled = activityCheckerEnabled
 	s.flawlessPetCheckerEnabled = flawlessPetCheckerEnabled
 	s.gameDir = gameDir
-	s.manaChecker = manaChecker
 }
 
 func (s *ActionState) isEnabled() bool {
@@ -1107,23 +1100,6 @@ func (s *ActionState) endPetHanging() {
 			s.currentPetActionId++
 		case controlunit.Jump:
 			s.currentPetActionId = jumpId
-		}
-	}
-}
-
-func (s *ActionState) checkCharacterMana() {
-
-	if !game.IsBattleScene(s.hWnd) || !s.isEnabled() {
-		return
-	}
-
-	if s.isManaChecker() {
-		s.logH("checks characters' mana")
-
-		game.CloseAllWindows(s.hWnd)
-		game.ClearChat(s.hWnd)
-		if s.isOutOfMana = s.isAnyCharacterOutOfMana(); s.isOutOfMana {
-			s.logH("someone is out of mana")
 		}
 	}
 }

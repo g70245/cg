@@ -200,24 +200,21 @@ func newBattleContainer(games game.Games, compactButton *widget.Button, onCompac
 }
 
 func newBatttleGroupContainer(games game.Games, allGames game.Games, destroy, restoreFullView, resizeCollapsedView func()) (groupView *battleGroupView, sharedStopChan chan bool) {
-	manaChecker := battle.NewManaChecker()
-	healthMonitor := battle.NewHealthMonitor(games)
+	partyState := &battle.PartyState{}
+	vitalsMonitor := battle.NewVitalsMonitor(games)
 	sharedStopChan = make(chan bool, len(games))
-	workers := battle.CreateWorkers(games, r.getGameDir, manaChecker, healthMonitor, new(atomic.Bool), sharedStopChan, new(sync.WaitGroup))
+	workers := battle.CreateWorkers(games, r.getGameDir, partyState, vitalsMonitor, new(atomic.Bool), sharedStopChan, new(sync.WaitGroup))
 	ridingSteps := newRidingStepsView(games, allGames)
 
 	gameWidget, actionViewers := generateGameWidget(gameWidgeOptions{
 		games:            games,
 		allGames:         allGames,
-		manaChecker:      manaChecker,
 		workers:          workers,
 		onAliasesChanged: func() { ridingSteps.refreshAliases(games, allGames) },
 	})
 	menu := generateMenuWidget(menuWidgetOptions{
-		games:           games,
-		allGames:        allGames,
-		manaChecker:     manaChecker,
-		healthMonitor:   healthMonitor,
+		partyState:      partyState,
+		vitalsMonitor:   vitalsMonitor,
 		workers:         workers,
 		sharedStopChan:  sharedStopChan,
 		actionViewers:   actionViewers,

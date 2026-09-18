@@ -14,8 +14,11 @@ import (
 	"cg/game/enum/threshold"
 )
 
-func TestManaCheckerConcurrentAccess(t *testing.T) {
-	checker := NewManaChecker()
+func TestPartyStateConcurrentAccess(t *testing.T) {
+	state := &PartyState{}
+	if state.Enabled() {
+		t.Fatal("Enabled() = true by default, want false")
+	}
 	var waitGroup sync.WaitGroup
 
 	for i := 0; i < 50; i++ {
@@ -23,15 +26,27 @@ func TestManaCheckerConcurrentAccess(t *testing.T) {
 		waitGroup.Add(2)
 		go func() {
 			defer waitGroup.Done()
-			checker.Set(fmt.Sprint(i))
+			state.SetEnabled(i%2 == 0)
 		}()
 		go func() {
 			defer waitGroup.Done()
-			_ = checker.Get()
+			_ = state.Enabled()
 		}()
 	}
 
 	waitGroup.Wait()
+}
+
+func TestWorkerShouldWaitForParty(t *testing.T) {
+	state := &PartyState{}
+	worker := &Worker{partyState: state}
+	if worker.shouldWaitForParty() {
+		t.Fatal("shouldWaitForParty() = true by default, want false")
+	}
+	state.SetEnabled(true)
+	if !worker.shouldWaitForParty() {
+		t.Fatal("shouldWaitForParty() = false after enabling Party")
+	}
 }
 
 func TestWorkerBeginWorkAllowsOnlyOneConcurrentStart(t *testing.T) {
@@ -85,7 +100,7 @@ func TestWorkerActionStateSnapshotIsIndependent(t *testing.T) {
 		hWnd:                  1,
 		actionState:           CreateNewBattleActionState(1),
 		movementMode:          movement.None,
-		manaChecker:           NewManaChecker(),
+		partyState:            &PartyState{},
 		sharedInventoryStatus: &atomic.Bool{},
 	}
 
@@ -103,14 +118,14 @@ func TestWorkerActionStateSnapshotIsIndependent(t *testing.T) {
 }
 
 func TestWorkerConcurrentConfigurationAccess(t *testing.T) {
-	checker := NewManaChecker()
-	checker.Set("1")
+	partyState := &PartyState{}
+	partyState.SetEnabled(true)
 	sharedInventoryStatus := &atomic.Bool{}
 	worker := &Worker{
 		hWnd:                  1,
 		actionState:           CreateNewBattleActionState(1),
 		movementMode:          movement.None,
-		manaChecker:           checker,
+		partyState:            partyState,
 		sharedInventoryStatus: sharedInventoryStatus,
 	}
 

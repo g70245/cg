@@ -15,44 +15,17 @@ import (
 )
 
 const (
-	NO_MANA_CHECKER = "None"
-)
-
-const (
 	DURATION_BATTLE_WORKER            = 400 * time.Millisecond
 	DURATION_BATTLE_LAST_ACTION       = 1000 * time.Millisecond
 	DURATION_BATTLE_CHECKER_LOG       = 300 * time.Millisecond
 	DURATION_BATTLE_CHECKER_INVENTORY = 60 * time.Second
 )
 
-// ManaChecker is shared by every worker in a battle group. The UI may change
-// the selected checker while workers are running, so all access is synchronized.
-type ManaChecker struct {
-	mu    sync.RWMutex
-	value string
-}
-
-func NewManaChecker() *ManaChecker {
-	return &ManaChecker{value: NO_MANA_CHECKER}
-}
-
-func (m *ManaChecker) Get() string {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.value
-}
-
-func (m *ManaChecker) Set(value string) {
-	m.mu.Lock()
-	m.value = value
-	m.mu.Unlock()
-}
-
 type Worker struct {
 	hWnd                  win.HWND
 	gameDir               func() string
-	manaChecker           *ManaChecker
-	healthMonitor         *HealthMonitor
+	partyState            *PartyState
+	vitalsMonitor         *VitalsMonitor
 	sharedInventoryStatus *atomic.Bool
 	sharedStopChan        chan bool
 	sharedWaitGroup       *sync.WaitGroup
@@ -76,7 +49,7 @@ type Worker struct {
 
 type Workers []*Worker
 
-func CreateWorkers(games game.Games, gameDir func() string, manaChecker *ManaChecker, healthMonitor *HealthMonitor, sharedInventoryStatus *atomic.Bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) Workers {
+func CreateWorkers(games game.Games, gameDir func() string, partyState *PartyState, vitalsMonitor *VitalsMonitor, sharedInventoryStatus *atomic.Bool, sharedStopChan chan bool, sharedWaitGroup *sync.WaitGroup) Workers {
 	workers := make(Workers, 0, len(games))
 	for _, hWnd := range games.GetHWNDs() {
 		newWorkerTicker := time.NewTicker(time.Hour)
@@ -90,8 +63,8 @@ func CreateWorkers(games game.Games, gameDir func() string, manaChecker *ManaChe
 		workers = append(workers, &Worker{
 			hWnd:                             hWnd,
 			gameDir:                          gameDir,
-			manaChecker:                      manaChecker,
-			healthMonitor:                    healthMonitor,
+			partyState:                       partyState,
+			vitalsMonitor:                    vitalsMonitor,
 			sharedInventoryStatus:            sharedInventoryStatus,
 			sharedStopChan:                   sharedStopChan,
 			sharedWaitGroup:                  sharedWaitGroup,
@@ -134,7 +107,7 @@ func (w *Worker) Work() bool {
 
 		currentMapName := game.GetMapName(w.hWnd)
 		w.sharedInventoryStatus.Store(false)
-		actionState.configureRuntime(w.enabled.Load, w.activityCheckerEnabled.Load, w.flawlessPetCheckerEnabled.Load, w.gameDir, w.manaChecker)
+		actionState.configureRuntime(w.enabled.Load, w.activityCheckerEnabled.Load, w.flawlessPetCheckerEnabled.Load, w.gameDir)
 		actionState.reset()
 
 		var enemies []game.CheckTarget
@@ -155,7 +128,7 @@ func (w *Worker) Work() bool {
 			case <-w.workerTicker.C:
 				switch game.GetScene(w.hWnd) {
 				case game.BATTLE_SCENE:
-					if w.isGrouping() {
+					if w.shouldWaitForParty() {
 						// Magic Baby uses turn-based party battles. A character that
 						// returns to the normal scene waits below until every party
 						// window leaves battle, preventing the leader from moving into
@@ -174,35 +147,35 @@ func (w *Worker) Work() bool {
 						break
 					}
 
-					if isOutOfResource || w.sharedInventoryStatus.Load() || actionState.isOutOfMana {
+					if isOutOfResource || w.sharedInventoryStatus.Load() {
 						w.pause(&actionState)
 						utils.Beeper.Play()
 						break
 					}
-					if w.healthMonitor.IsBlocked() {
+					if w.vitalsMonitor.IsBlocked() {
 						w.pause(&actionState)
 						break
 					}
-					isHealthLow, err := w.healthMonitor.Check()
+					isVitalsLow, err := w.vitalsMonitor.Check()
 					if err != nil {
-						w.healthMonitor.Block()
-						log.Printf("Handle %d health monitoring failed: %v\n", w.hWnd, err)
+						w.vitalsMonitor.Block()
+						log.Printf("Handle %d vitals monitoring failed: %v\n", w.hWnd, err)
 						w.pause(&actionState)
 						break
 					}
-					if isHealthLow {
-						if w.healthMonitor.Block() {
-							log.Printf("Handle %d health is below the monitoring ratio\n", w.hWnd)
+					if isVitalsLow {
+						if w.vitalsMonitor.Block() {
+							log.Printf("Handle %d HP or MP is below the monitoring ratio\n", w.hWnd)
 							utils.Beeper.Play()
 						}
 						w.pause(&actionState)
 						break
 					}
 					movementState.Mode = mode
-					if w.isGrouping() {
+					if w.shouldWaitForParty() {
 						w.sharedWaitGroup.Wait()
 					}
-					if w.healthMonitor.IsBlocked() {
+					if w.vitalsMonitor.IsBlocked() {
 						w.pause(&actionState)
 						break
 					}
@@ -244,7 +217,7 @@ func (w *Worker) Work() bool {
 					utils.Beeper.Play()
 				}
 				if isOutOfResource = game.IsOutOfResource(w.gameDir()); isOutOfResource {
-					log.Printf("Handle %d is out of resource\n", w.hWnd)
+					log.Printf("Handle %d is out of lure\n", w.hWnd)
 					w.pause(&actionState)
 					utils.Beeper.Play()
 				}
@@ -361,11 +334,11 @@ func (w *Worker) runtimeSnapshot() (ActionState, MovementState, []string) {
 }
 
 func (w *Worker) setSharedInventoryStatus(isFull bool) {
-	if w.isGrouping() {
+	if w.shouldWaitForParty() {
 		w.sharedInventoryStatus.Store(isFull)
 	}
 }
 
-func (w *Worker) isGrouping() bool {
-	return w.manaChecker.Get() != NO_MANA_CHECKER
+func (w *Worker) shouldWaitForParty() bool {
+	return w.partyState.Enabled()
 }

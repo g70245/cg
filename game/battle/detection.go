@@ -162,20 +162,6 @@ func (s *ActionState) canRecall() bool {
 	return internal.GetColor(s.hWnd, BATTLE_WINDOW_PET_RECALL_BUTTON.X, BATTLE_WINDOW_PET_RECALL_BUTTON.Y) == COLOR_BATTLE_RECALL_BUTTON
 }
 
-func (s *ActionState) isAnyCharacterOutOfMana() bool {
-	internal.MoveCursorToNowhere(s.hWnd)
-
-	for _, h := range allCharacters {
-		oy := h.Y + 3
-		manaPoint := h.X + 2
-		if internal.GetColor(s.hWnd, h.X-2, h.Y-2) == COLOR_BATTLE_STATUS_PIVOT &&
-			internal.GetColor(s.hWnd, manaPoint, oy) != COLOR_BATTLE_MANA_UPPER {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTarget) bool {
 	healthPoint := int32(ratio*30) + checkTarget.X
 
@@ -183,9 +169,9 @@ func (s *ActionState) isHealthLowerThan(ratio float32, checkTarget *game.CheckTa
 		internal.GetColor(s.hWnd, healthPoint+1, checkTarget.Y) != COLOR_BATTLE_BLOOD_UPPER
 }
 
-func isHealthRatioLowerThan(current, maximum uint32, ratio float32) (bool, error) {
+func isRatioLowerThan(current, maximum uint32, ratio float32) (bool, error) {
 	if maximum == 0 {
-		return false, fmt.Errorf("character maximum health is zero")
+		return false, fmt.Errorf("maximum value is zero")
 	}
 	return float32(current)/float32(maximum) < ratio, nil
 }

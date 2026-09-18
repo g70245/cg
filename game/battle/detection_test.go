@@ -23,7 +23,7 @@ func TestGetSkillWindowPosFromCapture(t *testing.T) {
 	}
 }
 
-func TestIsHealthRatioLowerThan(t *testing.T) {
+func TestIsRatioLowerThan(t *testing.T) {
 	tests := []struct {
 		name      string
 		current   uint32
@@ -40,12 +40,12 @@ func TestIsHealthRatioLowerThan(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := isHealthRatioLowerThan(tt.current, tt.maximum, tt.ratio)
+			got, err := isRatioLowerThan(tt.current, tt.maximum, tt.ratio)
 			if (err != nil) != tt.wantError {
-				t.Fatalf("isHealthRatioLowerThan() error = %v, wantError %t", err, tt.wantError)
+				t.Fatalf("isRatioLowerThan() error = %v, wantError %t", err, tt.wantError)
 			}
 			if got != tt.want {
-				t.Errorf("isHealthRatioLowerThan() = %t, want %t", got, tt.want)
+				t.Errorf("isRatioLowerThan() = %t, want %t", got, tt.want)
 			}
 		})
 	}

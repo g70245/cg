@@ -28,7 +28,6 @@ const separator = "    "
 type gameWidgeOptions struct {
 	games            game.Games
 	allGames         game.Games
-	manaChecker      *battle.ManaChecker
 	workers          battle.Workers
 	onAliasesChanged func()
 }
