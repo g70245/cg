@@ -6,7 +6,7 @@ This document records reusable process-memory knowledge confirmed through live r
 
 All offsets are relative to the compatible client's main module unless stated otherwise. The layout is client-version-specific and must be revalidated after a client update.
 
-The observations below were last validated on 2026-09-18. The character-status, local-pet-status, and remaining-riding-steps readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
+The observations below were last validated on 2026-09-20. The character-status, local-pet-status, remaining-riding-steps, and wild-battle flawless-pet readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
 
 ## XOR-encoded values
 
@@ -69,6 +69,55 @@ State value `2` does not by itself distinguish ordinary battle use from riding. 
 
 The application implements this layout in `game/pet_status.go`. It reads the state byte first and decodes all four HP/MP blocks in one 64-byte operation only for state `2`. Group Pet HP and Pet MP monitoring repeat that local-slot scan for every game window in the external application group, so they do not depend on access to teammates through one process.
 
+## Battle actor slots and attached layers
+
+The battle scene maintains 20 logical actor slots in a stable pointer table:
+
+```text
+entryAddress = module + 0x0018C6C4 + slot * 4
+actorPointer = littleEndianUint32(entryAddress)
+slot         = 0..19
+```
+
+Slots `0..9` represent the right side of the battle screen and slots `10..19` represent the left side. Within each side, the first five and second five entries are the two formation rows; paired positions differ by five. Empty positions contain a null pointer. The table represents logical battle positions rather than actor creation order, so populated entries need not form one packed sequence.
+
+Wild encounters consistently place the player's side on the right and monsters on the left, making slots `10..19` the enemy range used by Flawless Pet monitoring. Player-versus-player battles may assign the local player to either side, so the wild-encounter rule must not be treated as a universal enemy-side rule.
+
+Observed actor fields include:
+
+| Relative offset | Field |
+| --- | --- |
+| `+0x00C` | Battle/render context pointer |
+| `+0x030` | Integer X coordinate |
+| `+0x034` | Integer Y coordinate |
+| `+0x0C4` | Actor name |
+| `+0x170` | Current HP XOR block |
+| `+0x180` | Maximum HP XOR block |
+| `+0x1B0` | Current MP XOR block |
+| `+0x1C0` | Maximum MP XOR block |
+| `+0x1D0` | Level |
+
+The actor context stores two dedicated special-layer pointers:
+
+```text
+context + 0x13B0 = variant-2 layer pointer
+context + 0x13B4 = variant-1 layer pointer
+```
+
+The variant-2 layer is used for the confirmed flawless-pet glow. Relevant fields are:
+
+| Relative offset | Field |
+| --- | --- |
+| `+0x008` | Update handler (`module + 0x001F760`) |
+| `+0x010` | Parent actor pointer |
+| `+0x1D4` | Parent battle-slot index |
+| `+0x270` | Variant (`2`) |
+| `+0x2A8` | Animation resource ID |
+
+A flawless pet was repeatedly observed with resource ID `0x1C46E`; ordinary enemies had no variant-2 layer. The client receives this resource ID directly in the parsed battle record and creates the attached layer before battle actions begin. The runtime detector scans wild-enemy slots `10..19` and accepts the resource only when the layer's saved slot and parent pointer match the current actor. This rejects a layer left from a previous actor or battle. The retained screenshot/color implementation is not used as a runtime fallback.
+
+The separate active-render-object list near `module + 0x0018C2BC` contains actors, attached layers, and other render objects in dynamic order. It must not be treated as the logical 20-slot battle table.
+
 ## Party actor pointer table
 
 Local and remote party actors are reached through a stable pointer table rather than through reusable absolute actor addresses:
@@ -117,6 +166,8 @@ Confirmed:
 - Dynamic absolute actor addresses differ between client processes.
 - The remaining-riding-steps field and its `800 * pet loyalty ratio` initial value.
 - The `50`-steps-per-escape cost and the resulting `150`-step movement reserve.
+- The 20-entry battle actor table, four-byte pointer stride, and left/right side ranges.
+- The variant-2 layer pointer, parent and slot validation fields, and flawless-pet resource ID `0x1C46E`.
 
 Not yet confirmed:
 
@@ -124,5 +175,6 @@ Not yet confirmed:
 - The party actor table's total entry count and empty/stale-entry lifecycle.
 - Whether the non-character entries are pet actors, wrappers, or another actor type.
 - Teammate pet access.
+- The exact semantic purpose and resource mapping of the variant-1 special layer.
 - The exact riding-step decrement behavior and whether reaching zero automatically ends riding.
 - Compatibility of these offsets with other client versions.

@@ -99,7 +99,7 @@ Log-dependent battle and production monitoring will not start unless the selecte
 
 The Battle tab supports grouped game windows and configurable character and pet action sequences. Actions may include attacks, skills, healing, defensive behavior, movement, conditional thresholds, success/failure control units, and jumps between configured steps.
 
-Use the Monitoring menu to enable only the checks required for the current workflow. **Flawless Pet** monitoring looks for the moving, blinking sparkle effect around detected enemies. When the configured sparkle color is found, CG plays the selected alert and pauses that window's battle actions until the battle ends or the worker is stopped. The check depends on fixed client coordinates and colors and is not saved in `.ac` files.
+Use the Monitoring menu to enable only the checks required for the current workflow. **Flawless Pet** monitoring reads the supported client's wild-battle actor table and verifies the glow layer attached to each enemy. When a matching glow resource is found, CG plays the selected alert and pauses that window's battle actions until the battle ends or the worker is stopped. The check is client-version-specific and is not saved in `.ac` files.
 
 Battle action configurations can be saved to and loaded from `.ac` files. These files are JSON-based but currently have no formal schema version, so keep backups before editing them outside CG.
 

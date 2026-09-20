@@ -81,7 +81,9 @@ func (s *ActionState) getEnemies(checkTargets []game.CheckTarget) []game.CheckTa
 	return targets
 }
 
-func (s *ActionState) searchFlawlessPet(checkTargets []game.CheckTarget) bool {
+// searchFlawlessPetByCapture retains the previous screenshot detector for rollback.
+// The active Flawless Pet path uses game.HasFlawlessPet without a capture fallback.
+func (s *ActionState) searchFlawlessPetByCapture(checkTargets []game.CheckTarget) bool {
 	if len(checkTargets) == 0 {
 		return false
 	}

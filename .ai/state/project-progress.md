@@ -1,6 +1,6 @@
 # Project Progress
 
-Last updated: 2026-09-18
+Last updated: 2026-09-20
 
 ## Project direction
 
@@ -49,6 +49,7 @@ Maintain a reliable Windows build and packaging path while incrementally adding 
 - Added continuous remaining-riding-step reads for every alias in a battle group and a Compact Battle status row that omits zero values, stays current while full view is active, follows alias changes, and stops with the group; battle riding checks now use the same memory value with the legacy color check as a read-error fallback, and fixed supported-client addresses avoid repeated module snapshots while preserving exact-read errors.
 - Replaced the character and pet Health battle actions with independent runtime-only `HP` and `Pet HP` group monitors. Each moving worker checks every group window before movement, character checks adjust the configured ratio only while riding with at least 150 steps, pet checks decode every active local slot from memory, a low result blocks group movement and alerts once, and a read failure blocks without audio while the existing pause path finishes battle cleanup.
 - Replaced the selected-window Mana checker with independent runtime-only `MP` and `Pet MP` group monitors backed by the confirmed four-block HP/MP memory layout. Added an explicit group-level `Party` toggle for the existing battle-exit wait and shared inventory stop behavior, kept movement schedules independent, and reorganized Monitoring into five columns with user-facing `Lure` wording while preserving the generic game-log resource phrase and internal resource identifiers.
+- Replaced active Flawless Pet screenshot detection with a supported-client wild-battle memory check that scans left-side actor slots `10..19`, follows each actor's variant-2 layer, and validates the current parent, slot, and `0x1C46E` glow resource before pausing battle actions. The previous capture-based implementation remains available in source for rollback but is not a runtime fallback.
 
 ## Current repository facts
 

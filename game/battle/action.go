@@ -131,7 +131,12 @@ func (s *ActionState) executeFlawlessPetChecker() {
 		return
 	}
 
-	if s.searchFlawlessPet(AllEnemies) {
+	hasFlawlessPet, err := game.HasFlawlessPet(s.hWnd)
+	if err != nil {
+		log.Printf("# Handle %v cannot read flawless pet battle data: %v", s.hWnd, err)
+	}
+
+	if hasFlawlessPet {
 		s.logH("encounters a flawless pet")
 		utils.Beeper.Play()
 
