@@ -26,7 +26,7 @@ Compact Battle view keeps the battle-group controls visible while adding optiona
 - Configure ordered character and pet actions, conditions, jumps, and targets.
 - Load and save battle action configurations as `.ac` files.
 - Select optional movement patterns driven by in-game map coordinates.
-- Monitor teleport, resource, activity, verification, health, mana, inventory, and flawless-pet encounters.
+- Monitor teleport, resource, activity, verification, health, mana, inventory, Level 1, and Flawless Pet encounters.
 - Assist with material preparation, item production, and inventory organization.
 - Play a repeating MP3 alert when operator attention is required.
 - Recognize both standard and supported Sandbox-style game window classes.
@@ -109,7 +109,7 @@ The Production tab creates a worker for each selected game window. Production au
 
 ## Alerts
 
-CG uses the selected MP3 as a repeating operator alert. Alerts may be triggered by configured battle, flawless-pet, inventory, verification, resource, or production conditions. Press `Ctrl+0` to stop an active alert.
+CG uses the selected MP3 as a repeating operator alert. Alerts may be triggered by configured battle, Level 1 and Flawless Pet, inventory, verification, resource, or production conditions. Level 1 and Flawless Pet monitoring are intended for wild encounters and do not distinguish PvP battles. Press `Ctrl+0` to stop an active alert.
 
 ## Test and Quality Checks
 
