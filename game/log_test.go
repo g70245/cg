@@ -69,3 +69,11 @@ func TestValidateLogDirectory(t *testing.T) {
 		})
 	}
 }
+
+func TestActivityPhrasesExcludeLevelOneDetection(t *testing.T) {
+	for _, phrase := range PH_ACTIVITY {
+		if phrase == "發現野生一級" {
+			t.Fatal("PH_ACTIVITY still contains the legacy level-one log phrase")
+		}
+	}
+}

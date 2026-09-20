@@ -142,6 +142,7 @@ func TestWorkerConcurrentConfigurationAccess(t *testing.T) {
 				actionState.AddCharacterAction(character.Attack)
 			})
 			worker.SetActivityCheckerEnabled(i%2 == 0)
+			worker.SetLevelOneCheckerEnabled(i%2 == 0)
 			worker.setSharedInventoryStatus(i%2 == 0)
 		}()
 		go func() {
@@ -150,6 +151,7 @@ func TestWorkerConcurrentConfigurationAccess(t *testing.T) {
 			_ = worker.CustomEnemyOrder()
 			_ = worker.ActionStateSnapshot()
 			_ = worker.activityCheckerEnabled.Load()
+			_ = worker.levelOneCheckerEnabled.Load()
 			_ = sharedInventoryStatus.Load()
 		}()
 	}

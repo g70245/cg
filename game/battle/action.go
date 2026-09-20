@@ -82,6 +82,7 @@ type ActionState struct {
 
 	enabled                   func() bool
 	activityCheckerEnabled    func() bool
+	levelOneCheckerEnabled    func() bool
 	flawlessPetCheckerEnabled func() bool
 	gameDir                   func() string
 
@@ -96,6 +97,7 @@ func (s *ActionState) Act() {
 		s.wait()
 		s.executeActivity()
 		s.detectEnemies()
+		s.executeLevelOneChecker()
 		s.executeFlawlessPetChecker()
 		s.executeCharacterStateMachine()
 		s.wait()
@@ -118,6 +120,27 @@ func (s *ActionState) executeActivity() {
 
 	if game.DoesEncounterActivityMonsters(s.gameDir()) {
 		s.logH("encounters the activity monster")
+		utils.Beeper.Play()
+
+		for game.IsBattleScene(s.hWnd) && s.isEnabled() {
+			time.Sleep(DURATION_BATTLE_ACTION_WAITING_LOOP)
+		}
+	}
+}
+
+func (s *ActionState) executeLevelOneChecker() {
+	if !s.isLevelOneCheckerEnabled() {
+		return
+	}
+
+	hasLevelOne, err := game.HasLevelOneEnemy(s.hWnd)
+	if err != nil {
+		log.Printf("# Handle %v cannot read level one battle data: %v", s.hWnd, err)
+		return
+	}
+
+	if hasLevelOne {
+		s.logH("encounters a level one enemy")
 		utils.Beeper.Play()
 
 		for game.IsBattleScene(s.hWnd) && s.isEnabled() {
@@ -924,9 +947,10 @@ func CreateNewBattleActionState(hWnd win.HWND) ActionState {
 	}
 }
 
-func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, flawlessPetCheckerEnabled func() bool, gameDir func() string) {
+func (s *ActionState) configureRuntime(enabled, activityCheckerEnabled func() bool, levelOneCheckerEnabled func() bool, flawlessPetCheckerEnabled func() bool, gameDir func() string) {
 	s.enabled = enabled
 	s.activityCheckerEnabled = activityCheckerEnabled
+	s.levelOneCheckerEnabled = levelOneCheckerEnabled
 	s.flawlessPetCheckerEnabled = flawlessPetCheckerEnabled
 	s.gameDir = gameDir
 }
@@ -937,6 +961,10 @@ func (s *ActionState) isEnabled() bool {
 
 func (s *ActionState) isActivityCheckerEnabled() bool {
 	return s.activityCheckerEnabled != nil && s.activityCheckerEnabled()
+}
+
+func (s *ActionState) isLevelOneCheckerEnabled() bool {
+	return s.levelOneCheckerEnabled != nil && s.levelOneCheckerEnabled()
 }
 
 func (s *ActionState) isFlawlessPetCheckerEnabled() bool {

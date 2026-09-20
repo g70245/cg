@@ -35,7 +35,7 @@ var (
 	PH_TELEPORTING        = []string{"被不可思", "你感覺到一股"}
 	PH_OUT_OF_RESOURCE    = []string{"道具已經用完了"}
 	PH_VERIFICATION       = []string{"驗證系統"}
-	PH_ACTIVITY           = []string{"發現野生一級", "南瓜之王", "虎王", "釣魚途中"}
+	PH_ACTIVITY           = []string{"南瓜之王", "虎王", "釣魚途中"}
 	PH_PRODUCTION_FAILURE = []string{}
 )
 

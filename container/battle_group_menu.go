@@ -166,6 +166,25 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 		}
 	})
 	activitiesCheckerButton.Importance = widget.HighImportance
+	var levelOneCheckerButton *widget.Button
+	levelOneCheckerButton = widget.NewButtonWithIcon("Level 1", theme.CheckButtonIcon(), func() {
+		switch levelOneCheckerButton.Icon {
+		case theme.CheckButtonCheckedIcon():
+			for i := range options.workers {
+				options.workers[i].SetLevelOneCheckerEnabled(false)
+			}
+			turn(theme.CheckButtonIcon(), levelOneCheckerButton)
+		case theme.CheckButtonIcon():
+			if !validateBeeperConfig("Level 1 Monitoring") {
+				return
+			}
+			for i := range options.workers {
+				options.workers[i].SetLevelOneCheckerEnabled(true)
+			}
+			turn(theme.CheckButtonCheckedIcon(), levelOneCheckerButton)
+		}
+	})
+	levelOneCheckerButton.Importance = widget.HighImportance
 	var flawlessPetCheckerButton *widget.Button
 	flawlessPetCheckerButton = widget.NewButtonWithIcon("Flawless Pet", theme.CheckButtonIcon(), func() {
 		switch flawlessPetCheckerButton.Icon {
@@ -219,8 +238,8 @@ func generateMenuWidget(options menuWidgetOptions) *battleGroupMenu {
 	})
 	inventoryCheckerButton.Importance = widget.HighImportance
 	monitoringDialog := dialog.NewCustom("Monitoring", "Close", container.NewGridWithColumns(5,
-		partyButton, teleportAndResourceCheckerButton, activitiesCheckerButton, inventoryCheckerButton, flawlessPetCheckerButton,
-		mpCheckerButton, petMPCheckerButton, healthCheckerButton, petHealthCheckerButton,
+		partyButton, teleportAndResourceCheckerButton, inventoryCheckerButton, levelOneCheckerButton, flawlessPetCheckerButton,
+		mpCheckerButton, petMPCheckerButton, healthCheckerButton, petHealthCheckerButton, activitiesCheckerButton,
 	), window)
 	checkersButton := widget.NewButtonWithIcon("Monitoring", theme.MenuIcon(), func() {
 		monitoringDialog.Show()

@@ -6,7 +6,7 @@ This document records reusable process-memory knowledge confirmed through live r
 
 All offsets are relative to the compatible client's main module unless stated otherwise. The layout is client-version-specific and must be revalidated after a client update.
 
-The observations below were last validated on 2026-09-20. The character-status, local-pet-status, remaining-riding-steps, and wild-battle flawless-pet readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
+The observations below were last validated on 2026-09-21. The character-status, local-pet-status, remaining-riding-steps, wild-battle level-one, and flawless-pet readers are currently implemented in the application; the party-actor layout remains documented knowledge for future work.
 
 ## XOR-encoded values
 
@@ -116,6 +116,8 @@ The variant-2 layer is used for the confirmed flawless-pet glow. Relevant fields
 
 A flawless pet was repeatedly observed with resource ID `0x1C46E`; ordinary enemies had no variant-2 layer. The client receives this resource ID directly in the parsed battle record and creates the attached layer before battle actions begin. The runtime detector scans wild-enemy slots `10..19` and accepts the resource only when the layer's saved slot and parent pointer match the current actor. This rejects a layer left from a previous actor or battle. The retained screenshot/color implementation is not used as a runtime fallback.
 
+Level 1 monitoring scans the same slots and reads the level at `actor + 0x1D0`. A non-null actor with level `1` pauses battle actions and alerts the user. The check intentionally does not distinguish a wild encounter from player-versus-player combat, so it should remain disabled during PvP. Level 1 runs before Flawless Pet; if it pauses the battle, the later glow check does not run for that encounter.
+
 The separate active-render-object list near `module + 0x0018C2BC` contains actors, attached layers, and other render objects in dynamic order. It must not be treated as the logical 20-slot battle table.
 
 ## Party actor pointer table
@@ -167,6 +169,7 @@ Confirmed:
 - The remaining-riding-steps field and its `800 * pet loyalty ratio` initial value.
 - The `50`-steps-per-escape cost and the resulting `150`-step movement reserve.
 - The 20-entry battle actor table, four-byte pointer stride, and left/right side ranges.
+- The actor level field at `+0x1D0` and the left-side Level 1 monitor built from it.
 - The variant-2 layer pointer, parent and slot validation fields, and flawless-pet resource ID `0x1C46E`.
 
 Not yet confirmed:

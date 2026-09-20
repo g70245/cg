@@ -9,10 +9,6 @@ import (
 	"github.com/g70245/win"
 )
 
-const uint32MemorySize = 4
-
-type processMemoryReader func(address uint32, size uint) ([]byte, error)
-
 func HasFlawlessPet(hWnd win.HWND) (bool, error) {
 	return hasFlawlessPetWith(func(address uint32, size uint) ([]byte, error) {
 		return internal.ReadMemoryAtAddress(hWnd, address, size)
@@ -20,24 +16,18 @@ func HasFlawlessPet(hWnd win.HWND) (bool, error) {
 }
 
 func hasFlawlessPetWith(readMemory processMemoryReader) (bool, error) {
-	actorTableAddress := uint32(MEMORY_BATTLE_ACTOR_TABLE + BATTLE_ENEMY_SLOT_START*uint32MemorySize)
-	actorTableSize := uint(BATTLE_ENEMY_SLOT_COUNT * uint32MemorySize)
-	actorTable, err := readMemory(actorTableAddress, actorTableSize)
+	actors, err := readBattleEnemyActors(readMemory)
 	if err != nil {
-		return false, fmt.Errorf("read enemy actor table: %w", err)
-	}
-	if len(actorTable) < int(actorTableSize) {
-		return false, fmt.Errorf("read enemy actor table: got %d bytes, want %d", len(actorTable), actorTableSize)
+		return false, err
 	}
 
-	for index := 0; index < BATTLE_ENEMY_SLOT_COUNT; index++ {
+	for index, actor := range actors {
 		slot := BATTLE_ENEMY_SLOT_START + index
-		actor := binary.LittleEndian.Uint32(actorTable[index*uint32MemorySize:])
 		if actor == 0 {
 			continue
 		}
 
-		context, err := readFlawlessPetUint32(readMemory, actor+MEMORY_ACTOR_CONTEXT_OFFSET)
+		context, err := readBattleUint32(readMemory, actor+MEMORY_ACTOR_CONTEXT_OFFSET)
 		if err != nil {
 			return false, fmt.Errorf("read battle slot %d actor context: %w", slot, err)
 		}
@@ -45,7 +35,7 @@ func hasFlawlessPetWith(readMemory processMemoryReader) (bool, error) {
 			continue
 		}
 
-		layer, err := readFlawlessPetUint32(readMemory, context+MEMORY_CONTEXT_LAYER2_OFFSET)
+		layer, err := readBattleUint32(readMemory, context+MEMORY_CONTEXT_LAYER2_OFFSET)
 		if err != nil {
 			return false, fmt.Errorf("read battle slot %d layer: %w", slot, err)
 		}
@@ -71,15 +61,4 @@ func hasFlawlessPetWith(readMemory processMemoryReader) (bool, error) {
 	}
 
 	return false, nil
-}
-
-func readFlawlessPetUint32(readMemory processMemoryReader, address uint32) (uint32, error) {
-	data, err := readMemory(address, uint32MemorySize)
-	if err != nil {
-		return 0, err
-	}
-	if len(data) < uint32MemorySize {
-		return 0, fmt.Errorf("got %d bytes, want %d", len(data), uint32MemorySize)
-	}
-	return binary.LittleEndian.Uint32(data), nil
 }

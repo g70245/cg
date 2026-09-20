@@ -38,6 +38,7 @@ type Worker struct {
 	teleportAndResourceCheckerEnabled atomic.Bool
 	inventoryCheckerEnabled           atomic.Bool
 	activityCheckerEnabled            atomic.Bool
+	levelOneCheckerEnabled            atomic.Bool
 	flawlessPetCheckerEnabled         atomic.Bool
 	enabled                           atomic.Bool
 	running                           atomic.Bool
@@ -107,7 +108,7 @@ func (w *Worker) Work() bool {
 
 		currentMapName := game.GetMapName(w.hWnd)
 		w.sharedInventoryStatus.Store(false)
-		actionState.configureRuntime(w.enabled.Load, w.activityCheckerEnabled.Load, w.flawlessPetCheckerEnabled.Load, w.gameDir)
+		actionState.configureRuntime(w.enabled.Load, w.activityCheckerEnabled.Load, w.levelOneCheckerEnabled.Load, w.flawlessPetCheckerEnabled.Load, w.gameDir)
 		actionState.reset()
 
 		var enemies []game.CheckTarget
@@ -270,6 +271,10 @@ func (w *Worker) StartInventoryChecker() {
 
 func (w *Worker) SetActivityCheckerEnabled(enabled bool) {
 	w.activityCheckerEnabled.Store(enabled)
+}
+
+func (w *Worker) SetLevelOneCheckerEnabled(enabled bool) {
+	w.levelOneCheckerEnabled.Store(enabled)
 }
 
 func (w *Worker) SetFlawlessPetCheckerEnabled(enabled bool) {
